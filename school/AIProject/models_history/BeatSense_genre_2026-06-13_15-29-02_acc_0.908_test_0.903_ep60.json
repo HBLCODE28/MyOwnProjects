@@ -1,0 +1,40 @@
+{
+  "name": "BeatSense_genre_2026-06-13_15-29-02_acc_0.908_test_0.903_ep60.keras",
+  "task": "genre",
+  "genre_labels": [
+    "blues",
+    "classical",
+    "country",
+    "disco",
+    "hiphop",
+    "jazz",
+    "metal",
+    "pop",
+    "reggae",
+    "rock"
+  ],
+  "scaler_file": "BeatSense_genre_2026-06-13_15-29-02_acc_0.908_test_0.903_ep60.scaler.pkl",
+  "accuracy": 0.908,
+  "test_accuracy": 0.903,
+  "epoch": 60,
+  "battles": [
+    {
+      "battle_id": 0,
+      "timestamp": "2026-06-13 15:52",
+      "result": "win",
+      "opponent": "BeatSense_genre_2026-04-02_16-03-36_acc_0.767_test_0.617_ep41.keras"
+    }
+  ],
+  "wins": 1,
+  "losses": 0,
+  "notes": {
+    "train_samples": 6640,
+    "val_samples": 600,
+    "test_samples": 596,
+    "overfit_gap": 0.0912,
+    "restored_train_accuracy": 0.9995,
+    "restored_val_accuracy": 0.9083,
+    "mean_prediction_certainty": 0.9211
+  },
+  "draws": 0
+}

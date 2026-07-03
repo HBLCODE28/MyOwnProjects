@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}קרבות מודלים | תדר{% endblock %}
+{% block body_class %}app-page{% endblock %}
+{% block content %}
+<section class="card reveal-up battle-hero-tadar battle-hero-game">
+  <div>
+    <div class="section-label">אדמין בלבד</div>
+    <h1>קרבות מודלים</h1>
+    <p class="muted-line">בחר שני מודלים, שלח אותם לזירה, ותן לשופט להכריע מי מהם ניתח את השיר בצורה מדויקת יותר.</p>
+  </div>
+  <div class="battle-top-steps">
+    <article class="metric-tile card">
+      <span>שלב 1</span>
+      <strong>בחר לוחמים</strong>
+    </article>
+    <article class="metric-tile card">
+      <span>שלב 2</span>
+      <strong>תן לשופט להכריע</strong>
+    </article>
+  </div>
+</section>
+
+<section class="battle-layout reveal-up">
+  <div class="battle-column-side">
+    <section class="card battle-arena-card battle-arena-game">
+      <div class="battle-stage-kicker">זירת המשחק</div>
+      <h2>הקרב החי</h2>
+      <p class="muted-line">ברגע שהקרב מתחיל, שני המודלים מנתחים את אותו השיר. בסוף בוחרים את הסגנון האמיתי והמנצח נקבע.</p>
+      <div class="battle-arena" id="battleArena">
+        <div class="arena-fighter left fighter-a">
+          <span class="arena-label">מודל א׳</span>
+          <strong id="arenaModelA">ממתין</strong>
+          <div class="arena-avatar avatar-a"></div>
+        </div>
+        <div class="arena-track">
+          <div class="arena-laser"></div>
+          <div class="arena-vs">מול</div>
+        </div>
+        <div class="arena-fighter right fighter-b">
+          <span class="arena-label">מודל ב׳</span>
+          <strong id="arenaModelB">ממתין</strong>
+          <div class="arena-avatar avatar-b"></div>
+        </div>
+      </div>
+      <p id="battle-run-status" class="battle-live-status" aria-live="polite">בחר קרב שמור וקובץ אודיו כדי להתחיל.</p>
+    </section>
+
+    <section class="card battle-summary-card">
+      <h2>תוצאה אחרונה</h2>
+      <div id="battleResult" class="battle-result-empty">עדיין אין תוצאה.</div>
+    </section>
+  </div>
+
+  <div class="battle-column-main">
+    <section class="card battle-panel battle-setup-panel">
+      <h2>בחר לוחמים</h2>
+      <div class="form stack-gap inline-grid">
+        <div>
+          <label for="modelA">מודל א׳</label>
+          <select id="modelA"></select>
+        </div>
+        <div>
+          <label for="modelB">מודל ב׳</label>
+          <select id="modelB"></select>
+        </div>
+        <button class="primary-btn" type="button" id="create-battle-btn">צור קרב</button>
+      </div>
+    </section>
+
+    <section class="card battle-panel battle-run-panel">
+      <h2>שלח שיר לזירה</h2>
+      <div class="form stack-gap inline-grid battle-run-grid">
+        <div>
+          <label for="battleId">קרב שמור</label>
+          <select id="battleId"></select>
+        </div>
+        <div>
+          <label for="battleAudio">קובץ אודיו</label>
+          <input id="battleAudio" type="file" accept="audio/*" />
+        </div>
+        <button class="primary-btn" type="button" id="run-battle-btn">הרץ קרב</button>
+      </div>
+      <p class="muted-line">המערכת בודקת עד {{ analysis_source_seconds }} שניות מהשיר ומשווה את המודלים בחלונות של {{ model_window_seconds }} שניות.</p>
+    </section>
+
+    <section class="card battle-panel battle-judge-panel">
+      <h2>עמדת השופט</h2>
+      <p class="muted-line">לאחר סיום הקרב בחר את הסגנון האמיתי של השיר. המערכת תבדוק איזה מודל היה קרוב יותר ותכריז על המנצח.</p>
+      <div id="judgePanel" class="judge-panel-friendly" hidden>
+        <div id="judgeStyleGrid" class="judge-style-grid"></div>
+        <button class="primary-btn" type="button" id="judge-style-btn">אשר הכרעה</button>
+      </div>
+    </section>
+
+    <section class="card battle-panel battle-saved-panel">
+      <h2>קרבות שמורים</h2>
+      <ul id="battleList" class="battle-list"></ul>
+    </section>
+  </div>
+</section>
+
+<section class="battle-graphs reveal-up battle-graphs-compact">
+  <section class="card battle-graph-card">
+    <h2>השוואת ביטחון</h2>
+    <div id="battleCompareGraph" class="graph-stack"></div>
+  </section>
+  <section class="card battle-graph-card">
+    <h2>חלוקת הצבעות</h2>
+    <div id="battleVoteGraph" class="graph-stack"></div>
+  </section>
+</section>
+
+<details class="card reveal-up battle-details-toggle battle-details-card">
+  <summary>הצג שלבי ביצוע</summary>
+  <div id="battleStages" class="stage-grid details-body"></div>
+</details>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  TadarUI.initBattlesPage();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}התדר שלי | תדר{% endblock %}
+{% block body_class %}app-page{% endblock %}
+{% block content %}
+<section class="card onboarding-card reveal-up">
+  {% if not genres %}
+    <h1>לא נמצאו סגנונות</h1>
+    <p class="muted-line">לא נמצאו סגנונות בתיקיית `data/processed_data/train`. יש להעלות דאטה לפני הגדרת התדר שלי.</p>
+  {% else %}
+    <form method="post" class="form stack-gap" id="genre-form">
+      {% for genre in genres %}
+        <input
+          type="hidden"
+          name="pref_{{ genre }}"
+          value="{% if genre in liked %}like{% elif genre in disliked %}dislike{% else %}neutral{% endif %}"
+          data-genre-input="{{ genre }}"
+        />
+      {% endfor %}
+
+      <div class="onboarding-head">
+        <div class="onboarding-progress-row">
+          <span class="small-text">שלב 1 מתוך 2</span>
+          <span class="small-text" id="selected-count"></span>
+        </div>
+        <div class="progress-shell progress-shell-wide">
+          <div class="progress-bar" id="genre-progress"></div>
+        </div>
+        <h1>מה התדר שלך?</h1>
+        <p class="muted-line">מה הסגנון שלך? ומה פחות? ניתן לעדכן כל כרטיס בלחיצה.</p>
+      </div>
+
+      <div class="onboarding-mode-switch" role="tablist" aria-label="בחירת מצב העדפה">
+        <button class="mode-pill active" type="button" id="mode-like" data-mode="like" aria-pressed="true">אוהב.ת</button>
+        <button class="mode-pill" type="button" id="mode-dislike" data-mode="dislike" aria-pressed="false">לא בשבילי</button>
+        <button class="mode-pill" type="button" id="mode-clear" data-mode="neutral" aria-pressed="false">נקה סימון</button>
+      </div>
+
+      <div class="genre-grid" id="genre-grid" aria-label="רשת התדר שלי">
+        {% for genre in genres %}
+          {% set current_value = 'like' if genre in liked else ('dislike' if genre in disliked else 'neutral') %}
+          <button
+            class="genre-card {% if current_value == 'like' %}is-like{% elif current_value == 'dislike' %}is-dislike{% endif %}"
+            type="button"
+            data-genre-card="{{ genre }}"
+            data-value="{{ current_value }}"
+            aria-pressed="{{ 'true' if current_value != 'neutral' else 'false' }}"
+          >
+            <span class="genre-name">{{ genre }}</span>
+            <span class="genre-state">
+              {% if current_value == 'like' %}
+                אהוב
+              {% elif current_value == 'dislike' %}
+                להימנע
+              {% else %}
+                בחר
+              {% endif %}
+            </span>
+          </button>
+        {% endfor %}
+      </div>
+
+      <button class="primary-btn onboarding-submit" type="submit">המשך לניתוח שירים</button>
+    </form>
+
+    <script>
+    (function () {
+      const formEl = document.getElementById("genre-form");
+      const progressEl = document.getElementById("genre-progress");
+      const countEl = document.getElementById("selected-count");
+      const modeButtons = Array.from(formEl.querySelectorAll(".mode-pill"));
+      const cards = Array.from(formEl.querySelectorAll("[data-genre-card]"));
+      let activeMode = "like";
+
+      function inputFor(genre) {
+        return formEl.querySelector(`[data-genre-input="${CSS.escape(genre)}"]`);
+      }
+
+      function setMode(nextMode) {
+        activeMode = nextMode;
+        modeButtons.forEach((button) => {
+          const isActive = button.dataset.mode === nextMode;
+          button.classList.toggle("active", isActive);
+          button.setAttribute("aria-pressed", String(isActive));
+        });
+      }
+
+      function updateProgress() {
+        const selectedTotal = cards.filter((card) => card.dataset.value !== "neutral").length;
+        const percent = Math.round((selectedTotal / cards.length) * 100);
+        progressEl.style.width = `${percent}%`;
+        countEl.textContent = `${selectedTotal}/${cards.length} נבחרו`;
+      }
+
+      function renderCard(card, value) {
+        card.dataset.value = value;
+        card.classList.toggle("is-like", value === "like");
+        card.classList.toggle("is-dislike", value === "dislike");
+        card.setAttribute("aria-pressed", String(value !== "neutral"));
+        const stateEl = card.querySelector(".genre-state");
+        if (stateEl) {
+          stateEl.textContent = value === "like" ? "אהוב" : value === "dislike" ? "להימנע" : "בחר";
+        }
+      }
+
+      modeButtons.forEach((button) => {
+        button.addEventListener("click", () => setMode(button.dataset.mode));
+      });
+
+      cards.forEach((card) => {
+        card.addEventListener("click", () => {
+          const genre = card.dataset.genreCard;
+          const hiddenInput = inputFor(genre);
+          if (!hiddenInput) return;
+          hiddenInput.value = activeMode;
+          renderCard(card, activeMode);
+          updateProgress();
+        });
+      });
+
+      updateProgress();
+    })();
+    </script>
+  {% endif %}
+</section>
+{% endblock %}

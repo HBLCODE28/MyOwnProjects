@@ -1,0 +1,4 @@
+{
+  "status_message": "\nTraining complete.\n\nModel saved to history:\n- BeatSense_genre_2026-04-02_16-03-36_acc_0.767_test_0.617_ep41.keras\n\nValidation accuracy: 76.7%\nEvaluation accuracy: 61.7%\nBest epoch: 41\n\nDetected genres:\n- blues, classical, country, disco, hiphop, jazz, metal, pop, reggae, rock\n\nThis model predicts music genres.\nThe final Like/Dislike recommendation is computed later from each user's preferences.\n",
+  "summary_path": "/media/magshimim/Transcend/final-project_BeatSense/final-project_BeatSense/instance/manual_check_training_2026-04-02.json"
+}

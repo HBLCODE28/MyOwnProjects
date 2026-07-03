@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}תדר{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+{% block content %}
+<section class="landing-hero card" aria-label="עמוד הבית של תדר">
+  <div class="landing-visualizer-shell" aria-hidden="true">
+    <canvas id="landing-visualizer" class="landing-visualizer"></canvas>
+  </div>
+  <div class="landing-copy">
+    <h1>תרגיש את המוזיקה</h1>
+    <p class="landing-text">תדר מנתחת כל שיר ומגלה אם הוא בשבילך על בסיס הטעם המוזיקלי שלך.</p>
+    <div class="hero-actions">
+      {% if current_user.is_authenticated %}
+      <a class="primary-btn hero-btn" href="{{ url_for('dashboard') }}">ניתוח שירים</a>
+      {% else %}
+      <a class="primary-btn hero-btn" href="{{ url_for('register') }}">התחל בחינם</a>
+      <button class="link-btn hero-btn hero-btn-login" type="button" data-open-modal="login-modal">כניסה לחשבון</button>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="landing-features">
+  <article class="feature-card card">
+    <div class="feature-dot"></div>
+    <h2>התאמה אישית מדויקת</h2>
+    <p>"תדר" לומד את ההעדפות המוסיקליות שלך ומספק המלצות בהתאם לפרופיל ההעדפות שלך.</p>
+  </article>
+  <article class="feature-card card">
+    <div class="feature-dot"></div>
+    <h2>חסכון בזמן</h2>
+    <p>"תדר" מנתח את קבצי המוזיקה בחלון זמן קצר כך שנחסך זמן במעבר על שירים.</p>
+  </article>
+  <article class="feature-card card">
+    <div class="feature-dot"></div>
+    <h2>גילוי מוזיקה חדשה</h2>
+    <p>"תדר" מאפשר להיחשף לשירים ואמנים חדשים בתוך הסגנונות האהובים, ואפילו להרחיב לטעמים קרובים.</p>
+  </article>
+</section>
+
+<section class="landing-stats card">
+  <div>
+    <strong>10+</strong>
+    <span>סגנונות</span>
+  </div>
+  <div>
+    <strong>מדויק</strong>
+    <span>פענוח מתקדם</span>
+  </div>
+  <div>
+    <strong>30s</strong>
+    <span>חלון ניתוח</span>
+  </div>
+</section>
+
+<section id="signup-modal" class="auth-modal-overlay" hidden aria-hidden="true" aria-label="חלון הרשמה">
+  <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title">
+    <button type="button" class="modal-close" data-close-modal aria-label="סגירת חלון ההרשמה" style="color:white">x</button>
+    <h2 id="signup-title" class="modal-title auth-modal-title">פתיחת חשבון</h2>
+    <form method="post" action="{{ url_for('register') }}" class="form auth-form stack-gap">
+      <label for="signup-username">שם משתמש</label>
+      <input id="signup-username" name="username" type="text" required minlength="3" autocomplete="username" />
+
+      <label for="signup-email">אימייל</label>
+      <input id="signup-email" name="email" type="email" required autocomplete="email" />
+
+      <label for="signup-password">סיסמה</label>
+      <input id="signup-password" name="password" type="password" required minlength="6" autocomplete="new-password" />
+
+      <button class="primary-btn" type="submit">צור משתמש</button>
+    </form>
+    <p class="muted-line auth-alt-link">יש לך כבר חשבון? <button type="button" class="text-link-btn" data-switch-modal="login-modal">כניסה</button></p>
+  </div>
+</section>
+
+<section id="login-modal" class="auth-modal-overlay" hidden aria-hidden="true" aria-label="חלון כניסה">
+  <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <button type="button" class="modal-close" data-close-modal aria-label="סגירת חלון הכניסה" style="color:white">x</button>
+    <h2 id="login-title" class="modal-title auth-modal-title">כניסה</h2>
+    <form method="post" action="{{ url_for('login') }}" class="form auth-form stack-gap">
+      <label for="login-username">שם משתמש</label>
+      <input id="login-username" name="username" type="text" required minlength="3" autocomplete="username" />
+
+      <label for="login-password">סיסמה</label>
+      <input id="login-password" name="password" type="password" required minlength="6" autocomplete="current-password" />
+
+      <button class="primary-btn" type="submit">כניסה לחשבון</button>
+    </form>
+    <p class="muted-line auth-alt-link"><a href="{{ url_for('forgot_password') }}">שכחתי סיסמה</a></p>
+    <p class="muted-line auth-alt-link">אין לך חשבון? <button type="button" class="text-link-btn" data-switch-modal="signup-modal">הרשמה</button></p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,548 @@
+﻿------------signup.js------------
+function validateForm(event) {
+    event.preventDefault(); // Prevent automatic form submission
+    console.clear()
+    let isValid = true;
+    console.log("Starting form validation...");
+
+    // Form elements
+    const uNameElement = document.getElementById('uName');
+    const fNameElement = document.getElementById('fName');
+    const lNameElement = document.getElementById('lName');
+    const emailElement = document.getElementById('email');
+    const genderElement = document.getElementById('gender');
+    const phonePrefixElement = document.getElementById('prefix');
+    const phoneElement = document.getElementById('phone');
+    const yearBornElement = document.getElementById('yearBorn');
+    const cityElement = document.getElementById('city');
+    const hobbiesElements = document.getElementById('hobbies');
+    const passwordElement = document.getElementById('pw');
+    const passwordConfirmElement = document.getElementById('pwConfirm');
+
+    // Reset error messages
+    const errorFields = ['uNameError', 'fNameError', 'lNameError', 'emailError', 'genderError', 'phoneError', 'yearBornError', 'cityError', 'hobbiesError', 'pwError', 'pwConfirmError'];
+    errorFields.forEach(hideError);
+
+
+    console.log("Error messages reset");
+
+    // בדיקת שם משתמש (6-30 תווים, ללא תווים מיוחדים)
+    if (!uNameElement || !validateUserName(uNameElement.value.trim())) {
+        console.log("User Name validation failed:", uNameElement ? uNameElement.value : "null");
+        showError('uNameError', "User Name must be 6-30 characters, no special characters.");
+        isValid = false;
+    } else {
+        console.log("User Name validation succeeded:", uNameElement.value.trim());
+    }
+
+    // בדיקת שם פרטי (2-50 תווים, אותיות בלבד)
+    if (!fNameElement || fNameElement.value.trim() === "" || !isValidName(fNameElement.value.trim())) {
+        console.log("First Name validation failed:", fNameElement ? fNameElement.value : "null");
+        showError('fNameError', "First Name is required and must be 2-50 alphabetic characters.");
+        isValid = false;
+    } else {
+        console.log("First Name validation succeeded:", fNameElement.value.trim());
+    }
+
+    // בדיקת שם משפחה (2-50 תווים, אותיות בלבד)
+    if (!lNameElement || lNameElement.value.trim() === "" || !isValidName(lNameElement.value.trim())) {
+        console.log("Last Name validation failed:", lNameElement ? lNameElement.value : "null");
+        showError('lNameError', "Last Name is required and must be 2-50 alphabetic characters.");
+        isValid = false;
+    } else {
+        console.log("Last Name validation succeeded:", lNameElement.value.trim());
+    }
+
+    // בדיקת דוא"ל
+    if (!emailElement || !validateEmail(emailElement.value.trim())) {
+        console.log("Email validation failed:", emailElement ? emailElement.value : "null");
+        showError('emailError', "Please enter a valid email address.");
+        isValid = false;
+    } else {
+        console.log("Email validation succeeded:", emailElement.value.trim());
+    }
+
+    // Validate Gender
+    const selectedGender = genderElement.querySelector('input[type="radio"]:checked'); /* בוחר את כפתור הרדיו שנבחר */
+    if (!selectedGender) {
+        console.log("Gender validation failed: not selected");
+        showError('genderError', "Please select a gender.");
+        isValid = false;
+    } else {
+        console.log("Gender validation succeeded:", selectedGender.value);
+    }
+
+    // בדיקת קידומת טלפון
+    if (!phonePrefixElement || phonePrefixElement.value === "") {
+        console.log("Phone Prefix validation failed:", phonePrefixElement ? phonePrefixElement.value : "null");
+        showError('phoneError', "Please select a phone prefix.");
+        isValid = false;
+    } else {
+        console.log("Phone Prefix validation succeeded:", phonePrefixElement.value);
+    }
+
+    // בדיקת מספר טלפון (7-10 ספרות)
+    if (!phoneElement || !isValidPhone(phoneElement.value.trim())) {
+        console.log("Phone Number validation failed:", phoneElement ? phoneElement.value : "null");
+        showError('phoneError', "Phone Number must be 7-10 digits.");
+        isValid = false;
+    } else {
+        console.log("Phone Number validation succeeded:", phoneElement.value.trim());
+    }
+    let currentYear = new Date().getFullYear();
+    let YearNumber = parseInt(yearBornElement.value.trim());
+    console.log("YearNumber: ", YearNumber);
+
+    // בדיקת שנת לידה (מספר בעל 4 ספרות)
+    if (!yearBornElement || !isValidYear(yearBornElement.value.trim()) || YearNumber >= currentYear) {
+        console.log("Year Born validation failed:", yearBornElement ? yearBornElement.value : "null");
+        showError('yearBornError', "Please enter a valid 4-digit year.");
+        isValid = false;
+    } else {
+        console.log("Year Born validation succeeded:", yearBornElement.value.trim());
+    }
+
+    // בדיקת עיר
+    if (!cityElement || cityElement.value === "") {
+        console.log("City validation failed:", cityElement ? cityElement.value : "null");
+        showError('cityError', "Please select a city.");
+        isValid = false;
+    } else {
+        console.log("City validation succeeded:", cityElement.value);
+    }
+
+    // בדיקת תחביבים (לפחות אחד חייב להיבחר)
+    const selectedHobbie = hobbiesElements.querySelectorAll('input[name="hobbies"]:checked');
+    if (!hobbiesElements || hobbiesElements.length < 1) {
+        console.log("Hobbies validation failed: none selected");
+        showError('hobbiesError', "Please select at least one hobby.");
+        isValid = false;
+    } else {
+        console.log("Hobbies validation succeeded:", hobbiesElements.length, "hobbies selected");
+    }
+
+    // בדיקת סיסמה (לפחות 6 תווים)
+    if (!passwordElement || !isValidPassword(passwordElement.value.trim())) {
+        console.log("Password validation failed:", passwordElement ? passwordElement.value : "null");
+        showError('pwError', "Password must be at least 6 characters.");
+        isValid = false;
+    } else {
+        console.log("Password validation succeeded:", passwordElement.value.trim());
+    }
+
+    // בדיקת אימות סיסמה (חייבת להתאים לסיסמה)
+    if (!passwordConfirmElement || passwordElement.value.trim() !== passwordConfirmElement.value.trim()) {
+        console.log("Password confirmation validation failed:", passwordConfirmElement ? passwordConfirmElement.value : "null");
+        showError('pwConfirmError', "Passwords do not match.");
+        isValid = false;
+    } else {
+        console.log("Password confirmation validation succeeded:", passwordConfirmElement.value.trim());
+    }
+    if (isValid) {
+        SuccessMessage();
+    }
+
+    return isValid;
+
+}
+
+// פונקציות עזר
+function validateUserName(username) {
+    const usernameRegex = /^[A-Za-z0-9]{6,30}$/;
+    return usernameRegex.test(username);
+}
+
+function isValidName(name) {
+    return /^[A-Za-z]{2,50}$/.test(name);
+}
+
+function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function isValidPhone(phone) {
+    return /^[0-9]{7,10}$/.test(phone);
+}
+
+function isValidYear(year) {
+    const currentYear = new Date().getFullYear();
+    const parsedYear = parseInt(year, 10);
+    return !isNaN(parsedYear) && parsedYear >= 1900 && parsedYear <= currentYear;
+}
+
+function isValidPassword(password) {
+    return password.length >= 6;
+}
+
+function showError(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = 'block';
+        element.textContent = message;
+        element.style.color = 'red';
+        element.style.fontWeight = 'bold';
+        element.style.marginTop = '5px';
+    }
+}
+
+function hideError(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = 'none';
+    }
+}
+
+
+function SuccessMessage() {
+    console.log("SuccessMessage function called");
+    alert("Registration successful!");
+}
+
+---------------------------------
+
+
+------------signup.aspx------------
+<%@ Page Title="Sign Up" Language="C#" MasterPageFile="~/pages/Site.Master" AutoEventWireup="true" CodeBehind="signup.aspx.cs" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
+    <h2>Sign Up</h2>
+    
+    <!-- Include the JavaScript file -->
+    <script src="signup.js" type="text/javascript"></script>
+
+    <!-- User Name -->
+    <div>
+        <label for="uName">User Name:</label>
+        <asp:TextBox ID="uName" runat="server" ClientIDMode="Static" />
+        <asp:Label ID="uNameError" runat="server" ForeColor="Red" Text="User Name is required" Visible="false" />
+    </div>
+
+    <!-- Last Name -->
+    <div>
+        <label for="lName">Last Name:</label>
+        <asp:TextBox ID="lName" runat="server" ClientIDMode="Static" />
+        <asp:Label ID="lNameError" runat="server" ForeColor="Red" Text="Last Name is required" Visible="false" />
+    </div>
+
+    <!-- First Name -->
+    <div>
+        <label for="fName">First Name:</label>
+        <asp:TextBox ID="fName" runat="server" ClientIDMode="Static" />
+        <asp:Label ID="fNameError" runat="server" ForeColor="Red" Text="First Name is required" Visible="false" />
+    </div>
+
+    <!-- Email -->
+    <div>
+        <label for="email">Email:</label>
+        <asp:TextBox ID="email" runat="server" ClientIDMode="Static" />
+        <asp:Label ID="emailError" runat="server" ForeColor="Red" Text="Email is required" Visible="false" />
+    </div>
+
+    <!-- Gender -->
+    <div>
+        <label>Gender:</label>
+        <asp:RadioButtonList ID="gender" runat="server" ClientIDMode="Static">
+            <asp:ListItem Text="Male" Value="Male" />
+            <asp:ListItem Text="Female" Value="Female" />
+        </asp:RadioButtonList>
+        <asp:Label ID="genderError" runat="server" ForeColor="Red" Text="Gender is required" Visible="false" />
+    </div>
+
+    <!-- Phone Prefix -->
+    <div>
+        <label for="prefix">Phone Prefix:</label>
+        <asp:DropDownList ID="prefix" runat="server" ClientIDMode="Static">
+            <asp:ListItem Text="02" Value="02" />
+            <asp:ListItem Text="03" Value="03" />
+            <asp:ListItem Text="04" Value="04" />
+            <asp:ListItem Text="08" Value="08" />
+            <asp:ListItem Text="077" Value="077" />
+            <asp:ListItem Text="050" Value="050" />
+            <asp:ListItem Text="052" Value="052" />
+            <asp:ListItem Text="053" Value="053" />
+            <asp:ListItem Text="054" Value="054" />
+            <asp:ListItem Text="057" Value="057" />
+        </asp:DropDownList>
+        <asp:Label ID="phoneError" runat="server" ForeColor="Red" Visible="false" />
+    </div>
+
+    <!-- Phone Number -->
+    <div>
+        <label for="phone">Phone:</label>
+        <asp:TextBox ID="phone" runat="server" ClientIDMode="Static" />
+        <asp:Label ID="phoneError" runat="server" ForeColor="Red" Visible="false" />
+    </div>
+
+    <!-- Year Born -->
+    <div>
+        <label for="yearBorn">Year Born:</label>
+        <asp:TextBox ID="yearBorn" runat="server" ClientIDMode="Static" />
+        <asp:Label ID="yearBornError" runat="server" ForeColor="Red" Visible="false" />
+    </div>
+
+    <!-- City -->
+    <div>
+        <label for="city">City:</label>
+        <asp:DropDownList ID="city" runat="server" ClientIDMode="Static">
+            <asp:ListItem Text="Tel Aviv" Value="Tel Aviv" />
+            <asp:ListItem Text="Jerusalem" Value="Jerusalem" />
+            <asp:ListItem Text="Haifa" Value="Haifa" />
+            <asp:ListItem Text="Be'er Sheva" Value="Be'er Sheva" />
+            <asp:ListItem Text="Netanya" Value="Netanya" />
+            <asp:ListItem Text="Ashdod" Value="Ashdod" />
+            <asp:ListItem Text="Eilat" Value="Eilat" />
+        </asp:DropDownList>
+        <asp:Label ID="cityError" runat="server" ForeColor="Red" Visible="false" />
+    </div>
+
+    <!-- Hobbies -->
+    <div>
+        <label>Hobbies:</label>
+        <asp:CheckBoxList ID="hobbies" runat="server" ClientIDMode="Static">
+            <asp:ListItem Text="Reading" Value="Reading" />
+            <asp:ListItem Text="Traveling" Value="Traveling" />
+            <asp:ListItem Text="Sports" Value="Sports" />
+            <asp:ListItem Text="Music" Value="Music" />
+            <asp:ListItem Text="Cooking" Value="Cooking" />
+        </asp:CheckBoxList>
+        <asp:Label ID="hobbiesError" runat="server" ForeColor="Red" Visible="false" />
+    </div>
+
+    <!-- Password -->
+    <div>
+        <label for="pw">Password:</label>
+        <asp:TextBox ID="pw" runat="server" TextMode="Password" ClientIDMode="Static" />
+        <asp:Label ID="pwError" runat="server" ForeColor="Red" Visible="false" />
+    </div>
+
+    <!-- Confirm Password -->
+    <div>
+        <label for="pwConfirm">Confirm Password:</label>
+        <asp:TextBox ID="pwConfirm" runat="server" TextMode="Password" ClientIDMode="Static" />
+        <asp:Label ID="pwConfirmError" runat="server" ForeColor="Red" Visible="false" />
+    </div>
+
+    <!-- Submit Button -->
+    <div>
+        <asp:Button ID="btnSubmit" runat="server" CssClass="submit-btn" Text="Sign Up" OnClientClick="return validateForm(event);" />
+    </div>
+</asp:Content>
+
+
+---------------------------------
+
+
+------------signup.aspx.cs------------
+
+
+using System;
+using System.Text.RegularExpressions;
+using System.Web.UI;
+
+namespace MyProject
+{
+    public partial class Signup : Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                // כל קוד שאתה רוצה שירוץ בפעם הראשונה שהדף נטען
+            }
+        }
+
+        protected void btnSubmit_Click(object sender, EventArgs e)
+        {
+            // לוודא שצד השרת מבצע את כל הוולידציות הדרושות
+            if (ValidateForm())
+            {
+                // אם כל השדות חוקיים, אפשר להמשיך עם הרשמה, כמו לשמור במסד נתונים
+                SaveUserData();
+                Response.Write("<script>alert('Registration successful!');</script>");
+            }
+            else
+            {
+                Response.Write("<script>alert('There are validation errors in the form.');</script>");
+            }
+        }
+
+        private bool ValidateForm()
+        {
+            bool isValid = true;
+
+            // בדיקת שם משתמש
+            if (string.IsNullOrEmpty(uName.Text.Trim()) || !ValidateUserName(uName.Text.Trim()))
+            {
+                uNameError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                uNameError.Visible = false;
+            }
+
+            // בדיקת שם פרטי
+            if (string.IsNullOrEmpty(fName.Text.Trim()) || !IsValidName(fName.Text.Trim()))
+            {
+                fNameError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                fNameError.Visible = false;
+            }
+
+            // בדיקת שם משפחה
+            if (string.IsNullOrEmpty(lName.Text.Trim()) || !IsValidName(lName.Text.Trim()))
+            {
+                lNameError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                lNameError.Visible = false;
+            }
+
+            // בדיקת כתובת דוא"ל
+            if (string.IsNullOrEmpty(email.Text.Trim()) || !ValidateEmail(email.Text.Trim()))
+            {
+                emailError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                emailError.Visible = false;
+            }
+
+            // בדיקת מין
+            if (string.IsNullOrEmpty(gender.SelectedValue))
+            {
+                genderError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                genderError.Visible = false;
+            }
+
+            // בדיקת קידומת טלפון
+            if (string.IsNullOrEmpty(prefix.SelectedValue))
+            {
+                phoneError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                phoneError.Visible = false;
+            }
+
+            // בדיקת מספר טלפון
+            if (string.IsNullOrEmpty(phone.Text.Trim()) || !IsValidPhone(phone.Text.Trim()))
+            {
+                phoneError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                phoneError.Visible = false;
+            }
+
+            // בדיקת שנת לידה
+            if (string.IsNullOrEmpty(yearBorn.Text.Trim()) || !IsValidYear(yearBorn.Text.Trim()))
+            {
+                yearBornError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                yearBornError.Visible = false;
+            }
+
+            // בדיקת עיר
+            if (string.IsNullOrEmpty(city.SelectedValue))
+            {
+                cityError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                cityError.Visible = false;
+            }
+
+            // בדיקת סיסמה
+            if (string.IsNullOrEmpty(pw.Text.Trim()) || !IsValidPassword(pw.Text.Trim()))
+            {
+                pwError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                pwError.Visible = false;
+            }
+
+            // בדיקת אימות סיסמה
+            if (pw.Text.Trim() != pwConfirm.Text.Trim())
+            {
+                pwConfirmError.Visible = true;
+                isValid = false;
+            }
+            else
+            {
+                pwConfirmError.Visible = false;
+            }
+
+            return isValid;
+        }
+
+        private bool ValidateUserName(string username)
+        {
+            // תנאים לשם משתמש (6-30 תווים ללא תווים מיוחדים)
+            return Regex.IsMatch(username, @"^[A-Za-z0-9]{6,30}$");
+        }
+
+        private bool IsValidName(string name)
+        {
+            // תנאים לשם (רק אותיות, בין 2 ל-50 תווים)
+            return Regex.IsMatch(name, @"^[A-Za-z]{2,50}$");
+        }
+
+        private bool ValidateEmail(string email)
+        {
+            // שימוש בביטוי רגולרי לבדוק אם הדוא"ל תקין
+            return Regex.IsMatch(email, @"^[^\s@]+@[^\s@]+\.[^\s@]+$");
+        }
+
+        private bool IsValidPhone(string phone)
+        {
+            // מספר טלפון יכול להיות באורך 7-10 ספרות
+            return Regex.IsMatch(phone, @"^[0-9]{7,10}$");
+        }
+
+        private bool IsValidYear(string year)
+        {
+            // לוודא שהשנה היא מספר בן 4 ספרות ולא יותר מהשנה הנוכחית
+            int currentYear = DateTime.Now.Year;
+            if (int.TryParse(year, out int yearBorn))
+            {
+                return yearBorn >= 1900 && yearBorn <= currentYear;
+            }
+            return false;
+        }
+
+        private bool IsValidPassword(string password)
+        {
+            // סיסמה צריכה להיות באורך של לפחות 6 תווים
+            return password.Length >= 6;
+        }
+
+        private void SaveUserData()
+        {
+            // פונקציה לשמירת הנתונים למסד נתונים או ביצוע פעולה אחרת
+            // כאן נוכל לשמור את הנתונים של המשתמש החדש
+        }
+    }
+}
+
+
+--------------------------------------

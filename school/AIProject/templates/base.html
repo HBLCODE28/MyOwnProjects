@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}תדר{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body class="{% block body_class %}{% endblock %}">
+    <a class="skip-link" href="#main-content">דלג לתוכן הראשי</a>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <div class="topbar-branding">
+            <a class="brand" href="{{ url_for('home', from_logo='1') if current_user.is_authenticated else url_for('home') }}">
+              <span class="brand-mark">תדר</span>
+            </a>
+            {% if current_user.is_authenticated %}
+            <div class="user-greeting">שלום {{ current_user.username }}</div>
+            {% endif %}
+          </div>
+          <div class="topbar-actions">
+          {% if current_user.is_authenticated %}
+          <nav class="nav-links" aria-label="ניווט ראשי">
+            <a href="{{ url_for('dashboard') }}">ניתוח שיר</a>
+            {% if is_admin %}
+            <a href="{{ url_for('training_page') }}">אימון</a>
+            <a href="{{ url_for('battles_page') }}">קרבות מודלים</a>
+            <a href="{{ url_for('models_page') }}">מודלים</a>
+            {% endif %}
+            <a href="{{ url_for('onboarding') }}">התדר שלי</a>
+            <form method="post" action="{{ url_for('logout') }}">
+              <button class="link-btn" type="submit">התנתקות</button>
+            </form>
+          </nav>
+          {% elif request.endpoint == "home" %}
+          <div class="nav-links nav-links-auth">
+            <button class="link-btn" type="button" data-open-modal="login-modal">כניסה</button>
+            <button class="primary-btn small-btn" type="button" data-open-modal="signup-modal">הרשמה</button>
+          </div>
+          {% else %}
+          <nav class="nav-links nav-links-auth" aria-label="ניווט התחברות והרשמה">
+            <a class="link-btn nav-anchor" href="{{ url_for('login') }}">כניסה</a>
+            <a class="primary-btn small-btn nav-anchor" href="{{ url_for('register') }}">הרשמה</a>
+          </nav>
+          {% endif %}
+          </div>
+        </div>
+      </header>
+
+      <main class="page" id="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <section class="flash-wrap" aria-live="assertive">
+              {% for category, message in messages %}
+                <p class="flash {{ category }}">{{ message }}</p>
+              {% endfor %}
+            </section>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay" hidden aria-hidden="true">
+      <div class="loading-panel" role="status" aria-live="polite" aria-label="טעינה">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="loading-title" id="loading-title">מכינים את התוצאה שלך</div>
+        <div class="loading-text" id="loading-text">אנא המתן...</div>
+        <div class="loading-subtext" id="loading-subtext">התהליך נמשך בדרך כלל 10-40 שניות בהתאם למקור.</div>
+        <div class="loading-mini-progress" aria-hidden="true">
+          <div class="loading-mini-bar" id="loading-mini-bar"></div>
+        </div>
+        <div class="loading-eta" id="loading-eta">זמן משוער שנותר: --</div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "name": "BeatSense_genre_2026-06-07_19-23-57_acc_0.887_test_0.872_ep60.keras",
+  "task": "genre",
+  "genre_labels": [
+    "blues",
+    "classical",
+    "country",
+    "disco",
+    "hiphop",
+    "jazz",
+    "metal",
+    "pop",
+    "reggae",
+    "rock"
+  ],
+  "accuracy": 0.887,
+  "test_accuracy": 0.872,
+  "epoch": 60,
+  "battles": [],
+  "wins": 0,
+  "losses": 0,
+  "notes": {
+    "train_samples": 6200,
+    "val_samples": 300,
+    "test_samples": 298,
+    "overfit_gap": 0.113,
+    "restored_train_accuracy": 0.9997,
+    "restored_val_accuracy": 0.8867,
+    "mean_prediction_certainty": 0.9247
+  }
+}

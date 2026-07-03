@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}ניתוח שיר | תדר{% endblock %}
+{% block body_class %}app-page{% endblock %}
+{% block content %}
+<section class="dashboard-shell reveal-up">
+  <div class="dashboard-main">
+    <section class="card dashboard-upload-card">
+      <h1>ניתוח שיר חדש</h1>
+      <p class="muted-line">העלאת קובץ אודיו או הוספת קישור YouTube. גודל קובץ מרבי: {{ max_file_size_mb }}MB.</p>
+
+      <form method="post" enctype="multipart/form-data" class="form stack-gap" data-show-loader="1">
+        <input type="hidden" name="source_mode" value="file" />
+        <label class="upload-dropzone" for="audio-drop-input" id="audio-drop-zone">
+          <span class="upload-title">העלאת קובץ שמע לכאן</span>
+          <span class="upload-subtitle">mp3, wav, m4a עד {{ max_file_size_mb }}MB</span>
+          <span class="upload-cta">או בחירה מקובץ במחשב</span>
+          <span class="upload-file-state" id="audio-file-state">עדיין לא נבחר קובץ</span>
+        </label>
+        <input id="audio-drop-input" type="file" name="audio" accept="audio/*" required />
+        <button class="primary-btn" type="submit">נתח קובץ</button>
+      </form>
+
+      <div class="upload-divider" aria-hidden="true">
+        <span></span>
+        <small>או</small>
+        <span></span>
+      </div>
+
+      <form method="post" class="form youtube-form" data-show-loader="1">
+        <input type="hidden" name="source_mode" value="youtube" />
+        <label for="youtube_url">קישור YouTube</label>
+        <div class="youtube-row">
+          <input id="youtube_url" name="youtube_url" type="url" placeholder="הדבק קישור YouTube..." required />
+          <button class="primary-btn" type="submit">נתח</button>
+        </div>
+      </form>
+    </section>
+
+    {% if latest_analysis %}
+    <section class="result-screen">
+      <article class="card result-hero {% if latest_analysis.preference_fit.label == 'Like' %}result-like{% else %}result-dislike{% endif %}">
+        <span class="result-kicker">תוצאה אחרונה</span>
+        <h2>
+          {% if latest_analysis.preference_fit.label == 'Like' %}
+            השיר הזה בשבילך
+          {% else %}
+            כנראה שזה פחות יתאים לך
+          {% endif %}
+        </h2>
+        <p class="muted-line">
+          מזוהה כ:
+          <strong>{{ latest_analysis.model_result.primary_genre or translate_preference_label(latest_analysis.model_result.label) }}</strong>
+          {% if latest_analysis.model_result.genre_confidence %}
+            ({{ latest_analysis.model_result.genre_confidence|round(1) }}% ביטחון)
+          {% endif %}
+        </p>
+        <p class="muted-line">{{ latest_analysis.preference_fit.reason }}</p>
+      </article>
+
+      <article class="card">
+        <div class="section-label">זיהוי סגנונות בשיר</div>
+        <div class="result-bars">
+          {% for style in latest_analysis.styles %}
+          <div class="result-bar-row">
+            <span>{{ style.genre }}</span>
+            <div class="bar-shell">
+              <div class="bar-fill{% if loop.index == 1 %} ok{% endif %}" style="width: {{ style.score }}%"></div>
+            </div>
+            <strong>{{ style.score|round(1) }}%</strong>
+          </div>
+          {% endfor %}
+          {% if not latest_analysis.styles %}
+          <p class="muted-line">{{ latest_analysis.style_summary }}</p>
+          {% endif %}
+        </div>
+      </article>
+
+      <div class="result-metric-grid">
+        <article class="metric-tile card">
+          <span>ביטחון</span>
+          <strong>{{ latest_analysis.model_result.confidence|round(1) }}%</strong>
+        </article>
+        <article class="metric-tile card">
+          <span>מקטעים</span>
+          <strong>{{ latest_analysis.segment_count }}</strong>
+        </article>
+        <article class="metric-tile card">
+          <span>חלון ניתוח</span>
+          <strong>{{ latest_analysis.analysis_source_seconds }} שניות</strong>
+        </article>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="card history-card">
+      <div class="history-head">
+        <div>
+          <h2>היסטוריית ניתוח</h2>
+          <p class="muted-line">שירים שנבדקו לאחרונה עבור החשבון שלך.</p>
+        </div>
+        <div class="history-pills">
+          <span class="history-pill">אהובים: {{ liked|length }}</span>
+          <span class="history-pill">להימנע: {{ disliked|length }}</span>
+        </div>
+      </div>
+      {% if history %}
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>זמן</th>
+            <th>מקור</th>
+            <th>סיכום</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in history %}
+          <tr>
+            <td>{{ row['created_at'] }}</td>
+            <td>{{ row['source_name'] }}</td>
+            <td>{{ row['label'] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted-line">עדיין אין ניתוחים קודמים.</p>
+      {% endif %}
+    </section>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  TadarUI.initDashboardPage();
+});
+</script>
+{% endblock %}

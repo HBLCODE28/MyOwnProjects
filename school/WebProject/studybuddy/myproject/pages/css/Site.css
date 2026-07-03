@@ -1,0 +1,216 @@
+﻿.badge {
+    font-weight: normal !important;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #feba02;
+    font-size: 1.2em;
+}
+
+    .password-toggle:hover {
+        color: #feba02;
+    }
+
+.navbar {
+    background-color: #003580;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-family: "Roboto", sans-serif;
+    color: #f2f6fa !important;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-toggler {
+    border: none;
+    background: transparent;
+}
+
+.navbar-toggler-icon {
+    background-color: #f2f6fa;
+    height: 3px;
+    width: 30px;
+    visibility: visible;
+    transition: background-color 0.3s ease;
+}
+
+.navbar-toggler:not(.collapsed) .navbar-toggler-icon {
+    visibility: visible;
+}
+
+.navbar-nav .nav-item .nav-link {
+    color: #f2f6fa !important;
+/*    font-weight: bold;
+*/}
+
+    .navbar-nav .nav-item .nav-link:hover {
+        color: #f2f6fa !important;
+    }
+
+body {
+    font-family: "Roboto", sans-serif;
+    background-color: #f2f6fa;
+    color: #666;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    background-color: #F7C59F;
+    color: #004E89 !important;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border-bottom: 2px solid #1A659E;
+}
+
+.menu-bar {
+    background-color: #F7C59F;
+    color: #004E89 !important;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+    .menu-bar ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+    }
+
+        .menu-bar ul li {
+            padding: 10px 20px;
+        }
+
+            .menu-bar ul li a {
+                color: #FF6B35 !important;
+                text-decoration: none;
+                font-weight: bold;
+            }
+
+                .menu-bar ul li a:hover {
+                    color: #FF6B35 !important;
+                }
+
+.footer {
+
+    text-align: right;
+    padding: 20px;
+
+}
+
+.button {
+    cursor: pointer;
+    position: relative;
+    padding: 10px 24px;
+    font-size: 18px;
+    color: #f2f6fa;
+    border: 2px solid #009fe3;
+    border-radius: 34px;
+    background-color: #009fe3; 
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+    overflow: hidden;
+    width: 150px;
+    height: 50px;
+    text-align: center;
+}
+
+
+
+    .button:hover {
+        color: #f2f6fa;
+        transform: scale(1.1);
+        box-shadow: 0 0px 20px #009fe3;
+        text-decoration: none;
+    }
+
+    .button:active {
+        transform: scale(1);
+    }
+.like-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+   
+    
+}
+
+    .like-btn.liked {
+        color: red;
+    }
+
+.dropdown-menu {
+    background-color: #f2f6fa;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    color: #003580 !important;
+    font-weight: bold;
+}
+
+    .dropdown-item:hover {
+        background-color: #ccc;
+        color: #003580 !important;
+    }
+
+    .dropdown-item:focus {
+        background-color: #ccc;
+        color: #003580 !important;
+    }
+
+.slippery-snail {
+    padding: 10px;
+    border: 2px solid transparent;
+    background-color: #f2f6fa;
+    border-radius: 12px;
+    border-color: #feba02;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.form-check-input {
+    margin-right: 60px !important;
+    margin-left: 60px !important;
+}
+
+h2 {
+    font-family: "Roboto", sans-serif;
+    color: #666;
+    text-align: center;
+    margin-bottom: 30px;
+}
+h1 {
+    font-family: "Roboto", sans-serif;
+    color: #666;
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 700;
+}
+
+.album {
+    background-color: #f2f6fa;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+}
+
+.text-center {
+    text-align: center;
+}

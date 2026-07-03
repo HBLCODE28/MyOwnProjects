@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}הרשמה | תדר{% endblock %}
+{% block content %}
+<section class="card auth-card">
+  <h1>פתיחת חשבון</h1>
+  <form method="post" class="form">
+    <label for="username">שם משתמש</label>
+    <input id="username" name="username" type="text" required minlength="3" />
+
+    <label for="email">אימייל</label>
+    <input id="email" name="email" type="email" required autocomplete="email" />
+
+    <label for="password">סיסמה</label>
+    <input id="password" name="password" type="password" required minlength="6" />
+
+    <button type="submit">צור משתמש</button>
+  </form>
+  <p class="muted-line">כבר נרשמת? <a href="{{ url_for('login') }}">כניסה</a></p>
+</section>
+{% endblock %}

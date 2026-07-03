@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}כניסה | תדר{% endblock %}
+{% block content %}
+<section class="card auth-card">
+  <h1>כניסה</h1>
+  <form method="post" class="form">
+    <label for="username">שם משתמש</label>
+    <input id="username" name="username" type="text" required minlength="3" />
+
+    <label for="password">סיסמה</label>
+    <input id="password" name="password" type="password" required minlength="6" />
+
+    <button type="submit">כניסה לחשבון</button>
+  </form>
+  <p class="muted-line">אין לך עדיין חשבון? <a href="{{ url_for('register') }}">יצירת חשבון</a></p>
+  <p class="muted-line"><a href="{{ url_for('forgot_password') }}">שכחתי סיסמה</a></p>
+</section>
+{% endblock %}

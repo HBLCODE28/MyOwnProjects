@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}אימון | תדר{% endblock %}
+
+{% block content %}
+<section class="card reveal-up">
+  <h1>מרכז האימון</h1>
+  <p class="muted-line">כאן מרוכזים כלי האימון של מנוע הסגנונות ושל המודל הראשי, עם תצוגה נוחה יותר למעקב ובלי לשנות את הלוגיקה מאחורי הקלעים.</p>
+</section>
+
+<section class="card reveal-up training-hero-card" id="train-panel" data-is-admin="{{ '1' if is_admin else '0' }}">
+  <div class="training-panel-head">
+    <div>
+      <div class="section-label">מנוע הסגנונות</div>
+      <h2>אימון מסייע הסגנונות</h2>
+      <p class="muted-line">האזור הזה בונה פרופיל סגנונות מתוך קבצי הדאטה, כדי לשפר את ההבנה של סגנונות ואת ההתאמה האישית של תוצאות הניתוח.</p>
+      <p class="muted-line" id="train-stage" aria-live="polite">שלב: {{ training_state.stage_label }}</p>
+      <p class="muted-line" id="train-message" aria-live="polite">{{ training_state.message }}</p>
+    </div>
+    <button type="button" id="train-start-btn">רענון נתוני הסגנונות</button>
+  </div>
+
+  <div class="progress-shell" aria-hidden="true">
+    <div class="progress-bar" id="train-progress" style="width: {{ training_state.progress }}%"></div>
+  </div>
+  <p class="muted-line" id="train-detail">{{ training_state.progress }}%</p>
+
+  <div class="training-browser" aria-labelledby="training-browser-title">
+    <div class="training-browser-sidebar">
+      <div class="training-browser-intro">
+        <h3 id="training-browser-title">דפדפן קבצי סגנונות</h3>
+        <p class="muted-line">אפשר להיכנס לרשימה עם Tab ואז לנוע בין הסגנונות בעזרת החיצים למעלה ולמטה.</p>
+      </div>
+      <div id="train-empty" class="muted-line" hidden>עדיין אין קבצי סגנונות זמינים.</div>
+      <div id="train-genre-list" class="training-genre-list" role="listbox" aria-label="דפדפן קבצי סגנונות"></div>
+    </div>
+
+    <section class="training-browser-detail" aria-live="polite" aria-labelledby="train-selected-genre">
+      <div class="training-browser-summary">
+        <h3 id="train-selected-genre">בחירת סגנון</h3>
+        <p class="muted-line" id="train-selected-total">עדיין לא נבחרו קבצים.</p>
+        <p class="muted-line" id="train-selected-summary">בחר סגנון מהרשימה כדי לראות את קבצי האימון שלו.</p>
+      </div>
+      <div id="train-file-columns" class="training-file-columns"></div>
+    </section>
+  </div>
+</section>
+
+<section class="card reveal-up training-main-card" id="main-train-panel">
+  <h2>אימון המודל הראשי</h2>
+  <p class="muted-line">האזור הזה מפעיל את צינור האימון הראשי דרך רכיב הרצה ייעודי לאימון בלבד.</p>
+  <p class="muted-line">רכיב הרצה: <strong id="main-train-runner">{{ main_training_state.runner_name }}</strong></p>
+  <p class="muted-line">{{ main_training_state.runner_note }}</p>
+  <p class="muted-line" id="main-train-stage">שלב: {{ main_training_state.stage_label }}</p>
+  <p class="muted-line" id="main-train-message">{{ main_training_state.message }}</p>
+  <div class="progress-shell" aria-hidden="true">
+    <div class="progress-bar" id="main-train-progress" style="width: {{ main_training_state.progress }}%"></div>
+  </div>
+  <p class="muted-line" id="main-train-detail">{{ main_training_state.progress }}%</p>
+  <div class="training-action-row">
+    <button type="button" id="main-train-start-btn" {{ "disabled" if not main_training_state.runner_available else "" }}>התחל אימון מודל ראשי</button>
+    <button type="button" id="main-train-refresh-btn">רענון סטטוס האימון</button>
+  </div>
+  <div class="training-meta-grid">
+    <p class="muted-line">התחיל: <span id="main-train-started">{{ main_training_state.started_at or 'עדיין לא התחיל' }}</span></p>
+    <p class="muted-line">הסתיים: <span id="main-train-finished">{{ main_training_state.finished_at or 'עדיין לא הסתיים' }}</span></p>
+    <p class="muted-line">דוח פלט: <span id="main-train-output">{{ main_training_state.output_notebook or 'עדיין לא נוצר' }}</span></p>
+    <p class="muted-line">נתיב לוג: <span id="main-train-log-path">{{ main_training_state.log_path or 'עדיין לא נוצר' }}</span></p>
+  </div>
+  <h3>סיכום התקדמות האימון</h3>
+  <p class="muted-line">תצוגת האדמין מראה את נקודות ההתקדמות החשובות. הלוג המלא והמפורט נשמר בקובץ הלוג.</p>
+  <pre id="main-train-log" class="metric-report">{{ main_training_state.log_tail|join('\n') if main_training_state.log_tail else 'עדיין אין פלט לוג.' }}</pre>
+</section>
+
+<section class="card reveal-up">
+  <h2>תוצאת האימון האחרונה</h2>
+  {% if latest_metric %}
+    <article class="metric-card">
+      <h3>{{ latest_metric.label }}</h3>
+      <p class="muted-line">דיוק: {{ latest_metric.accuracy }}</p>
+      <img src="{{ url_for('metric_asset', filename=latest_metric.image) }}" alt="מטריצת בלבול אחרונה {{ latest_metric.label }}" class="metric-image" />
+      {% if latest_metric.excerpt %}
+      <pre class="metric-report">{{ latest_metric.excerpt|join('\n') }}</pre>
+      {% endif %}
+    </article>
+  {% else %}
+    <p class="muted-line">עדיין אין תוצאת אימון זמינה.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  TadarUI.initTrainingPage();
+});
+</script>
+{% endblock %}

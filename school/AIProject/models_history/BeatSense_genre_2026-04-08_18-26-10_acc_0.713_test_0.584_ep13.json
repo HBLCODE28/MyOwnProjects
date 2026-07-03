@@ -1,0 +1,36 @@
+{
+  "name": "BeatSense_genre_2026-04-08_18-26-10_acc_0.713_test_0.584_ep13.keras",
+  "task": "genre",
+  "genre_labels": [
+    "blues",
+    "classical",
+    "country",
+    "disco",
+    "hiphop",
+    "jazz",
+    "metal",
+    "pop",
+    "reggae",
+    "rock"
+  ],
+  "accuracy": 0.713,
+  "test_accuracy": 0.584,
+  "epoch": 13,
+  "battles": [
+    {
+      "battle_id": 0,
+      "timestamp": "2026-05-18 12:08",
+      "result": "loss",
+      "opponent": "BeatSense_genre_2026-05-18_11-06-47_acc_0.756_test_0.620_ep17.keras"
+    }
+  ],
+  "wins": 0,
+  "losses": 1,
+  "notes": {
+    "train_samples": 4200,
+    "val_samples": 150,
+    "test_samples": 149,
+    "overfit_gap": 0.3171
+  },
+  "draws": 0
+}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}מודלים | תדר{% endblock %}
+{% block content %}
+<section class="card reveal-up">
+  <h1>ניהול מודלים</h1>
+  <p class="muted-line">כאן אפשר לעבור על המודלים שאומנו, לבדוק ביצועים בקרבות, ולבחור ידנית איזה מודל יהיה המודל הפעיל.</p>
+  <form method="post" action="{{ url_for('activate_model') }}" class="form stack-gap">
+    <label for="model_path">מודלים זמינים</label>
+    <select id="model_path" name="model_path" required>
+      {% for model in models %}
+        <option value="{{ model.path }}" {% if model.path == active_path %}selected{% endif %}>{{ model.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">הגדר כמודל הפעיל</button>
+  </form>
+  <form method="post" action="{{ url_for('delete_all_models') }}" class="form stack-gap" onsubmit="return confirm('למחוק את כל קבצי המודלים והמטא-דאטה שלהם?');">
+    <button type="submit" class="btn-danger">מחיקת כל המודלים</button>
+  </form>
+</section>
+
+<section class="card reveal-up">
+  <h2>המודל הפעיל כרגע</h2>
+  {% if active_path %}
+    <code>{{ active_path }}</code>
+  {% else %}
+    <p class="muted-line">עדיין לא נבחר מודל פעיל.</p>
+  {% endif %}
+  <p class="muted-line">כל ריצת אימון נשמרת בתוך <code>models_history</code>. שום מודל לא הופך אוטומטית למודל הטוב ביותר.</p>
+</section>
+
+<section class="card reveal-up">
+  <h2>גרפי קרבות מודלים</h2>
+  {% if models %}
+    <div class="model-grid">
+      {% for model in models %}
+      <article class="result-card">
+        <h3 class="model-card-title" title="{{ model.name }}">{{ model.short_name }}</h3>
+        <p class="muted-line model-card-meta">ולידציה {{ model.accuracy }} | בדיקה {{ model.test_accuracy }} | אפוק {{ model.epoch }}</p>
+        <div class="graph-stack">
+          <div class="bar-row"><span>ניצחונות</span><div class="bar-shell"><div class="bar-fill ok" style="width: {{ model.win_width }}%"></div></div><strong>{{ model.wins }}</strong></div>
+          <div class="bar-row"><span>הפסדים</span><div class="bar-shell"><div class="bar-fill bad" style="width: {{ model.loss_width }}%"></div></div><strong>{{ model.losses }}</strong></div>
+          <div class="bar-row"><span>תיקו</span><div class="bar-shell"><div class="bar-fill warn" style="width: {{ model.draw_width }}%"></div></div><strong>{{ model.draws }}</strong></div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted-line">כרגע אין קבצי מודלים זמינים.</p>
+  {% endif %}
+</section>
+
+<section class="card reveal-up">
+  <h2>תוצאת האימון האחרונה</h2>
+  {% if latest_metric %}
+    <article class="metric-card">
+      <h3>{{ latest_metric.label }}</h3>
+      <p class="muted-line">דיוק: {{ latest_metric.accuracy }}</p>
+      <img src="{{ url_for('metric_asset', filename=latest_metric.image) }}" alt="מטריצת בלבול אחרונה {{ latest_metric.label }}" class="metric-image" />
+      {% if latest_metric.excerpt %}
+      <pre class="metric-report">{{ latest_metric.excerpt|join('\n') }}</pre>
+      {% endif %}
+    </article>
+  {% else %}
+    <p class="muted-line">עדיין אין תוצאת אימון זמינה.</p>
+  {% endif %}
+</section>
+{% endblock %}
