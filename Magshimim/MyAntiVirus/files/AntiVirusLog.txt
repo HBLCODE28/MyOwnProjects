@@ -1,0 +1,14 @@
+Anti-virus began! Welcome!
+
+Folder to scan: 
+C:\DEMO-20240601T034658Z-001\DEMO\files
+Virus signature: 
+C:\DEMO-20240601T034658Z-001\DEMO\KittenVirusSign
+
+Scanning option:
+Normal Scan
+
+Results:
+C:\DEMO-20240601T034658Z-001\DEMO\files\AntiVirusLog.txt  Clean
+C:\DEMO-20240601T034658Z-001\DEMO\files\kitten_frog.jpg  Infected!
+C:\DEMO-20240601T034658Z-001\DEMO\files\kitten_run.jpg  Clean
