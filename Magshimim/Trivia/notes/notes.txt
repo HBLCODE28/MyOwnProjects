@@ -1,0 +1,2 @@
+notes:
+git pull origin bugfix/client-errors-handling --rebase - do when danial push
