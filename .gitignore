@@ -1,0 +1,102 @@
+# Generated repository inventory
+/tree*.txt
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Visual Studio and JetBrains
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+_ReSharper*/
+*.DotSettings.user
+
+# VS Code - keep shareable project configuration
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Temporary and backup files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+*.log
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Python bytecode and tool caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging and PyInstaller output
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Keep PyInstaller .spec files tracked because they define the build.
+# Local FFmpeg binary - keep the placeholder file
+/Groove/work_groove/vendor/ffmpeg/bin/*.exe
+
+# Generated installer executables
+/Groove/work_groove/installer/*.exe
+/QuickSub/Installer/*.exe
+
+# QuickSub - .NET / WPF generated output
+/QuickSub/bin/
+/QuickSub/obj/
+/QuickSub/Artifacts/
+/QuickSub/TestResults/
+/QuickSub/BenchmarkDotNet.Artifacts/
+*.nupkg
+*.snupkg
+
+# Publish-profile user settings may contain local paths or credentials
+*.pubxml.user
+
+# VMware large/generated/runtime files
+./Magshimim/SecuSpectra/vm/*.vmdk
+./Magshimim/SecuSpectra/vm/*.nvram
+./Magshimim/SecuSpectra/vm/*.vmsd
+./Magshimim/SecuSpectra/vm/*.vmxf
+./Magshimim/SecuSpectra/vm/*.vmem
+./Magshimim/SecuSpectra/vm/*.vmss
+./Magshimim/SecuSpectra/vm/*.vmsn
+./Magshimim/SecuSpectra/vm/*.scoreboard
+./Magshimim/SecuSpectra/vm/*.log
+./Magshimim/SecuSpectra/vm/*.lck/
+./Magshimim/SecuSpectra/vm/anti_virus-s009.vmdk
+./Magshimim/SecuSpectra/vm/anti_virus-s013.vmdk
