@@ -100,3 +100,14 @@ pip-wheel-metadata/
 ./Magshimim/SecuSpectra/vm/*.lck/
 ./Magshimim/SecuSpectra/vm/anti_virus-s009.vmdk
 ./Magshimim/SecuSpectra/vm/anti_virus-s013.vmdk
+/Magshimim/SecuSpectra/vm/
+*.vmdk
+*.vmem
+*.vmsn
+*.vmss
+*.nvram
+*.ipch
+bin/
+obj/
+Debug/
+Release/
