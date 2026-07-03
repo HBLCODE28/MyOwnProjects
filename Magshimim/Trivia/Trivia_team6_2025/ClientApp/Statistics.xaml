@@ -1,0 +1,89 @@
+﻿<Window x:Class="ClientApp.StatisticsWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    WindowState="Maximized"
+    Title="My Statistics" Height="250" Width="400">
+    <Window.Resources>
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#ADD8E6"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontFamily" Value="Parade"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                Background="{TemplateBinding Background}"
+                CornerRadius="20"
+                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="Gray"
+                                          BlurRadius="10"
+                                          Direction="270"
+                                          ShadowDepth="2"
+                                          Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+    <Grid Margin="10" Background="#b2e4f7">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+        <Image Source="images/StatisticsIcon.png"
+    Grid.Column="1"
+    Width="100"
+    Height="100"
+    Margin="10"/>
+        <StackPanel Grid.Row="1" Grid.Column="1" Margin="20">
+            <TextBlock x:Name="userPerformances" Text="My performances" FontSize="24" Margin="0,0,0,20" TextAlignment="Center"/>
+
+            <Button Content="back" Width="100" Click="back"  
+            Style="{StaticResource ButtonStyle}" Margin="0,0,0,10"/>
+
+            <Button Content="Load my performances" x:Name="LoadMyPerformances"
+        Width="160" Click="getPerformances" Style="{StaticResource ButtonStyle}"
+        Visibility="Visible" Margin="0,0,0,20"/>
+
+            <TextBlock Text="Total Number Of Questions: " Width="300" Margin="0,0,0,5" Visibility="Hidden"/>
+            <TextBlock x:Name="totalNumberOfQuestions" Width="300" Margin="0,0,0,15" Visibility="Hidden"/>
+
+            <TextBlock Text="Average Answer Time: " Width="300" Margin="0,0,0,5" Visibility="Hidden"/>
+            <TextBlock x:Name="averageAnswerTime" Width="300" Margin="0,0,0,15" Visibility="Hidden"/>
+
+            <TextBlock Text="Number Of Games Played: " Width="300" Margin="0,0,0,5" Visibility="Hidden"/>
+            <TextBlock x:Name="numberOfGamesPlayed" Width="300" Margin="0,0,0,15" Visibility="Hidden"/>
+            
+            <TextBlock Text="Number Of Correct Answers: " Width="300" Margin="0,0,0,5" Visibility="Hidden"/>
+            <TextBlock x:Name="numberOfCorrectAnswers" Width="300" Margin="0,0,0,15" Visibility="Hidden"/>
+        </StackPanel>
+
+    </Grid>
+</Window>

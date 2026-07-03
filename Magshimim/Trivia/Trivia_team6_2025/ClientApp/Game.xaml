@@ -1,0 +1,118 @@
+﻿<Window x:Class="ClientApp.GameWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowState="Maximized"
+        Title="Menu" Height="593" Width="588">
+    <Window.Resources>
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#ADD8E6"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontFamily" Value="Parade"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+             Background="{TemplateBinding Background}"
+             CornerRadius="20"
+             SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="Gray"
+                                       BlurRadius="10"
+                                       Direction="270"
+                                       ShadowDepth="2"
+                                       Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+    </Window.Resources>
+
+    <Grid Background="#b2e4f7" Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- header -->
+            <RowDefinition Height="*"/>
+            <!-- options -->
+            <RowDefinition Height="Auto"/>
+            <!-- correct answers -->
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <Grid Grid.Row="0" Margin="0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <!-- left: questions left -->
+                <ColumnDefinition Width="2*" />
+                <!-- center: question -->
+                <ColumnDefinition Width="*" />
+                <!-- right: time left -->
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="QuestionsLeftText"
+                       Grid.Column="0"
+                       Text=""  
+                       FontSize="18"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Center"
+                       Margin="10"/>
+            <!-- the text will diplay like this : Current question number/total number of questions-->
+
+            <TextBlock x:Name="CurrentQuestionText"
+                       Grid.Column="1"
+                       FontSize="30"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextWrapping="Wrap" Text=""/>
+
+            <TextBlock x:Name="TimerText"
+                       Grid.Column="2"
+                       Text="" 
+                       FontSize="18"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       Margin="10"/>
+            <!-- the text will diplay like this : minutes:seconds-->
+        </Grid>
+
+        <!-- OPTIONS -->
+        <UniformGrid Grid.Row="1" Columns="2" Rows="2" Margin="100,20" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Button x:Name="Option1" Content="" Style="{StaticResource ButtonStyle}" Width="200" Height="80" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Center" Click ="AnswerButton_Click"/>
+            <Button x:Name="Option2" Content="" Style="{StaticResource ButtonStyle}" Width="200" Height="80" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Center" Click ="AnswerButton_Click"/>
+            <Button x:Name="Option3" Content="" Style="{StaticResource ButtonStyle}" Width="200" Height="80" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Center" Click ="AnswerButton_Click"/>
+            <Button x:Name="Option4" Content="" Style="{StaticResource ButtonStyle}" Width="200" Height="80" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Center" Click ="AnswerButton_Click"/>
+        </UniformGrid>
+        <!---START THE GAME -->
+        <Button x:Name="StartTheGame" Click ="startGameClick" Content="Let the game begin!" Style="{StaticResource ButtonStyle}" Width="155" Height="62" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="195,334,0,0" Grid.Row="1" />
+        <!-- CORRECT ANSWERS COUNT -->
+        <TextBlock x:Name="CorrectAnswersText"
+                   Grid.Row="2"
+                   Text="Correct Answers: "
+                   FontSize="20"
+                   TextAlignment="Center"
+                   HorizontalAlignment="Center"
+                   Margin="0,20"/>
+    </Grid>
+</Window>

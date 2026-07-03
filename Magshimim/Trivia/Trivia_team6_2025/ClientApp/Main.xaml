@@ -1,0 +1,137 @@
+﻿<Window x:Class="ClientApp.Main"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowState="Maximized"
+        Title="Menu" Height="753" Width="549">
+    <Window.Resources>
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#ADD8E6"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontFamily" Value="Parade"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+
+                        <Border x:Name="border"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="20"
+                        SnapsToDevicePixels="True"
+                        
+                            >
+                            <ContentPresenter HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Effect">
+
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="Gray"
+                                                  BlurRadius="10"
+                                                  Direction="270"
+                                                  ShadowDepth="2"
+                                                  Opacity="0.5"
+                                                          />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+    <Grid Margin="10" Background="#b2e4f7">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+        <Border x:Name="RedAlertOverlay"
+        Background="#AAFF0000"
+        Visibility="Collapsed"
+        Padding="20"
+        CornerRadius="10"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Top"
+        Margin="20"
+        RenderTransformOrigin="0.5,0">
+            <Border.RenderTransform>
+                <TranslateTransform Y="-100"/>
+            </Border.RenderTransform>
+
+            <Grid>
+                <TextBlock Text="🚨 צבע אדום! יש להיכנס למרחב מוגן"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   TextAlignment="Center"
+                   VerticalAlignment="Center"/>
+                <Button Content="✖"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Background="Transparent"
+                Foreground="White"
+                BorderThickness="0"
+                FontSize="16"
+                Click="CloseRedAlert_Click"/>
+            </Grid>
+        </Border>
+
+        <Image Source="images/icon.png"
+           Grid.Column="0"
+           Width="100"
+           Height="100"
+           Margin="10"/>
+        <Button x:Name="example" Grid.Row="1" Content="example" Width="100" Height="30"
+Style="{StaticResource ButtonStyle}"
+Margin="0,62,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" IsEnabled="True"
+Click="Example_Click"/>
+        <Button  x:Name="SignUp" Grid.Row="2" Grid.RowSpan="3" Content="Sign Up" Width="100" Height="30" 
+             Style="{StaticResource ButtonStyle}" Margin="0,63,0,0" HorizontalAlignment="Center" 
+                VerticalAlignment="Top" IsEnabled="True"  Click="SignUp_Click"/>
+
+
+        <Button x:Name="LogIn" Grid.Row="4" Content="Log In" Width="100" Height="30"
+            Style="{StaticResource ButtonStyle}"
+            Margin="0,122,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" IsEnabled="True"
+            Click="LogIn_Click"/>
+
+        <Button x:Name="JoinRoom" Grid.Row="6" Content="Join Room" Width="100" Height="30"
+            Style="{StaticResource ButtonStyle}"
+            Margin="0,189,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" IsEnabled="False"
+            Click="JoinRoom_Click"/>
+
+        <Button x:Name="CreateRoom" Grid.Row="6" Content="Create Room" Width="100" Height="30" 
+            Style="{StaticResource ButtonStyle}"
+            Margin="0,252,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" IsEnabled="False"
+            Click="CreateRoom_Click"/>
+
+        <Button x:Name="MyStatistics" Grid.Row="6" Content="My Statistics" Width="100" Height="30" 
+            Style="{StaticResource ButtonStyle}"
+            Margin="0,315,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" IsEnabled="False"
+            Click="Statistics_Click"/>
+
+        <Button Grid.Row="6" Content="exit" Width="100" Height="30" 
+            Style="{StaticResource ButtonStyle}"
+            Margin="0,378,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" 
+            Click="Exit_Click"/>
+      
+        <!--FontFamily="Fonts/Text.ttf#Text"-->
+    </Grid>
+</Window>
