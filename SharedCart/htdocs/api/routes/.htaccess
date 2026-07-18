@@ -1,0 +1,4 @@
+# Route files are loaded only through api/index.php.
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>

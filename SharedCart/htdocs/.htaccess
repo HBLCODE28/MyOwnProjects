@@ -1,0 +1,18 @@
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Common guessed administration paths are handled by a server-side monitor.
+  # The monitor records the attempt and returns a generic 404 response.
+  RewriteRule ^(?:admin|administrator|dashboard|wp-admin)(?:/.*)?$ admin-access-monitor.php [L,QSA,NC]
+  RewriteRule ^(?:admin|administrator|dashboard)\.(?:html?|php)$ admin-access-monitor.php [L,QSA,NC]
+</IfModule>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+  <html lang="he" dir="rtl">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>סל שיתופי</title>
+  <meta name="theme-color" content="#bee9e8">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260707-3">
+  <link rel="alternate icon" href="favicon.ico?v=20260707-3">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Karantina:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260708-4">
+  </head>
+  <body>
+
+  <a href="#main-content" class="skip-link">דלג לתוכן</a>
+
+  <header id="appHeader" class="app-header hidden" role="banner">
+    <button id="btnBack" class="hdr-icon hidden" aria-label="חזור"><svg class="icon icon-tabler icon-tabler-arrow-back-up tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-arrow-back-up"></use></svg></button>
+    <span class="hdr-title" id="hdrTitle">סל שיתופי</span>
+    <div class="hdr-right">
+      <button id="btnRenameGroup" class="hdr-text-btn hidden" aria-label="שנה את שם הקבוצה">שנה שם</button>
+      <button id="btnProfile" class="hdr-text-btn hdr-profile-btn" aria-label="פתח פרופיל">פרופיל</button>
+      <button id="btnAdminDashboard" class="hdr-text-btn admin-dashboard-btn hidden" type="button" aria-label="פתח לוח ניהול" title="לוח ניהול"><svg class="icon icon-tabler icon-tabler-layout-dashboard tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-layout-dashboard"></use></svg><span id="adminDashboardLabel">לוח ניהול</span></button>
+      <button id="btnLanguage" class="hdr-icon" type="button" aria-label="שפה" title="שפה"><svg class="icon icon-tabler icon-tabler-language tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-language"></use></svg></button>
+      <button id="btnNotifications" class="hdr-icon hidden" aria-label="התראות">
+        <svg class="icon icon-tabler icon-tabler-bell tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-bell"></use></svg><span id="notifBadge" class="badge hidden"></span>
+      </button>
+      <button id="btnGroupMenu" class="hdr-icon group-menu-toggle hidden" type="button" aria-label="פתח תפריט קבוצה" aria-expanded="false" aria-controls="bottomNav"><svg class="icon icon-tabler icon-tabler-list-details tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-list-details"></use></svg></button>
+      <button id="btnLogout" class="hdr-text-btn" aria-label="התנתק">יציאה</button>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- AUTH -->
+    <section id="screenAuth" class="screen">
+      <div class="auth-wrap">
+        <div class="auth-hero"><svg class="icon icon-tabler icon-tabler-shopping-cart tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-shopping-cart"></use></svg></div>
+        <h1 class="auth-title">סל שיתופי</h1>
+        <p class="auth-sub">קניות משותפות, בקלות</p>
+
+        <div id="authError" class="msg-error hidden" role="alert"></div>
+
+        <form id="formLogin" class="auth-card" novalidate>
+          <label for="loginEmail">אימייל</label>
+          <input type="email" id="loginEmail" name="username" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" maxlength="254" placeholder="your@email.com" required aria-describedby="loginEmailError">
+          <span id="loginEmailError" class="field-error hidden" role="alert"></span>
+          <label for="loginPassword">סיסמה</label>
+          <input type="password" id="loginPassword" name="password" autocomplete="current-password" placeholder="לפחות 8 תווים" required aria-describedby="loginPasswordError">
+          <span id="loginPasswordError" class="field-error hidden" role="alert"></span>
+          <button id="btnLogin" type="submit" class="btn-primary">כניסה</button>
+          <button id="btnShowForgotPassword" type="button" class="btn-ghost">שכחתי סיסמה</button>
+          <button id="btnShowRegister" type="button" class="btn-ghost">אין לי חשבון - הרשמה</button>
+        </form>
+
+        <div id="formRegister" class="auth-card hidden">
+          <label for="regUsername">שם משתמש</label>
+          <input type="text" id="regUsername" autocomplete="username" placeholder="השם שלך" maxlength="50" required aria-describedby="regUsernameError">
+          <span id="regUsernameError" class="field-error hidden" role="alert"></span>
+          <label for="regEmail">אימייל</label>
+          <input type="email" id="regEmail" autocomplete="email" maxlength="254" placeholder="your@email.com" required aria-describedby="regEmailError">
+          <span id="regEmailError" class="field-error hidden" role="alert"></span>
+          <label for="regPassword">סיסמה</label>
+          <input type="password" id="regPassword" autocomplete="new-password" maxlength="256" placeholder="לפחות 8 תווים" minlength="8" required aria-describedby="regPasswordError">
+          <span id="regPasswordError" class="field-error hidden" role="alert"></span>
+          <label for="regPasswordConfirm">אימות סיסמה</label>
+          <input type="password" id="regPasswordConfirm" autocomplete="new-password" maxlength="256" placeholder="יש להזין את הסיסמה שוב" minlength="8" required aria-describedby="regPasswordConfirmError">
+          <span id="regPasswordConfirmError" class="field-error hidden" role="alert"></span>
+          <button id="btnRegister" type="button" class="btn-primary">הרשמה</button>
+          <button id="btnShowLogin" type="button" class="btn-ghost">יש לי חשבון - כניסה</button>
+        </div>
+
+        <div id="formForgotPassword" class="auth-card hidden">
+          <label for="forgotEmail">אימייל</label>
+          <input type="email" id="forgotEmail" autocomplete="email" maxlength="254" placeholder="your@email.com" required>
+          <button id="btnSendResetCode" type="button" class="btn-primary">שלח קוד אימות</button>
+          <button id="btnBackToLoginFromForgot" type="button" class="btn-ghost">חזרה לכניסה</button>
+        </div>
+
+        <div id="formResetPassword" class="auth-card hidden">
+          <label for="resetEmail">אימייל</label>
+          <input type="email" id="resetEmail" autocomplete="email" maxlength="254" placeholder="your@email.com" required>
+          <label for="resetCode">קוד אימות</label>
+          <input type="text" id="resetCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456" required>
+          <button id="btnVerifyResetCode" type="button" class="btn-outline">אמת קוד</button>
+          <button id="btnBackToLoginFromReset" type="button" class="btn-ghost">חזרה לכניסה</button>
+        </div>
+
+        <div id="formNewPassword" class="auth-card hidden">
+          <p class="section-label" style="padding:0 0 10px">שינוי סיסמה</p>
+          <p id="newPasswordHint" class="auth-sub" style="margin-bottom:10px">הקוד אומת. אפשר להגדיר סיסמה חדשה.</p>
+          <label for="newPassword">סיסמה חדשה</label>
+          <input type="password" id="newPassword" autocomplete="new-password" maxlength="256" placeholder="לפחות 8 תווים" minlength="8" required>
+          <label for="newPasswordConfirm">אימות סיסמה</label>
+          <input type="password" id="newPasswordConfirm" autocomplete="new-password" maxlength="256" placeholder="יש להזין את הסיסמה שוב" minlength="8" required>
+          <button id="btnResetPassword" type="button" class="btn-primary">שנה סיסמה</button>
+          <button id="btnBackToLoginFromNewPassword" type="button" class="btn-ghost">חזרה לכניסה</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GROUPS -->
+    <section id="screenGroups" class="screen hidden">
+      <div class="home-profile-panel">
+        <button id="btnHomeProfile" type="button" class="home-profile-button" aria-label="פתח פרופיל">
+          <span class="home-profile-icon" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-user-check tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-user-check"></use></svg></span>
+          <span class="home-profile-copy">
+            <strong id="btnHomeProfileLabel">פרופיל</strong>
+            <small id="homeProfileName">הגדרות החשבון ושינוי סיסמה</small>
+          </span>
+          <span class="home-profile-arrow" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-arrow-back-up tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-arrow-back-up"></use></svg></span>
+        </button>
+      </div>
+      <p class="section-label">הקבוצות שלי</p>
+      <ul id="groupList" class="group-list" aria-label="קבוצות"></ul>
+
+      <p class="section-label">קבוצה חדשה</p>
+      <div class="form-card">
+        <div class="input-row">
+          <input type="text" id="newGroupName" placeholder="שם הקבוצה" maxlength="100">
+          <button id="btnCreateGroup" class="btn-primary">צור</button>
+        </div>
+      </div>
+
+      <p class="section-label">הצטרף לקבוצה קיימת</p>
+      <div class="form-card">
+        <div class="input-row">
+          <input type="text" id="joinInviteLink" placeholder="הדבק קישור הצטרפות..." autocomplete="off">
+          <button id="btnJoinGroup" class="btn-outline">הצטרף</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ITEMS -->
+    <section id="screenItems" class="screen hidden">
+      <div id="notifPanel" class="notif-panel hidden" role="region" aria-live="polite"></div>
+
+      <div id="shareBanner" class="share-banner hidden">
+        <span id="shareText" class="share-text"></span>
+        <button id="btnCopyLink" class="share-copy-btn">העתק</button>
+        <button id="btnShareClose" class="share-x" aria-label="סגור"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      </div>
+
+      <div id="existingItemSheet" class="existing-item-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="existingItemTitle">
+        <div class="existing-item-card">
+          <div class="sheet-handle" aria-hidden="true"></div>
+          <h2 id="existingItemTitle" class="sheet-title">הפריט כבר קיים</h2>
+          <p id="existingItemText" class="sheet-text"></p>
+          <div class="sheet-actions">
+            <button id="btnExistingItemAdd" class="btn-primary">הוסף לכמות הקיימת</button>
+            <button id="btnExistingItemCancel" class="btn-ghost">ביטול</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="parchment">
+        <ul id="itemList" class="item-list" aria-label="פריטים לקנייה"></ul>
+        <p id="emptyState" class="empty-state hidden"><span>הרשימה ריקה</span><svg class="icon icon-tabler icon-tabler-shopping-cart tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-shopping-cart"></use></svg></p>
+      </div>
+
+      <form id="addItemForm" class="add-bar" aria-label="הוסף פריט">
+        <input type="text" id="newItemName" list="itemSuggestions" placeholder="שם פריט (לא חובה עם תמונה)" maxlength="200" autocomplete="off" aria-label="שם פריט, לא חובה אם נבחרה תמונה">
+        <input type="number" id="newItemQty" value="1" min="1" max="999" aria-label="כמות" class="qty-input">
+        <input type="file" id="newItemImage" accept="image/*" class="hidden">
+        <button type="button" id="btnPickItemImage" class="btn-outline add-img-btn" aria-label="הוסף תמונה"><svg class="icon icon-tabler icon-tabler-photo tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-photo"></use></svg></button>
+        <button type="submit" class="btn-primary add-btn" aria-label="הוסף פריט">הוסף פריט</button>
+      </form>
+      <datalist id="itemSuggestions"></datalist>
+
+      <div class="form-card" style="margin-top:12px">
+        <button id="btnLeaveGroup" class="btn-outline hidden">עזוב קבוצה</button>
+      </div>
+    </section>
+
+    <!-- ACTIVITY -->
+    <section id="screenActivity" class="screen hidden">
+      <div class="activity-toolbar">
+        <p class="section-label">היסטוריה</p>
+        <button id="btnClearActivity" class="btn-clear-activity hidden" type="button">מחק היסטוריה</button>
+      </div>
+      <ul id="activityList" class="activity-list" aria-label="היסטוריה"></ul>
+      <p id="activityEmpty" class="empty-state hidden">אין פעילות עדיין</p>
+    </section>
+
+    <!-- MEMBERS -->
+    <section id="screenMembers" class="screen hidden">
+      <p class="section-label">חברי הקבוצה</p>
+      <ul id="memberList" class="member-list" aria-label="חברי הקבוצה"></ul>
+      <p id="membersEmpty" class="empty-state hidden">אין חברים בקבוצה</p>
+      <div class="form-card" style="margin-top:12px">
+        <button id="btnDeleteGroup" class="btn-danger hidden">מחק קבוצה</button>
+      </div>
+    </section>
+
+  </main>
+
+  <nav id="bottomNav" class="bottom-nav hidden" aria-label="ניווט">
+    <button class="nav-btn active" data-tab="items" aria-current="page">
+      <span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-shopping-cart tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-shopping-cart"></use></svg></span><span>רשימה</span>
+    </button>
+    <button class="nav-btn" data-tab="activity">
+      <span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-history tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-history"></use></svg></span><span>היסטוריה</span>
+    </button>
+    <button class="nav-btn" data-tab="members">
+      <span id="memberCount" class="nav-symbol" aria-hidden="true">0</span><span>חברים</span>
+    </button>
+    <button class="nav-btn" data-tab="share">
+      <span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-share tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-share"></use></svg></span><span>שתף</span>
+    </button>
+    <div class="mobile-menu-secondary" aria-label="פעולות נוספות">
+      <button id="mobileMenuProfile" type="button" class="mobile-menu-action"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-user-check tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-user-check"></use></svg></span><span>פרופיל</span></button>
+      <button id="mobileMenuRename" type="button" class="mobile-menu-action hidden"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-pencil tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-pencil"></use></svg></span><span>שנה שם קבוצה</span></button>
+      <button id="mobileMenuLogout" type="button" class="mobile-menu-action danger"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-arrow-back-up tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-arrow-back-up"></use></svg></span><span>יציאה</span></button>
+    </div>
+  </nav>
+
+  <div id="uiAlertModal" class="ui-alert-modal hidden" role="dialog" aria-modal="true" aria-labelledby="uiAlertTitle">
+    <div class="ui-alert-card">
+      <div id="uiAlertIcon" class="ui-alert-icon"><svg class="icon icon-tabler icon-tabler-alert-triangle tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-alert-triangle"></use></svg></div>
+      <h2 id="uiAlertTitle" class="ui-alert-title">הודעה</h2>
+      <p id="uiAlertText" class="ui-alert-text"></p>
+      <div class="ui-alert-actions">
+        <button id="uiAlertOk" class="btn-primary">אישור</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="profileModal" class="profile-modal hidden" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <div class="profile-card">
+      <button id="profileClose" type="button" class="profile-close" aria-label="סגור פרופיל"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      <h2 id="profileTitle" class="profile-title">פרופיל</h2>
+      <p class="profile-description">כאן אפשר לשנות את שם המשתמש שמופיע בקבוצות ובהערות.</p>
+      <label for="profileUsername" class="profile-label">שם משתמש</label>
+      <input id="profileUsername" type="text" maxlength="50" autocomplete="username" placeholder="שם המשתמש שלך" aria-describedby="profileError profileMessage">
+      <p id="profileError" class="profile-feedback profile-error hidden" role="alert"></p>
+      <p id="profileMessage" class="profile-feedback profile-success hidden" role="status"></p>
+      <div class="profile-actions">
+        <button id="btnSaveProfile" type="button" class="btn-primary">שמור שינויים</button>
+        <button id="btnCancelProfile" type="button" class="btn-ghost">ביטול</button>
+      </div>
+      <div class="profile-password-section">
+        <p id="profilePasswordIntro" class="profile-password-intro">שינוי סיסמה מחייב קוד אימות שיישלח לאימייל של החשבון.</p>
+        <button id="btnStartProfilePasswordChange" type="button" class="btn-outline profile-password-button">שינוי סיסמה</button>
+
+        <div id="profilePasswordVerification" class="profile-password-step hidden">
+          <p id="profilePasswordEmailHint" class="profile-password-email-hint"></p>
+          <label id="profilePasswordCodeLabel" for="profilePasswordCode" class="profile-label">קוד אימות</label>
+          <input id="profilePasswordCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+          <div class="profile-password-inline-actions">
+            <button id="btnVerifyProfilePasswordCode" type="button" class="btn-primary">אמת קוד</button>
+            <button id="btnResendProfilePasswordCode" type="button" class="btn-ghost">שלח שוב</button>
+          </div>
+        </div>
+
+        <div id="profilePasswordNewFields" class="profile-password-step hidden">
+          <label id="profileNewPasswordLabel" for="profileNewPassword" class="profile-label">סיסמה חדשה</label>
+          <input id="profileNewPassword" type="password" autocomplete="new-password" minlength="8" maxlength="256" placeholder="לפחות 8 תווים">
+          <label id="profilePasswordConfirmLabel" for="profilePasswordConfirm" class="profile-label">אימות סיסמה חדשה</label>
+          <input id="profilePasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="256" placeholder="יש להזין שוב את הסיסמה החדשה">
+          <button id="btnConfirmProfilePasswordChange" type="button" class="btn-primary profile-password-button">שמור סיסמה חדשה</button>
+        </div>
+
+        <p id="profilePasswordError" class="profile-feedback profile-error hidden" role="alert"></p>
+        <p id="profilePasswordMessage" class="profile-feedback profile-success hidden" role="status"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="itemActionsModal" class="item-actions-modal hidden" role="dialog" aria-modal="true" aria-labelledby="itemActionsTitle">
+    <div class="item-actions-card">
+      <div class="item-actions-header">
+        <h2 id="itemActionsTitle" class="item-actions-title">פעולות לפריט</h2>
+        <button id="itemActionsClose" type="button" class="item-actions-close" aria-label="סגור פעולות"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      </div>
+      <div class="item-actions-options">
+        <button id="btnItemActionComments" type="button" class="item-action-option">
+          <span class="item-action-icon" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-message-circle tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-message-circle"></use></svg></span>
+          <span id="itemActionCommentsText" class="item-action-text">הוסף הערה</span>
+          <span id="itemActionCommentsCount" class="item-action-count hidden" aria-hidden="true"></span>
+        </button>
+        <button id="btnItemActionImage" type="button" class="item-action-option">
+          <span class="item-action-icon" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-photo tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-photo"></use></svg></span>
+          <span id="itemActionImageText" class="item-action-text">הוסף תמונה</span>
+        </button>
+        <button id="btnItemActionReport" type="button" class="item-action-option">
+          <span class="item-action-icon" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-flag tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-flag"></use></svg></span>
+          <span class="item-action-text">דווח על הפריט</span>
+        </button>
+        <button id="btnItemActionDelete" type="button" class="item-action-option danger hidden">
+          <span class="item-action-icon" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-trash tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-trash"></use></svg></span>
+          <span class="item-action-text">מחק פריט</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="commentsModal" class="comments-modal hidden" role="dialog" aria-modal="true" aria-labelledby="commentsTitle">
+    <div class="comments-card">
+      <div class="comments-header">
+        <h2 id="commentsTitle" class="comments-title">הערות</h2>
+        <button id="commentsClose" type="button" class="comments-close" aria-label="סגור הערות"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      </div>
+      <p id="commentsStatus" class="comments-status hidden" role="status"></p>
+      <p id="commentsEmpty" class="comments-empty hidden">אין הערות לפריט הזה.</p>
+      <ul id="commentsList" class="comments-list" aria-live="polite"></ul>
+      <button id="btnAddCommentFromModal" type="button" class="btn-primary comments-add">הוסף הערה</button>
+    </div>
+  </div>
+
+  <div id="reportModal" class="report-modal hidden" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="report-card">
+      <button id="reportClose" type="button" class="report-close" aria-label="סגור דיווח"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      <h2 id="reportTitle" class="report-title">דיווח</h2>
+      <p id="reportTarget" class="report-target"></p>
+      <label for="reportReason" class="report-label">סיבת הדיווח</label>
+      <textarea id="reportReason" class="report-reason" maxlength="500" rows="5" placeholder="תארו בקצרה מה הבעיה" aria-describedby="reportError"></textarea>
+      <p id="reportError" class="report-error hidden" role="alert"></p>
+      <div class="report-actions">
+        <button id="btnSubmitReport" type="button" class="btn-primary">שלח דיווח</button>
+        <button id="btnCancelReport" type="button" class="btn-ghost">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="imagePreviewModal" class="image-preview-modal hidden" role="dialog" aria-modal="true" aria-labelledby="imagePreviewTitle">
+    <div class="image-preview-card">
+      <button id="imagePreviewClose" type="button" class="image-preview-close" aria-label="סגור תמונה"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      <img id="imagePreviewImage" class="image-preview-image" src="" alt="">
+      <p id="imagePreviewTitle" class="image-preview-title"></p>
+    </div>
+  </div>
+
+  <script src="vendor/jquery-3.7.1.min.js?v=3.7.1-full-1"></script>
+  <script src="app.js?v=20260708-3"></script>
+  </body>
+  </html>

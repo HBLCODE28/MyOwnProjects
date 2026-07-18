@@ -1,0 +1,16 @@
+RewriteEngine On
+
+# Preserve Bearer tokens when PHP runs through CGI/FastCGI.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+RewriteBase /api/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+<IfModule mod_authz_core.c>
+  <FilesMatch "^(config|auth_helper|admin_helper|email_helper)\.php$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
