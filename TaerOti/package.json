@@ -1,0 +1,38 @@
+{
+  "name": "taer-oti",
+  "version": "0.4.8",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "next build",
+    "start": "cross-env NODE_ENV=production tsx server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/game.test.ts tests/links.test.ts tests/socket.test.ts",
+    "test:deep": "npm run typecheck && npm test && npm run build",
+    "test:live": "tsx scripts/live-test.ts"
+  },
+  "dependencies": {
+    "next": "15.5.22",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "socket.io": "4.8.1",
+    "socket.io-client": "4.8.1",
+    "tsx": "4.19.3",
+    "cross-env": "7.0.3",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.10",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.3",
+    "autoprefixer": "10.4.21",
+    "postcss": "8.5.3",
+    "tailwindcss": "3.4.17",
+    "typescript": "5.8.2",
+    "@types/qrcode": "1.5.5"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
