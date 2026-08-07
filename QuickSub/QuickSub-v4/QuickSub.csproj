@@ -9,22 +9,11 @@
     <RootNamespace>QuickSub</RootNamespace>
     <AssemblyName>QuickSub</AssemblyName>
     <ApplicationIcon>Assets\QuickSub.ico</ApplicationIcon>
-    <Version>1.0.4</Version>
+    <Version>1.0.3</Version>
     <Authors>QuickSub</Authors>
     <Product>QuickSub</Product>
     <Description>Finds and downloads TV episode subtitles.</Description>
     <RepositoryUrl></RepositoryUrl>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
-    <PublishSingleFile>true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <PublishTrimmed>false</PublishTrimmed>
-    <DebugType>None</DebugType>
-    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>

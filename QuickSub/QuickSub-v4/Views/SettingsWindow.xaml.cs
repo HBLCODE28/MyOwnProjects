@@ -91,11 +91,8 @@ public partial class SettingsWindow : Window
                 apiKey,
                 CancellationToken.None);
 
-            int allowedDownloads = login.User?.AllowedDownloads ?? 0;
             ConnectionStatusText.Text =
-                $"Connection successful. Account level: {login.User?.Level ?? "unknown"}. " +
-                $"Account download allowance: {allowedDownloads}. " +
-                "This test verifies login only. Download quota and file-download errors are checked during an actual subtitle download.";
+                $"Connection successful. Account level: {login.User?.Level ?? "unknown"}.";
         }
         catch (Exception ex)
         {

@@ -186,12 +186,7 @@ public sealed class OpenSubtitlesClient
         CancellationToken cancellationToken)
     {
         EnsureAuthenticated();
-
-        string destinationDirectory = Path.GetDirectoryName(destinationSrtPath)
-            ?? throw new InvalidOperationException("The subtitle destination directory could not be determined.");
-
-        Directory.CreateDirectory(destinationDirectory);
-        destinationSrtPath = Path.GetFullPath(destinationSrtPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationSrtPath)!);
 
         OpenSubtitlesDownloadResponse download;
         using (HttpResponseMessage response = await SendAsync(
@@ -223,19 +218,15 @@ public sealed class OpenSubtitlesClient
         if (string.IsNullOrWhiteSpace(download.Link))
             throw new InvalidOperationException("OpenSubtitles returned an empty download link.");
 
-        Uri downloadUri = NormalizeDownloadUri(download.Link);
         string tempRoot = Path.Combine(Path.GetTempPath(), "QuickSub", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempRoot);
         string downloadedPath = Path.Combine(tempRoot, SanitizeFileName(download.FileName, "subtitle.download"));
-        string stagedDestinationPath = Path.Combine(
-            destinationDirectory,
-            $".quicksub-{Guid.NewGuid():N}.srt.tmp");
 
         try
         {
             using HttpResponseMessage fileResponse = await HttpRetry.SendAsync(
                 _httpClient,
-                () => new HttpRequestMessage(HttpMethod.Get, downloadUri),
+                () => new HttpRequestMessage(HttpMethod.Get, download.Link),
                 cancellationToken);
             await EnsureSuccessAsync(fileResponse, "The subtitle file could not be downloaded", cancellationToken);
 
@@ -250,39 +241,13 @@ public sealed class OpenSubtitlesClient
                 await fileResponse.Content.CopyToAsync(output, cancellationToken);
             }
 
-            FileInfo downloadedFile = new(downloadedPath);
-            if (!downloadedFile.Exists || downloadedFile.Length == 0)
-                throw new IOException("OpenSubtitles returned an empty subtitle file.");
-
             string sourcePath = await ExtractIfNeededAsync(downloadedPath, tempRoot, cancellationToken);
-            await converter.ConvertToSrtAsync(sourcePath, stagedDestinationPath, cancellationToken);
-
-            FileInfo stagedFile = new(stagedDestinationPath);
-            if (!stagedFile.Exists || stagedFile.Length == 0)
-                throw new IOException("QuickSub converted the subtitle, but the temporary SRT file was not created.");
-
-            File.Move(stagedDestinationPath, destinationSrtPath, overwrite: true);
-
-            FileInfo savedFile = new(destinationSrtPath);
-            savedFile.Refresh();
-            if (!savedFile.Exists || savedFile.Length == 0)
-                throw new IOException($"QuickSub could not verify the saved subtitle file: {destinationSrtPath}");
-
-            _logger.Info($"Subtitle saved and verified: {destinationSrtPath} ({savedFile.Length} bytes)");
+            await converter.ConvertToSrtAsync(sourcePath, destinationSrtPath, cancellationToken);
+            _logger.Info($"Subtitle saved: {destinationSrtPath}");
             return download;
         }
         finally
         {
-            try
-            {
-                if (File.Exists(stagedDestinationPath))
-                    File.Delete(stagedDestinationPath);
-            }
-            catch
-            {
-                // Temporary output cleanup failure is not fatal.
-            }
-
             try
             {
                 if (Directory.Exists(tempRoot))
@@ -290,11 +255,10 @@ public sealed class OpenSubtitlesClient
             }
             catch
             {
-                // Temporary download cleanup failure is not fatal.
+                // Temporary cleanup failure is not fatal.
             }
         }
     }
-
 
     private async Task AddSearchResultsAsync(
         IReadOnlyDictionary<string, string> parameters,
@@ -403,26 +367,6 @@ public sealed class OpenSubtitlesClient
         throw new OpenSubtitlesApiException(
             $"{context}. HTTP {(int)response.StatusCode}: {details}",
             response.StatusCode);
-    }
-
-    private Uri NormalizeDownloadUri(string link)
-    {
-        string value = link.Trim();
-
-        if (value.StartsWith("//", StringComparison.Ordinal))
-            value = "https:" + value;
-
-        if (Uri.TryCreate(value, UriKind.Absolute, out Uri? absolute) &&
-            (absolute.Scheme == Uri.UriSchemeHttps || absolute.Scheme == Uri.UriSchemeHttp))
-        {
-            return absolute;
-        }
-
-        if (Uri.TryCreate(_apiBase, value, out Uri? relativeResolved))
-            return relativeResolved;
-
-        throw new InvalidOperationException(
-            $"OpenSubtitles returned an invalid download link: {value}");
     }
 
     private static bool TryNormalizeApiBase(string baseUrl, out Uri? normalizedBase)

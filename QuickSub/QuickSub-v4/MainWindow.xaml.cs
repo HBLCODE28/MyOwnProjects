@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using Microsoft.Win32;
 using QuickSub.Models;
 using QuickSub.Services;
 using QuickSub.Views;
@@ -570,10 +569,7 @@ public partial class MainWindow : Window
         WorkProgress.IsIndeterminate = false;
         WorkProgress.Maximum = Math.Max(1, downloads.Count);
         WorkProgress.Value = 0;
-
         int current = 0;
-        string? alternateDownloadFolder = null;
-        bool stopRemainingDownloads = false;
 
         foreach (VideoEpisode video in downloads)
         {
@@ -583,340 +579,31 @@ public partial class MainWindow : Window
             StatusText.Text = $"Downloading {video.EpisodeCode}...";
             SummaryText.Text = $"{current} of {downloads.Count}";
 
-            string destination = BuildSubtitleDestination(
-                video,
-                settings.SubtitleLanguage,
-                alternateDownloadFolder);
+            string destination = Path.Combine(
+                video.OutputDirectory,
+                $"{video.BaseName}.{settings.SubtitleLanguage}.srt");
 
-            while (true)
+            try
             {
-                App.Services.Logger.Info($"Saving subtitle for {video.FileName} to: {destination}");
-
-                string destinationDirectory = Path.GetDirectoryName(destination)
-                    ?? throw new InvalidOperationException("The subtitle destination folder could not be determined.");
-                bool destinationDirectoryExistedBeforeAttempt = Directory.Exists(destinationDirectory);
-
-                try
-                {
-                    await DownloadWithFallbackAsync(video, destination, cancellationToken);
-                    VerifySavedSubtitle(destination);
-
-                    video.Status = EpisodeSearchStatus.Downloaded;
-                    video.Message = destination;
-
-                    FileInfo savedFile = new(destination);
-                    App.Services.Logger.Info(
-                        $"Verified subtitle for {video.FileName}: {destination} ({savedFile.Length} bytes)");
-                    break;
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception ex) when (IsAccessDenied(ex))
-                {
-                    App.Services.Logger.Error(
-                        $"Access denied while saving {video.FileName} to {destination}.",
-                        ex);
-
-                    if (alternateDownloadFolder is null)
-                    {
-                        TryCleanupBlockedSubtitleDirectory(
-                            destination,
-                            destinationDirectoryExistedBeforeAttempt);
-                    }
-
-                    string? selectedFolder = PromptForWritableSubtitleFolder(
-                        destination,
-                        ex,
-                        session.Show.Name);
-                    if (string.IsNullOrWhiteSpace(selectedFolder))
-                    {
-                        video.Status = EpisodeSearchStatus.Failed;
-                        video.Message =
-                            $"Access was denied for '{destination}'. No alternative download folder was selected.";
-                        stopRemainingDownloads = true;
-                        break;
-                    }
-
-                    alternateDownloadFolder = selectedFolder;
-                    destination = BuildSubtitleDestination(
-                        video,
-                        settings.SubtitleLanguage,
-                        alternateDownloadFolder);
-
-                    StatusText.Text = $"Downloading {video.EpisodeCode} to the selected folder...";
-                    SummaryText.Text = alternateDownloadFolder;
-                }
-                catch (Exception ex)
-                {
-                    video.Status = EpisodeSearchStatus.Failed;
-                    video.Message = ex.Message;
-                    App.Services.Logger.Error($"Download failed for {video.FileName}.", ex);
-                    break;
-                }
+                await DownloadWithFallbackAsync(video, destination, cancellationToken);
+                video.Status = EpisodeSearchStatus.Downloaded;
+                video.Message = destination;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                video.Status = EpisodeSearchStatus.Failed;
+                video.Message = ex.Message;
+                App.Services.Logger.Error($"Download failed for {video.FileName}.", ex);
             }
 
             WorkProgress.Value = current;
-
-            if (stopRemainingDownloads)
-                break;
-        }
-
-        if (stopRemainingDownloads)
-        {
-            foreach (VideoEpisode video in downloads.Where(item => item.Status == EpisodeSearchStatus.Found))
-            {
-                video.Status = EpisodeSearchStatus.Failed;
-                video.Message =
-                    "The download was not attempted because no writable alternative folder was selected.";
-            }
         }
 
         ShowSearchSummary(session, downloaded: true);
-    }
-
-    private static string BuildSubtitleDestination(
-        VideoEpisode video,
-        string languageCode,
-        string? alternateDownloadFolder)
-    {
-        string outputDirectory = string.IsNullOrWhiteSpace(alternateDownloadFolder)
-            ? video.OutputDirectory
-            : alternateDownloadFolder;
-
-        return Path.GetFullPath(Path.Combine(
-            outputDirectory,
-            $"{video.BaseName}.{languageCode}.srt"));
-    }
-
-    private static void VerifySavedSubtitle(string destination)
-    {
-        FileInfo savedFile = new(destination);
-        savedFile.Refresh();
-
-        if (!savedFile.Exists || savedFile.Length == 0)
-        {
-            throw new IOException(
-                $"QuickSub finished the download but could not verify the saved file: {destination}");
-        }
-    }
-
-    private string? PromptForWritableSubtitleFolder(
-        string blockedDestination,
-        Exception exception,
-        string seriesName)
-    {
-        string blockedDirectory = Path.GetDirectoryName(blockedDestination) ?? blockedDestination;
-
-        MessageBox.Show(
-            this,
-            "QuickSub cannot write subtitle files to the original folder.\n\n" +
-            $"Folder:\n{blockedDirectory}\n\n" +
-            $"Reason:\n{exception.Message}\n\n" +
-            "Select another folder. QuickSub will save the remaining subtitles inside:\n" +
-            "Subtitles\\<series name>",
-            "Choose another subtitle folder",
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
-
-        string initialDirectory = Directory.Exists(_selectedFolder)
-            ? _selectedFolder!
-            : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
-        while (true)
-        {
-            var dialog = new OpenFolderDialog
-            {
-                Title = "Select the parent folder for downloaded subtitles",
-                InitialDirectory = initialDirectory,
-                Multiselect = false
-            };
-
-            if (dialog.ShowDialog(this) != true)
-                return null;
-
-            string selectedRoot = Path.GetFullPath(dialog.FolderName);
-            string selectedSubtitleDirectory = BuildAlternateSubtitleDirectory(
-                selectedRoot,
-                seriesName);
-
-            if (CanWriteToDirectory(selectedSubtitleDirectory, out string? writeError))
-            {
-                App.Services.Logger.Info(
-                    $"The user selected an alternative subtitle folder: {selectedSubtitleDirectory}");
-                return selectedSubtitleDirectory;
-            }
-
-            MessageBox.Show(
-                this,
-                "QuickSub cannot write to the selected destination.\n\n" +
-                $"{selectedSubtitleDirectory}\n\n" +
-                $"{writeError}\n\n" +
-                "Select a different parent folder.",
-                "Folder is not writable",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
-            initialDirectory = selectedRoot;
-        }
-    }
-
-    private static string BuildAlternateSubtitleDirectory(
-        string selectedRoot,
-        string seriesName)
-    {
-        string safeSeriesName = SanitizeDirectoryName(seriesName);
-        return Path.GetFullPath(Path.Combine(
-            selectedRoot,
-            "Subtitles",
-            safeSeriesName));
-    }
-
-    private static string SanitizeDirectoryName(string value)
-    {
-        char[] invalidCharacters = Path.GetInvalidFileNameChars();
-        string sanitized = new(value
-            .Select(character => invalidCharacters.Contains(character) ? '_' : character)
-            .ToArray());
-
-        sanitized = sanitized.Trim().TrimEnd('.', ' ');
-        if (string.IsNullOrWhiteSpace(sanitized))
-            sanitized = "Series";
-
-        string[] reservedNames =
-        [
-            "CON", "PRN", "AUX", "NUL",
-            "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-            "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
-        ];
-
-        if (reservedNames.Contains(sanitized, StringComparer.OrdinalIgnoreCase))
-            sanitized = "_" + sanitized;
-
-        const int maximumLength = 100;
-        if (sanitized.Length > maximumLength)
-            sanitized = sanitized[..maximumLength].TrimEnd('.', ' ');
-
-        return sanitized;
-    }
-
-    private static void TryCleanupBlockedSubtitleDirectory(
-        string blockedDestination,
-        bool directoryExistedBeforeAttempt)
-    {
-        if (directoryExistedBeforeAttempt)
-            return;
-
-        string? blockedDirectory = Path.GetDirectoryName(blockedDestination);
-        if (string.IsNullOrWhiteSpace(blockedDirectory) ||
-            !Path.GetFileName(blockedDirectory).Equals(
-                "Subtitles",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        try
-        {
-            if (File.Exists(blockedDestination))
-            {
-                try
-                {
-                    File.Delete(blockedDestination);
-                }
-                catch (Exception fileCleanupException)
-                {
-                    App.Services.Logger.Warning(
-                        $"QuickSub could not remove the incomplete subtitle file '{blockedDestination}': " +
-                        fileCleanupException.Message);
-                }
-            }
-
-            if (Directory.Exists(blockedDirectory) &&
-                !Directory.EnumerateFileSystemEntries(blockedDirectory).Any())
-            {
-                Directory.Delete(blockedDirectory);
-                App.Services.Logger.Info(
-                    $"Removed the empty subtitle folder created during the failed save: {blockedDirectory}");
-            }
-        }
-        catch (Exception cleanupException)
-        {
-            App.Services.Logger.Warning(
-                $"QuickSub could not remove the empty blocked subtitle folder '{blockedDirectory}': " +
-                cleanupException.Message);
-        }
-    }
-
-    private static bool CanWriteToDirectory(string folder, out string? error)
-    {
-        string? testFile = null;
-
-        try
-        {
-            Directory.CreateDirectory(folder);
-            testFile = Path.Combine(folder, $".quicksub-write-test-{Guid.NewGuid():N}.tmp");
-
-            using (FileStream stream = new(
-                       testFile,
-                       FileMode.CreateNew,
-                       FileAccess.Write,
-                       FileShare.None,
-                       1,
-                       FileOptions.DeleteOnClose))
-            {
-                stream.WriteByte(0);
-                stream.Flush(flushToDisk: true);
-            }
-
-            if (File.Exists(testFile))
-                File.Delete(testFile);
-
-            error = null;
-            return true;
-        }
-        catch (Exception ex)
-        {
-            error = ex.Message;
-            return false;
-        }
-        finally
-        {
-            if (!string.IsNullOrWhiteSpace(testFile))
-            {
-                try
-                {
-                    if (File.Exists(testFile))
-                        File.Delete(testFile);
-                }
-                catch
-                {
-                    // A failed test-file cleanup does not change the write-access result.
-                }
-            }
-        }
-    }
-
-    private static bool IsAccessDenied(Exception exception)
-    {
-        for (Exception? current = exception; current is not null; current = current.InnerException)
-        {
-            if (current is UnauthorizedAccessException)
-                return true;
-
-            if (current.HResult == unchecked((int)0x80070005))
-                return true;
-
-            if (current is IOException &&
-                current.Message.Contains("access", StringComparison.OrdinalIgnoreCase) &&
-                current.Message.Contains("denied", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
 
@@ -941,12 +628,6 @@ public partial class MainWindow : Window
                     destination,
                     App.Services.SubtitleConverter,
                     cancellationToken);
-
-                FileInfo savedFile = new(destination);
-                savedFile.Refresh();
-                if (!savedFile.Exists || savedFile.Length == 0)
-                    throw new IOException($"The subtitle was not saved correctly: {destination}");
-
                 video.SelectedCandidate = candidate;
                 return;
             }
@@ -967,12 +648,6 @@ public partial class MainWindow : Window
                 App.Services.Logger.Warning(
                     $"Subtitle candidate {candidate.FileId} could not be converted for {video.FileName}. Trying another candidate.");
             }
-            catch (IOException ex)
-            {
-                lastError = ex;
-                App.Services.Logger.Warning(
-                    $"Subtitle candidate {candidate.FileId} could not be saved for {video.FileName}. Trying another candidate.");
-            }
         }
 
         throw lastError ?? new InvalidOperationException("No usable subtitle candidate could be downloaded.");
@@ -986,53 +661,24 @@ public partial class MainWindow : Window
         int missingCount = session.VideoEpisodes.Count(item =>
             item.Status is EpisodeSearchStatus.Missing or EpisodeSearchStatus.Failed);
 
-        if (downloadedCount + existingCount == total && missingCount == 0)
+        if (missingCount == 0)
         {
-            StatusText.Text = downloadedCount > 0
-                ? "All subtitle files were saved successfully."
-                : "All subtitle files already existed.";
-            SummaryText.Text = $"{downloadedCount} saved, {existingCount} already existed, {total} total.";
-        }
-        else if (downloadedCount > 0)
-        {
-            StatusText.Text = "Some subtitle files were saved.";
-            SummaryText.Text = $"{downloadedCount} saved, {existingCount} already existed, {missingCount} missing or failed.";
-        }
-        else if (downloaded)
-        {
-            StatusText.Text = "No subtitle files were saved.";
-
-            string? firstError = session.VideoEpisodes
-                .Where(item => item.Status == EpisodeSearchStatus.Failed)
-                .Select(item => item.Message)
-                .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
-
-            SummaryText.Text = string.IsNullOrWhiteSpace(firstError)
-                ? $"{existingCount} already existed, {missingCount} missing or failed. Open details for the error."
-                : $"{existingCount} already existed, {missingCount} missing or failed. First error: {ShortenForSummary(firstError, 180)}";
+            StatusText.Text = downloaded
+                ? "All subtitles were downloaded successfully."
+                : "Subtitles are available for every video file.";
+            SummaryText.Text = $"{downloadedCount} downloaded, {existingCount} already existed, {total} total.";
         }
         else
         {
-            StatusText.Text = "Not all subtitles were found.";
-            SummaryText.Text = $"{existingCount} already existed, {missingCount} missing.";
+            StatusText.Text = downloaded
+                ? "Available subtitles were downloaded."
+                : "Not all subtitles were found.";
+            SummaryText.Text = $"{downloadedCount} downloaded, {existingCount} already existed, {missingCount} missing.";
         }
 
         WorkProgress.IsIndeterminate = false;
         WorkProgress.Maximum = 100;
         WorkProgress.Value = 100;
-    }
-
-    private static string ShortenForSummary(string value, int maximumLength)
-    {
-        string singleLine = string.Join(
-            " ",
-            value.Split(
-                ['\r', '\n'],
-                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-
-        return singleLine.Length <= maximumLength
-            ? singleLine
-            : singleLine[..maximumLength].TrimEnd() + "...";
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
@@ -1108,27 +754,6 @@ public partial class MainWindow : Window
 
     private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
     {
-        string? subtitlePath = _lastResult?.VideoEpisodes
-            .Where(item => item.Status == EpisodeSearchStatus.Downloaded)
-            .Select(item => item.Message)
-            .FirstOrDefault(path => !string.IsNullOrWhiteSpace(path) && File.Exists(path));
-
-        subtitlePath ??= _lastResult?.VideoEpisodes
-            .Where(item => item.Status == EpisodeSearchStatus.Existing)
-            .Select(item => item.ExistingSubtitlePath)
-            .FirstOrDefault(path => !string.IsNullOrWhiteSpace(path) && File.Exists(path));
-
-        if (!string.IsNullOrWhiteSpace(subtitlePath) && File.Exists(subtitlePath))
-        {
-            Process.Start(new ProcessStartInfo(
-                "explorer.exe",
-                $"/select,\"{subtitlePath}\"")
-            {
-                UseShellExecute = true
-            });
-            return;
-        }
-
         if (_selectedFolder is null || !Directory.Exists(_selectedFolder))
         {
             ResetMissingSelectedFolder();

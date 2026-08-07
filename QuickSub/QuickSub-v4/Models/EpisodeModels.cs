@@ -22,7 +22,7 @@ public sealed class VideoEpisode
         ? $"S{Season:00}"
         : $"S{Season:00}" + string.Concat(Episodes.Select(number => $"E{number:00}"));
 
-    public string OutputDirectory => Path.Combine(Path.GetDirectoryName(FullPath)!, "Subtitles");
+    public string OutputDirectory => Path.GetDirectoryName(FullPath)!;
 }
 
 public sealed class UnrecognizedVideo
