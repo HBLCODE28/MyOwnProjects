@@ -323,23 +323,89 @@ if ('contribution' === $sub && null !== $id && ('POST' === $method || 'DELETE' =
             insertNotification($dbh, (int)$item['created_by'], (int)$item['id'], $uid, 'contribution_added', $qty);
         }
     } else {
-        if ($currentUserQty < $qty) {
-            if ($dbh->inTransaction()) $dbh->rollBack();
-            jsonError('You can only remove your own added quantity', 400);
-        }
+        $isCreator = (int)$item['created_by'] === (int)$uid;
 
-        if ($currentUserQty === $qty) {
-            $stmt = $dbh->prepare(
-                'DELETE FROM item_contributions WHERE item_id = :i AND user_id = :u'
-            );
-            $stmt->execute([':i' => $id, ':u' => $uid]);
+        if ($isCreator) {
+            // The item creator manages the total quantity. Keep at least one unit
+            // so decreasing quantity never deletes the item itself.
+            $currentTotal = (int)$item['base_quantity'] + (int)$current['total_extra'];
+            if ($qty > max(0, $currentTotal - 1)) {
+                if ($dbh->inTransaction()) $dbh->rollBack();
+                jsonError('Item quantity cannot be lower than 1', 400);
+            }
+
+            $remainingToRemove = $qty;
+
+            // Remove the creator's own added quantity first.
+            if ($remainingToRemove > 0 && $currentUserQty > 0) {
+                $remove = min($remainingToRemove, $currentUserQty);
+                if ($remove === $currentUserQty) {
+                    $stmt = $dbh->prepare('DELETE FROM item_contributions WHERE item_id = :i AND user_id = :u');
+                    $stmt->execute([':i' => $id, ':u' => $uid]);
+                } else {
+                    $stmt = $dbh->prepare(
+                        'UPDATE item_contributions SET quantity = quantity - :q WHERE item_id = :i AND user_id = :u'
+                    );
+                    $stmt->execute([':i' => $id, ':u' => $uid, ':q' => $remove]);
+                }
+                $remainingToRemove -= $remove;
+            }
+
+            // The creator may also remove quantity added by other members.
+            if ($remainingToRemove > 0) {
+                $stmt = $dbh->prepare(
+                    'SELECT user_id, quantity
+                       FROM item_contributions
+                      WHERE item_id = :i AND user_id <> :u
+                      ORDER BY quantity DESC, user_id ASC'
+                );
+                $stmt->execute([':i' => $id, ':u' => $uid]);
+                foreach ($stmt->fetchAll() as $contribution) {
+                    if ($remainingToRemove <= 0) break;
+                    $contributorId = (int)$contribution['user_id'];
+                    $contributorQty = (int)$contribution['quantity'];
+                    $remove = min($remainingToRemove, $contributorQty);
+
+                    if ($remove === $contributorQty) {
+                        $delete = $dbh->prepare('DELETE FROM item_contributions WHERE item_id = :i AND user_id = :u');
+                        $delete->execute([':i' => $id, ':u' => $contributorId]);
+                    } else {
+                        $update = $dbh->prepare(
+                            'UPDATE item_contributions SET quantity = quantity - :q WHERE item_id = :i AND user_id = :u'
+                        );
+                        $update->execute([':i' => $id, ':u' => $contributorId, ':q' => $remove]);
+                    }
+                    $remainingToRemove -= $remove;
+                }
+            }
+
+            // If no added quantity remains, decrease the creator's original base quantity.
+            if ($remainingToRemove > 0) {
+                $newBaseQuantity = max(1, (int)$item['base_quantity'] - $remainingToRemove);
+                $stmt = $dbh->prepare('UPDATE grocery_items SET quantity = :q WHERE id = :id');
+                $stmt->execute([':q' => $newBaseQuantity, ':id' => $id]);
+                $remainingToRemove = 0;
+            }
         } else {
-            $stmt = $dbh->prepare(
-                'UPDATE item_contributions
-                    SET quantity = quantity - :q
-                  WHERE item_id = :i AND user_id = :u'
-            );
-            $stmt->execute([':i' => $id, ':u' => $uid, ':q' => $qty]);
+            // Other members may only remove the quantity they personally added.
+            if ($currentUserQty < $qty) {
+                if ($dbh->inTransaction()) $dbh->rollBack();
+                jsonError('You can only remove your own added quantity', 400);
+            }
+
+            if ($currentUserQty === $qty) {
+                $stmt = $dbh->prepare(
+                    'DELETE FROM item_contributions WHERE item_id = :i AND user_id = :u'
+                );
+                $stmt->execute([':i' => $id, ':u' => $uid]);
+            } else {
+                $stmt = $dbh->prepare(
+                    'UPDATE item_contributions
+                        SET quantity = quantity - :q
+                      WHERE item_id = :i AND user_id = :u'
+                );
+                $stmt->execute([':i' => $id, ':u' => $uid, ':q' => $qty]);
+            }
         }
 
         logActivity($dbh, (int)$item['group_id'], $uid, $id, 'contribution_removed', $item['name'], $qty);

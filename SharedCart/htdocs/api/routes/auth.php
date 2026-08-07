@@ -270,8 +270,19 @@ if ('register' === $sub) {
     enforceAuthActionLimit($dbh, 'register', clientIpAddress() ?: 'unknown', 10, 60);
     assertContentAllowed($dbh, $username, null, 'username', 'user');
 
-    $stmt = $dbh->prepare('SELECT id FROM users WHERE (email = :email OR username = :username) AND deleted_at IS NULL LIMIT 1');
-    $stmt->execute([':email' => $email, ':username' => $username]);
+    $stmt = $dbh->prepare(
+        'SELECT id
+           FROM users
+          WHERE deleted_at IS NULL
+            AND (email = :email OR username = :username OR email = :username_as_email OR username = :email_as_username)
+          LIMIT 1'
+    );
+    $stmt->execute([
+        ':email' => $email,
+        ':username' => $username,
+        ':username_as_email' => $username,
+        ':email_as_username' => $email,
+    ]);
     if ($stmt->fetch()) jsonError('האימייל או שם המשתמש כבר קיימים', 409);
 
     try {
@@ -310,30 +321,40 @@ if ('register' === $sub) {
 }
 
 if ('login' === $sub) {
-    $email = strtolower(trim((string)($body['email'] ?? '')));
+    $identifier = trim((string)($body['identifier'] ?? $body['email'] ?? $body['username'] ?? ''));
     $password = (string)($body['password'] ?? '');
 
     $missing = [];
-    if ('' === $email) $missing[] = 'אימייל';
+    if ('' === $identifier) $missing[] = 'שם משתמש או אימייל';
     if ('' === $password) $missing[] = 'סיסמה';
     if ($missing) jsonError('חסרים הפרטים הבאים: ' . implode(', ', $missing));
 
-    if (strlen($email) > MAX_EMAIL_LEN || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        jsonError('כתובת האימייל אינה תקינה');
+    if (authUnicodeLength($identifier) > MAX_EMAIL_LEN || preg_match('/[\x00-\x1F\x7F]/u', $identifier)) {
+        jsonError('Invalid login identifier');
     }
 
     $dbh = getDb();
     ensureAdminSchema($dbh);
-    enforceLoginAttemptLimit($dbh, $email);
+    enforceLoginAttemptLimit($dbh, $identifier);
     $stmt = $dbh->prepare(
-        'SELECT id, password, role, blocked_until, blocked_reason, deleted_at, preferred_language, token_version,
+        'SELECT id, username, email, password, role, blocked_until, blocked_reason, deleted_at, preferred_language, token_version,
                 (blocked_until IS NOT NULL AND blocked_until > UTC_TIMESTAMP()) AS is_blocked
            FROM users
-          WHERE LOWER(TRIM(email)) = :email
+          WHERE LOWER(TRIM(email)) = LOWER(TRIM(:identifier_email))
+             OR LOWER(TRIM(username)) = LOWER(TRIM(:identifier_username))
+          ORDER BY CASE
+                     WHEN LOWER(TRIM(email)) = LOWER(TRIM(:priority_email)) THEN 0
+                     ELSE 1
+                   END
           LIMIT 1'
     );
-    $stmt->execute([':email' => $email]);
+    $stmt->execute([
+        ':identifier_email' => $identifier,
+        ':identifier_username' => $identifier,
+        ':priority_email' => $identifier,
+    ]);
     $user = $stmt->fetch();
+    $securityEmail = $user ? strtolower(trim((string)($user['email'] ?? ''))) : (filter_var($identifier, FILTER_VALIDATE_EMAIL) ? strtolower($identifier) : '');
 
     if ($user) {
         $storedHash = trim((string)$user['password']);
@@ -346,12 +367,12 @@ if ('login' === $sub) {
     }
 
     if (!$user || !authVerifyPassword($password, (string)$user['password'])) {
-        recordLoginFailure($dbh, $email);
-        logSecurityEvent($dbh, 'login_failed', 'warning', $user ? (int)$user['id'] : null, $email, '/api/auth/login', [
+        recordLoginFailure($dbh, $identifier);
+        logSecurityEvent($dbh, 'login_failed', 'warning', $user ? (int)$user['id'] : null, $securityEmail, '/api/auth/login', [
             'reason' => 'invalid_credentials',
             'account_found' => (bool)$user,
         ]);
-        jsonError('האימייל או הסיסמה אינם נכונים', 401);
+        jsonError('Invalid credentials', 401);
     }
 
     // Upgrade legacy hashes after a successful login. The password column is widened
@@ -369,15 +390,15 @@ if ('login' === $sub) {
         }
     }
 
-    clearLoginFailures($dbh, $email);
+    clearLoginFailures($dbh, $identifier);
     if (!empty($user['deleted_at'])) {
-        logSecurityEvent($dbh, 'login_denied_deleted_account', 'warning', (int)$user['id'], $email, '/api/auth/login', [
+        logSecurityEvent($dbh, 'login_denied_deleted_account', 'warning', (int)$user['id'], $securityEmail, '/api/auth/login', [
             'reason' => 'deleted_account',
         ]);
         jsonError('Account deleted', 403);
     }
     if ((int)($user['is_blocked'] ?? 0) === 1) {
-        logSecurityEvent($dbh, 'login_denied_blocked_account', 'warning', (int)$user['id'], $email, '/api/auth/login', [
+        logSecurityEvent($dbh, 'login_denied_blocked_account', 'warning', (int)$user['id'], $securityEmail, '/api/auth/login', [
             'reason' => 'blocked_account',
             'blocked_until' => (string)($user['blocked_until'] ?? ''),
         ]);
@@ -399,7 +420,7 @@ if ('login' === $sub) {
     setAuthSessionCookie($token);
 
     $role = (string)($user['role'] ?? 'user');
-    logSecurityEvent($dbh, 'login_success', 'info', (int)$user['id'], $email, '/api/auth/login', [
+    logSecurityEvent($dbh, 'login_success', 'info', (int)$user['id'], $securityEmail, '/api/auth/login', [
         'reason' => 'authenticated',
         'role' => $role,
     ]);

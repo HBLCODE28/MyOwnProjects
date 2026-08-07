@@ -76,6 +76,7 @@ public partial class MainWindow : Window
         try
         {
             string query = ShowNameCleaner.GetSearchName(folder);
+            string matchedQuery = query;
             List<TvShow>? shows = null;
 
             while (true)
@@ -87,7 +88,32 @@ public partial class MainWindow : Window
                     {
                         string withoutYear = ShowNameCleaner.RemoveYear(query);
                         if (!withoutYear.Equals(query, StringComparison.OrdinalIgnoreCase))
+                        {
                             shows = await App.Services.TvMaze.SearchShowsAsync(withoutYear, _operationCancellation.Token);
+                            if (shows.Count > 0)
+                                matchedQuery = withoutYear;
+                        }
+                    }
+
+                    if (shows.Count == 0)
+                    {
+                        string withoutDashSuffix = ShowNameCleaner.RemoveDashSuffix(query);
+                        if (!withoutDashSuffix.Equals(query, StringComparison.OrdinalIgnoreCase))
+                        {
+                            matchedQuery = withoutDashSuffix;
+                            shows = await App.Services.TvMaze.SearchShowsAsync(withoutDashSuffix, _operationCancellation.Token);
+
+                            if (shows.Count == 0)
+                            {
+                                string withoutDashSuffixYear = ShowNameCleaner.RemoveYear(withoutDashSuffix);
+                                if (!withoutDashSuffixYear.Equals(withoutDashSuffix, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    shows = await App.Services.TvMaze.SearchShowsAsync(withoutDashSuffixYear, _operationCancellation.Token);
+                                    if (shows.Count > 0)
+                                        matchedQuery = withoutDashSuffixYear;
+                                }
+                            }
+                        }
                     }
                     break;
                 }
@@ -118,7 +144,7 @@ public partial class MainWindow : Window
             }
 
             TvShow? selected;
-            if (TvMazeClient.IsConfidentAutomaticMatch(query, _candidateShows))
+            if (TvMazeClient.IsConfidentAutomaticMatch(matchedQuery, _candidateShows))
             {
                 selected = _candidateShows[0];
             }

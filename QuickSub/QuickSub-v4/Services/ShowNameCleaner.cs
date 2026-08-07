@@ -52,6 +52,16 @@ public static partial class ShowNameCleaner
         return SpacesRegex().Replace(result, " ").Trim();
     }
 
+    public static string RemoveDashSuffix(string value)
+    {
+        int separatorIndex = value.IndexOf(" - ", StringComparison.Ordinal);
+        if (separatorIndex <= 0)
+            return value;
+
+        string result = value[..separatorIndex].Trim();
+        return string.IsNullOrWhiteSpace(result) ? value : result;
+    }
+
     public static string NormalizeForComparison(string value)
     {
         string normalized = value.Normalize().ToLowerInvariant();

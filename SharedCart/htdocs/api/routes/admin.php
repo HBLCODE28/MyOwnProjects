@@ -824,9 +824,16 @@ if ('users' === $section) {
         if ($length > MAX_USERNAME_LEN) jsonError('Username too long');
         if (preg_match('/[\x00-\x1F\x7F]/u', $username)) jsonError('Username contains unsupported characters');
         assertContentAllowed($dbh, $username, null, 'admin_username_change', 'user', $targetId);
-        $check = $dbh->prepare('SELECT 1 FROM users WHERE username = :username AND id <> :id AND deleted_at IS NULL LIMIT 1');
-        $check->execute([':username' => $username, ':id' => $targetId]);
-        if ($check->fetchColumn()) jsonError('Username already taken', 409);
+        $check = $dbh->prepare(
+            'SELECT 1
+               FROM users
+              WHERE id <> :id
+                AND deleted_at IS NULL
+                AND (username = :username OR email = :username_as_email)
+              LIMIT 1'
+        );
+        $check->execute([':username' => $username, ':username_as_email' => $username, ':id' => $targetId]);
+        if ($check->fetchColumn()) jsonError('Email or username already taken', 409);
         $dbh->prepare('UPDATE users SET username = :username WHERE id = :id')->execute([':username' => $username, ':id' => $targetId]);
         adminAudit($dbh, $adminUserId, 'username_changed', 'user', $targetId, ['username' => $username]);
         jsonOut(['message' => 'Username updated', 'username' => $username]);

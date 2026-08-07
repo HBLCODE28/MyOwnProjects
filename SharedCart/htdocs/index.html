@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Karantina:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260708-4">
+  <link rel="stylesheet" href="style.css?v=20260728-6">
   </head>
   <body>
 
@@ -22,6 +22,7 @@
     <span class="hdr-title" id="hdrTitle">סל שיתופי</span>
     <div class="hdr-right">
       <button id="btnRenameGroup" class="hdr-text-btn hidden" aria-label="שנה את שם הקבוצה">שנה שם</button>
+      <button id="btnGroupManage" class="hdr-text-btn hidden" type="button" aria-label="פתח ניהול קבוצה">ניהול קבוצה</button>
       <button id="btnProfile" class="hdr-text-btn hdr-profile-btn" aria-label="פתח פרופיל">פרופיל</button>
       <button id="btnAdminDashboard" class="hdr-text-btn admin-dashboard-btn hidden" type="button" aria-label="פתח לוח ניהול" title="לוח ניהול"><svg class="icon icon-tabler icon-tabler-layout-dashboard tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-layout-dashboard"></use></svg><span id="adminDashboardLabel">לוח ניהול</span></button>
       <button id="btnLanguage" class="hdr-icon" type="button" aria-label="שפה" title="שפה"><svg class="icon icon-tabler icon-tabler-language tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-language"></use></svg></button>
@@ -45,8 +46,8 @@
         <div id="authError" class="msg-error hidden" role="alert"></div>
 
         <form id="formLogin" class="auth-card" novalidate>
-          <label for="loginEmail">אימייל</label>
-          <input type="email" id="loginEmail" name="username" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" maxlength="254" placeholder="your@email.com" required aria-describedby="loginEmailError">
+          <label for="loginEmail">שם משתמש או אימייל</label>
+          <input type="text" id="loginEmail" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="254" placeholder="שם משתמש או your@email.com" required aria-describedby="loginEmailError">
           <span id="loginEmailError" class="field-error hidden" role="alert"></span>
           <label for="loginPassword">סיסמה</label>
           <input type="password" id="loginPassword" name="password" autocomplete="current-password" placeholder="לפחות 8 תווים" required aria-describedby="loginPasswordError">
@@ -170,7 +171,7 @@
       </form>
       <datalist id="itemSuggestions"></datalist>
 
-      <div class="form-card" style="margin-top:12px">
+      <div class="form-card group-leave-card" style="margin-top:12px">
         <button id="btnLeaveGroup" class="btn-outline hidden">עזוב קבוצה</button>
       </div>
     </section>
@@ -195,6 +196,51 @@
       </div>
     </section>
 
+    <!-- GROUP MANAGEMENT -->
+    <section id="screenGroupAdmin" class="screen hidden">
+      <div class="group-admin-heading">
+        <div>
+          <p id="groupAdminEyebrow" class="section-label">ניהול קבוצה</p>
+          <h2 id="groupAdminTitle" class="group-admin-title">הגדרות והרשאות</h2>
+        </div>
+        <button id="btnGroupAdminBack" type="button" class="btn-outline group-admin-back">חזרה לרשימה</button>
+      </div>
+
+      <div class="group-admin-card">
+        <div class="group-admin-card-copy">
+          <h3 id="groupAdminEmailTitle">התראות במייל</h3>
+          <p id="groupAdminEmailDescription">שליחת מייל ליוצר הקבוצה בכל פעם שמשתתף אחר מסמן פריט כנלקח.</p>
+        </div>
+        <label class="group-admin-switch" for="groupEmailNotifications">
+          <input id="groupEmailNotifications" type="checkbox">
+          <span class="group-admin-switch-track" aria-hidden="true"></span>
+          <span id="groupEmailNotificationsLabel">קבלת התראות במייל</span>
+        </label>
+        <p id="groupAdminEmailStatus" class="group-admin-status hidden" role="status"></p>
+      </div>
+
+      <div class="group-admin-section">
+        <div class="group-admin-section-head">
+          <h3 id="groupAdminMembersTitle">ניהול משתתפים</h3>
+          <span id="groupAdminMemberCount" class="group-admin-count">0</span>
+        </div>
+        <ul id="groupAdminMemberList" class="group-admin-list" aria-label="ניהול משתתפים"></ul>
+        <p id="groupAdminMembersEmpty" class="empty-state hidden">אין משתתפים נוספים בקבוצה.</p>
+      </div>
+
+      <div class="group-admin-section">
+        <div class="group-admin-section-head">
+          <div>
+            <h3 id="groupAdminContentTitle">ניהול תוכן</h3>
+            <p id="groupAdminContentDescription" class="group-admin-description">אפשר למחוק פריטים שנוספו על ידי כל משתתף. מחיקת פריט מסתירה גם את ההערות המשויכות אליו.</p>
+          </div>
+          <span id="groupAdminContentCount" class="group-admin-count">0</span>
+        </div>
+        <ul id="groupAdminContentList" class="group-admin-list" aria-label="ניהול תוכן"></ul>
+        <p id="groupAdminContentEmpty" class="empty-state hidden">אין תוכן פעיל בקבוצה.</p>
+      </div>
+    </section>
+
   </main>
 
   <nav id="bottomNav" class="bottom-nav hidden" aria-label="ניווט">
@@ -213,6 +259,9 @@
     <div class="mobile-menu-secondary" aria-label="פעולות נוספות">
       <button id="mobileMenuProfile" type="button" class="mobile-menu-action"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-user-check tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-user-check"></use></svg></span><span>פרופיל</span></button>
       <button id="mobileMenuRename" type="button" class="mobile-menu-action hidden"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-pencil tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-pencil"></use></svg></span><span>שנה שם קבוצה</span></button>
+      <button id="mobileMenuManage" type="button" class="mobile-menu-action hidden"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-shield-check tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-shield-check"></use></svg></span><span>ניהול קבוצה</span></button>
+      <button id="mobileMenuLeave" type="button" class="mobile-menu-action danger hidden"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-users-group tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-users-group"></use></svg></span><span>עזוב קבוצה</span></button>
+      <button id="mobileMenuBack" type="button" class="mobile-menu-action"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-arrow-back-up tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-arrow-back-up"></use></svg></span><span>חזרה לקבוצות</span></button>
       <button id="mobileMenuLogout" type="button" class="mobile-menu-action danger"><span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-arrow-back-up tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-arrow-back-up"></use></svg></span><span>יציאה</span></button>
     </div>
   </nav>
@@ -311,6 +360,22 @@
     </div>
   </div>
 
+
+  <div id="commentComposerModal" class="report-modal comment-composer-modal hidden" role="dialog" aria-modal="true" aria-labelledby="commentComposerTitle">
+    <div class="report-card comment-composer-card">
+      <button id="commentComposerClose" type="button" class="report-close" aria-label="סגור הוספת הערה"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      <h2 id="commentComposerTitle" class="report-title">הוספת הערה</h2>
+      <p id="commentComposerTarget" class="report-target"></p>
+      <label id="commentComposerLabel" for="commentComposerBody" class="comment-composer-label">תוכן ההערה</label>
+      <textarea id="commentComposerBody" class="report-reason" maxlength="500" rows="5" placeholder="כתבו הערה..." aria-describedby="commentComposerError"></textarea>
+      <p id="commentComposerError" class="report-error hidden" role="alert"></p>
+      <div class="report-actions">
+        <button id="btnSubmitComment" type="button" class="btn-primary">הוסף הערה</button>
+        <button id="btnCancelComment" type="button" class="btn-ghost">ביטול</button>
+      </div>
+    </div>
+  </div>
+
   <div id="reportModal" class="report-modal hidden" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
     <div class="report-card">
       <button id="reportClose" type="button" class="report-close" aria-label="סגור דיווח"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
@@ -335,6 +400,6 @@
   </div>
 
   <script src="vendor/jquery-3.7.1.min.js?v=3.7.1-full-1"></script>
-  <script src="app.js?v=20260708-3"></script>
+  <script src="app.js?v=20260806-1"></script>
   </body>
   </html>

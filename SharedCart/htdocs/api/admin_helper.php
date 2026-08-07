@@ -111,6 +111,7 @@ function ensureAdminSchema(PDO $dbh): void {
 
     ensureColumn($dbh, 'groups', 'deleted_at', 'DATETIME NULL');
     ensureColumn($dbh, 'groups', 'deleted_by', 'INT UNSIGNED NULL');
+    ensureColumn($dbh, 'groups', 'notify_creator_on_item_taken', 'TINYINT(1) NOT NULL DEFAULT 0');
     ensureIndex($dbh, 'groups', 'idx_groups_deleted_at', '`deleted_at`');
 
     ensureColumn($dbh, 'item_comments', 'deleted_at', 'DATETIME NULL');
@@ -387,14 +388,13 @@ function findBlockedTerm(PDO $dbh, string $text): ?array {
         return null;
     }
 
+    // Match only a complete normalized word or phrase. Padding with spaces keeps
+    // punctuation-separated terms detectable without matching inside another word.
     $padded = ' ' . $normalized . ' ';
-    $compact = str_replace(' ', '', $normalized);
     foreach ($rows as $row) {
         $term = trim((string)$row['normalized_term']);
         if ('' === $term) continue;
         if (str_contains($padded, ' ' . $term . ' ')) return $row;
-        $termCompact = str_replace(' ', '', $term);
-        if (strlen($termCompact) >= 4 && str_contains($compact, $termCompact)) return $row;
     }
     return null;
 }

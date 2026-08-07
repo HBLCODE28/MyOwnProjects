@@ -30,7 +30,7 @@ const MAIN_LANGUAGE_TEXT = {
         forgot: 'שכחתי סיסמה', register: 'הרשמה', loginLink: 'יש לי חשבון - כניסה', profile: 'פרופיל', logout: 'יציאה',
         rename: 'שנה שם', groupsTitle: 'הקבוצות שלי', newGroup: 'קבוצה חדשה', joinGroup: 'הצטרף לקבוצה קיימת', create: 'צור', join: 'הצטרף',
         addItem: 'הוסף פריט', itemPlaceholder: 'שם פריט (לא חובה עם תמונה)', list: 'רשימה', history: 'היסטוריה', members: 'חברים', share: 'שתף',
-        email: 'אימייל', password: 'סיסמה', username: 'שם משתמש', confirmPassword: 'אימות סיסמה', authSub: 'קניות משותפות, בקלות',
+        email: 'אימייל', loginIdentifier: 'שם משתמש או אימייל', password: 'סיסמה', username: 'שם משתמש', confirmPassword: 'אימות סיסמה', authSub: 'קניות משותפות, בקלות',
         groupName: 'שם הקבוצה', invitePlaceholder: 'הדבק קישור הצטרפות...', profileDescription: 'כאן אפשר לשנות את שם המשתמש ואת סיסמת החשבון.',
         saveChanges: 'שמור שינויים', cancel: 'ביטול', addImage: 'הוסף תמונה', notifications: 'התראות', admin: 'לוח ניהול',
         minPassword: 'לפחות 8 תווים', yourName: 'השם שלך', passwordAgain: 'יש להזין את הסיסמה שוב', sendCode: 'שלח קוד אימות',
@@ -40,14 +40,18 @@ const MAIN_LANGUAGE_TEXT = {
         clearHistory: 'מחק היסטוריה', noActivity: 'אין פעילות עדיין', groupMembers: 'חברי הקבוצה', noMembers: 'אין חברים בקבוצה',
         deleteGroup: 'מחק קבוצה', moreActions: 'פעולות נוספות', message: 'הודעה', ok: 'אישור', itemActions: 'פעולות לפריט',
         addComment: 'הוסף הערה', reportItem: 'דווח על הפריט', deleteItem: 'מחק פריט', commentsTitle: 'הערות', noComments: 'אין הערות לפריט הזה.',
-        report: 'דיווח', reportReason: 'סיבת הדיווח', reportPlaceholder: 'תארו בקצרה מה הבעיה', sendReport: 'שלח דיווח', imageClose: 'סגור תמונה'
+        commentTitle: 'הוספת הערה', commentLabel: 'תוכן ההערה', commentPlaceholder: 'כתבו הערה...', saveComment: 'הוסף הערה', backToGroups: 'חזרה לקבוצות',
+        groupManagement: 'ניהול קבוצה', groupAdminTitle: 'הגדרות והרשאות', backToList: 'חזרה לרשימה', emailNotifications: 'התראות במייל',
+        emailNotificationsDescription: 'שליחת מייל ליוצר הקבוצה בכל פעם שמשתתף אחר מסמן פריט כנלקח.', emailNotificationsLabel: 'קבלת התראות במייל',
+        manageMembers: 'ניהול משתתפים', manageContent: 'ניהול תוכן', manageContentDescription: 'אפשר למחוק פריטים שנוספו על ידי כל משתתף. מחיקת פריט מסתירה גם את ההערות המשויכות אליו.',
+        deleteComment: 'מחק הערה', report: 'דיווח', reportReason: 'סיבת הדיווח', reportPlaceholder: 'תארו בקצרה מה הבעיה', sendReport: 'שלח דיווח', imageClose: 'סגור תמונה'
     },
     en: {
         siteTitle: 'SharedCart', skip: 'Skip to content', back: 'Back', login: 'Sign in', registerLink: 'Create an account',
         forgot: 'Forgot password', register: 'Register', loginLink: 'I already have an account', profile: 'Profile', logout: 'Sign out',
         rename: 'Rename', groupsTitle: 'My groups', newGroup: 'New group', joinGroup: 'Join an existing group', create: 'Create', join: 'Join',
         addItem: 'Add item', itemPlaceholder: 'Item name (optional with image)', list: 'List', history: 'History', members: 'Members', share: 'Share',
-        email: 'Email', password: 'Password', username: 'Username', confirmPassword: 'Password confirmation', authSub: 'Shared shopping, made simple',
+        email: 'Email', loginIdentifier: 'Username or email', password: 'Password', username: 'Username', confirmPassword: 'Password confirmation', authSub: 'Shared shopping, made simple',
         groupName: 'Group name', invitePlaceholder: 'Paste an invitation link...', profileDescription: 'Change your display name and account password.',
         saveChanges: 'Save changes', cancel: 'Cancel', addImage: 'Add image', notifications: 'Notifications', admin: 'Admin dashboard',
         minPassword: 'At least 8 characters', yourName: 'Your name', passwordAgain: 'Enter the password again', sendCode: 'Send verification code',
@@ -57,7 +61,11 @@ const MAIN_LANGUAGE_TEXT = {
         clearHistory: 'Clear history', noActivity: 'No activity yet', groupMembers: 'Group members', noMembers: 'No members in this group',
         deleteGroup: 'Delete group', moreActions: 'More actions', message: 'Message', ok: 'OK', itemActions: 'Item actions',
         addComment: 'Add comment', reportItem: 'Report item', deleteItem: 'Delete item', commentsTitle: 'Comments', noComments: 'No comments for this item.',
-        report: 'Report', reportReason: 'Report reason', reportPlaceholder: 'Briefly describe the problem', sendReport: 'Send report', imageClose: 'Close image'
+        commentTitle: 'Add comment', commentLabel: 'Comment', commentPlaceholder: 'Write a comment...', saveComment: 'Add comment', backToGroups: 'Back to groups',
+        groupManagement: 'Group management', groupAdminTitle: 'Settings and permissions', backToList: 'Back to list', emailNotifications: 'Email notifications',
+        emailNotificationsDescription: 'Email the group creator whenever another member marks an item as taken.', emailNotificationsLabel: 'Receive email notifications',
+        manageMembers: 'Manage members', manageContent: 'Manage content', manageContentDescription: 'Delete items added by any member. Deleting an item also hides its associated comments.',
+        deleteComment: 'Delete comment', report: 'Report', reportReason: 'Report reason', reportPlaceholder: 'Briefly describe the problem', sendReport: 'Send report', imageClose: 'Close image'
     }
 };
 
@@ -82,7 +90,10 @@ function applyMainLanguage() {
     $('#btnShowLogin').text(text.loginLink);
     $('#btnProfile, #btnHomeProfileLabel, #mobileMenuProfile span:last-child').text(text.profile);
     $('#btnLogout, #mobileMenuLogout span:last-child').text(text.logout);
+    $('#mobileMenuLeave span:last-child').text(text.leaveGroup);
+    $('#mobileMenuBack span:last-child').text(text.backToGroups);
     $('#btnRenameGroup').text(text.rename);
+    $('#btnGroupManage, #mobileMenuManage span:last-child, #groupAdminEyebrow').text(text.groupManagement);
     $('#mobileMenuRename span:last-child').text(currentLanguage === 'he' ? 'שנה שם קבוצה' : 'Rename group');
     $('#screenGroups .section-label').eq(0).text(text.groupsTitle);
     $('#screenGroups .section-label').eq(1).text(text.newGroup);
@@ -102,7 +113,9 @@ function applyMainLanguage() {
     });
     $('.auth-title').text(text.siteTitle);
     $('.auth-sub').first().text(text.authSub);
-    $('label[for="loginEmail"], label[for="regEmail"], label[for="forgotEmail"], label[for="resetEmail"]').text(text.email);
+    $('label[for="loginEmail"]').text(text.loginIdentifier);
+    $('label[for="regEmail"], label[for="forgotEmail"], label[for="resetEmail"]').text(text.email);
+    $('#loginEmail').attr('placeholder', currentLanguage === 'he' ? 'שם משתמש או your@email.com' : 'Username or your@email.com');
     $('label[for="loginPassword"], label[for="regPassword"]').text(text.password);
     $('label[for="newPassword"]').text(text.newPassword);
     $('label[for="regUsername"], label[for="profileUsername"]').text(text.username);
@@ -132,6 +145,14 @@ function applyMainLanguage() {
     $('#screenMembers .section-label').text(text.groupMembers);
     $('#membersEmpty').text(text.noMembers);
     $('#btnDeleteGroup').text(text.deleteGroup);
+    $('#groupAdminTitle').text(text.groupAdminTitle);
+    $('#btnGroupAdminBack').text(text.backToList);
+    $('#groupAdminEmailTitle').text(text.emailNotifications);
+    $('#groupAdminEmailDescription').text(text.emailNotificationsDescription);
+    $('#groupEmailNotificationsLabel').text(text.emailNotificationsLabel);
+    $('#groupAdminMembersTitle').text(text.manageMembers);
+    $('#groupAdminContentTitle').text(text.manageContent);
+    $('#groupAdminContentDescription').text(text.manageContentDescription);
     $('.mobile-menu-secondary').attr('aria-label', text.moreActions);
     $('#uiAlertTitle').text(text.message);
     $('#uiAlertOk').text(text.ok);
@@ -154,6 +175,11 @@ function applyMainLanguage() {
     $('#btnItemActionDelete .item-action-text').text(text.deleteItem);
     $('#commentsTitle').text(text.commentsTitle);
     $('#commentsEmpty').text(text.noComments);
+    $('#commentComposerTitle').text(text.commentTitle);
+    $('#commentComposerLabel').text(text.commentLabel);
+    $('#commentComposerBody').attr('placeholder', text.commentPlaceholder);
+    $('#btnSubmitComment').text(text.saveComment);
+    $('#btnCancelComment').text(text.cancel);
     $('#reportTitle').text(text.report);
     $('.report-label').text(text.reportReason);
     $('#reportReason').attr('placeholder', text.reportPlaceholder);
@@ -174,7 +200,7 @@ function applyMainLanguage() {
     $('#btnAdminDashboard').attr({'aria-label': text.admin, title: text.admin});
     $('#adminDashboardLabel').text(text.admin);
     updateHomeProfileName();
-    $('#itemActionsClose, #commentsClose, #reportClose, #imagePreviewClose').attr('aria-label', text.close);
+    $('#itemActionsClose, #commentsClose, #commentComposerClose, #reportClose, #imagePreviewClose').attr('aria-label', text.close);
 }
 
 function updateAdminDashboardButton() {
@@ -223,6 +249,9 @@ let profileReturnFocus      = null;
 let commentsReturnFocus     = null;
 let commentsModalItemId     = null;
 let commentsModalItemName   = '';
+let commentComposerReturnFocus = null;
+let commentComposerContext     = null;
+let commentComposerOnAdded     = null;
 let itemActionsReturnFocus   = null;
 let itemActionsContext       = null;
 let reportReturnFocus         = null;
@@ -288,6 +317,10 @@ function hideStyledAlert() {
 
 $(document).on('keydown', event => {
     if (event.key === 'Escape') {
+        if (!$('#commentComposerModal').hasClass('hidden')) {
+            hideCommentComposer();
+            return;
+        }
         hideExistingItemSheet();
         hideStyledAlert();
         hideImagePreview();
@@ -673,14 +706,23 @@ function renderCommentsModal(items) {
             .on('click', function () {
                 openReportModal('comment', comment.id, `${username}: ${body}`, this);
             });
+        const $metaActions = $('<span class="comments-entry-meta-actions">').append(
+            $('<span class="relative-time comments-entry-time">')
+                .attr('data-time', timeValue)
+                .text(relTime(timeValue)),
+            $reportButton
+        );
+        if (Number(comment.can_delete)) {
+            $metaActions.append(
+                $('<button type="button" class="comments-entry-delete">')
+                    .attr('aria-label', uiText(`מחק את ההערה של ${username}`, `Delete ${username}'s comment`))
+                    .append(tablerIcon('trash'))
+                    .on('click', () => deleteComment(comment.id, username))
+            );
+        }
         const $meta = $('<div class="comments-entry-meta">').append(
             $('<strong class="comments-entry-user">').text(username),
-            $('<span class="comments-entry-meta-actions">').append(
-                $('<span class="relative-time comments-entry-time">')
-                    .attr('data-time', timeValue)
-                    .text(relTime(timeValue)),
-                $reportButton
-            )
+            $metaActions
         );
         $('<li class="comments-entry">').append(
             $meta,
@@ -689,6 +731,18 @@ function renderCommentsModal(items) {
     });
 
     refreshRelativeTimes();
+}
+
+function deleteComment(commentId, username) {
+    if (!commentsModalItemId || !commentId) return;
+    if (!confirm(uiText(`למחוק את ההערה של "${username}"?`, `Delete ${username}'s comment?`))) return;
+    apiCall('DELETE', `/items/${commentsModalItemId}/comments?comment_id=${encodeURIComponent(commentId)}`)
+        .done(() => {
+            loadCommentsModal();
+            loadItems();
+            if (!$('#screenGroupAdmin').hasClass('hidden')) loadGroupManagement();
+        })
+        .fail(xhr => $('#commentsStatus').text(apiErr(xhr)).removeClass('hidden'));
 }
 
 function loadCommentsModal() {
@@ -743,9 +797,9 @@ $('#commentsClose').on('click', hideCommentsModal);
 $('#commentsModal').on('click', event => {
     if (event.target && event.target.id === 'commentsModal') hideCommentsModal();
 });
-$('#btnAddCommentFromModal').on('click', () => {
+$('#btnAddCommentFromModal').on('click', function () {
     if (!commentsModalItemId) return;
-    addComment(commentsModalItemId, commentsModalItemName || uiText('הפריט', 'the item'), loadCommentsModal);
+    addComment(commentsModalItemId, commentsModalItemName || uiText('הפריט', 'the item'), loadCommentsModal, this);
 });
 
 function openItemActionsModal(context, trigger) {
@@ -759,7 +813,7 @@ function openItemActionsModal(context, trigger) {
     $('#itemActionCommentsText').text(commentCount > 0 ? uiText('הצג הערות', 'View comments') : uiText('הוסף הערה', 'Add comment'));
     $('#itemActionCommentsCount').text(commentCount).toggleClass('hidden', commentCount < 1);
     $('#itemActionImageText').text(itemActionsContext.hasImage ? uiText('החלף תמונה', 'Replace image') : uiText('הוסף תמונה', 'Add image'));
-    $('#btnItemActionDelete').toggleClass('hidden', !itemActionsContext.isCreator);
+    $('#btnItemActionDelete').toggleClass('hidden', !itemActionsContext.canDelete);
     $('#itemActionsModal').removeClass('hidden');
     $('body').addClass('item-actions-modal-open');
     $('#itemActionsClose').trigger('focus');
@@ -789,7 +843,7 @@ $('#btnItemActionComments').on('click', () => {
     hideItemActionsModal(false);
     itemActionsReturnFocus = null;
     if (context.commentCount > 0) openCommentsModal(context.id, context.name, returnFocus);
-    else addComment(context.id, context.actionName);
+    else addComment(context.id, context.actionName, null, returnFocus);
 });
 $('#btnItemActionImage').on('click', () => {
     const context = itemActionsContext;
@@ -808,7 +862,7 @@ $('#btnItemActionReport').on('click', () => {
 });
 $('#btnItemActionDelete').on('click', () => {
     const context = itemActionsContext;
-    if (!context || !context.isCreator) return;
+    if (!context || !context.canDelete) return;
     hideItemActionsModal(false);
     itemActionsReturnFocus = null;
     deleteItem(context.id, context.actionName);
@@ -835,6 +889,18 @@ $('#mobileMenuProfile').on('click', () => {
 $('#mobileMenuRename').on('click', () => {
     closeMobileGroupMenu();
     $('#btnRenameGroup').trigger('click');
+});
+$('#mobileMenuManage').on('click', () => {
+    closeMobileGroupMenu();
+    openGroupManagement();
+});
+$('#mobileMenuLeave').on('click', () => {
+    closeMobileGroupMenu();
+    $('#btnLeaveGroup').trigger('click');
+});
+$('#mobileMenuBack').on('click', () => {
+    closeMobileGroupMenu();
+    $('#btnBack').trigger('click');
 });
 $('#mobileMenuLogout').on('click', () => {
     closeMobileGroupMenu();
@@ -916,7 +982,7 @@ function setHeader(title, showBack, canRename = false) {
 
 // Auth
 const authFieldConfig = {
-    loginEmail: { errorId: 'loginEmailError', label: uiText('אימייל', 'Email') },
+    loginEmail: { errorId: 'loginEmailError', label: uiText('שם משתמש או אימייל', 'Username or email') },
     loginPassword: { errorId: 'loginPasswordError', label: uiText('סיסמה', 'Password') },
     regUsername: { errorId: 'regUsernameError', label: uiText('שם משתמש', 'Username') },
     regEmail: { errorId: 'regEmailError', label: uiText('אימייל', 'Email') },
@@ -986,8 +1052,10 @@ $('#btnShowLogin').on('click', () => {
 });
 
 $('#btnShowForgotPassword').on('click', () => {
+    const loginIdentifier = $('#loginEmail').val().trim();
+    const registrationEmail = $('#regEmail').val().trim();
     clearResetFlow();
-    $('#forgotEmail').val($('#loginEmail').val().trim() || $('#regEmail').val().trim());
+    $('#forgotEmail').val(validEmail(loginIdentifier) ? loginIdentifier : registrationEmail);
     showAuthForm('formForgotPassword');
 });
 
@@ -1006,15 +1074,15 @@ $('#formLogin').on('submit', event => {
     clearAuthErr();
     clearAuthFieldErrors();
 
-    const email = $('#loginEmail').val().trim().toLowerCase();
+    const identifier = $('#loginEmail').val().trim();
     const password = $('#loginPassword').val();
     const missing = [];
     const invalidFields = [];
 
-    if (!email) {
-        missing.push(uiText('אימייל', 'Email'));
+    if (!identifier) {
+        missing.push(uiText('שם משתמש או אימייל', 'Username or email'));
         invalidFields.push('loginEmail');
-        setAuthFieldError('loginEmail', uiText('יש להזין כתובת אימייל', 'Enter an email address'));
+        setAuthFieldError('loginEmail', uiText('יש להזין שם משתמש או אימייל', 'Enter a username or email'));
     }
     if (!password) {
         missing.push(uiText('סיסמה', 'Password'));
@@ -1026,21 +1094,15 @@ $('#formLogin').on('submit', event => {
         focusFirstInvalid(invalidFields);
         return;
     }
-    if (email.length > 254) {
-        setAuthFieldError('loginEmail', uiText('כתובת האימייל ארוכה מדי', 'The email address is too long'));
-        authErr(uiText('כתובת האימייל ארוכה מדי', 'The email address is too long'));
-        focusFirstInvalid(['loginEmail']);
-        return;
-    }
-    if (!validEmail(email)) {
-        setAuthFieldError('loginEmail', uiText('כתובת האימייל אינה תקינה', 'The email address is invalid'));
-        authErr(uiText('כתובת האימייל אינה תקינה', 'The email address is invalid'));
+    if (unicodeLength(identifier) > 254 || /[\x00-\x1F\x7F]/u.test(identifier)) {
+        setAuthFieldError('loginEmail', uiText('שם המשתמש או האימייל אינם תקינים', 'The username or email is invalid'));
+        authErr(uiText('שם המשתמש או האימייל אינם תקינים', 'The username or email is invalid'));
         focusFirstInvalid(['loginEmail']);
         return;
     }
 
     const $button = $('#btnLogin').prop('disabled', true);
-    apiCall('POST', '/auth/login', { email, password })
+    apiCall('POST', '/auth/login', { identifier, password })
         .done(res => {
             saveToken(res.token);
             currentUserRole = String(res.role || 'user');
@@ -1288,7 +1350,8 @@ function clearAuthErr() {
 function updateGroupActions() {
     $('#btnDeleteGroup').toggleClass('hidden', !currentGroupCanRename);
     $('#btnLeaveGroup').toggleClass('hidden', currentGroupCanRename);
-    $('#mobileMenuRename').toggleClass('hidden', !currentGroupCanRename);
+    $('#btnGroupManage, #mobileMenuManage, #mobileMenuRename').toggleClass('hidden', !currentGroupCanRename);
+    $('#mobileMenuLeave').toggleClass('hidden', currentGroupCanRename);
 }
 
 function normalizeGroupsResponse(response) {
@@ -1308,7 +1371,7 @@ function loadGroups() {
     $('#notifBadge, #notifPanel').addClass('hidden');
     $('#notifBadge').text('');
     notificationsPanelOpen = false;
-    $('#btnLeaveGroup, #btnDeleteGroup').addClass('hidden');
+    $('#btnLeaveGroup, #btnDeleteGroup, #btnGroupManage, #mobileMenuManage, #mobileMenuLeave').addClass('hidden');
     showScreen('screenGroups');
 
     apiCall('GET', '/groups')
@@ -1539,6 +1602,8 @@ $('#btnAdminDashboard').on('click', () => {
     }
 });
 
+$('#btnGroupManage').on('click', openGroupManagement);
+
 $('#btnLanguage').on('click', () => {
     currentLanguage = currentLanguage === 'he' ? 'en' : 'he';
     applyMainLanguage();
@@ -1592,6 +1657,7 @@ function renderItems(items) {
 function buildRow(item) {
     const isDone = !!Number(item.is_completed);
     const isCreator = Number(currentUserId) === Number(item.created_by);
+    const canDelete = isCreator || currentGroupCanRename;
     const myContributionQty = Math.max(0, Number(item.my_contribution_qty) || 0);
     const totalLimit = Math.max(0, Number(item.total_limit) || 10);
     const totalRemaining = Math.max(0, Number(item.total_remaining) || Math.max(0, totalLimit - Number(item.quantity || 0)));
@@ -1640,7 +1706,8 @@ function buildRow(item) {
                 actionName,
                 commentCount,
                 hasImage: !!imagePath,
-                isCreator
+                isCreator,
+                canDelete
             }, this);
         });
     if (commentCount > 0) {
@@ -1671,10 +1738,13 @@ function buildRow(item) {
             .appendTo($titleWrap);
     }
 
+    const itemQuantity = Math.max(0, Number(item.quantity) || 0);
+    const canDecreaseQuantity = isCreator ? itemQuantity > 1 : myContributionQty > 0;
     const $minus = $('<button type="button" class="qty-btn minus">')
         .attr('aria-label', uiText('הורד כמות', 'Decrease quantity'))
         .append(tablerIcon('minus'))
-        .toggleClass('hidden', isDone || myContributionQty <= 0)
+        .toggleClass('hidden', isDone || !canDecreaseQuantity)
+        .prop('disabled', isDone || !canDecreaseQuantity)
         .on('click', () => adjustContribution(item.id, -1));
 
     const $plus = $('<button type="button" class="qty-btn plus">')
@@ -1785,19 +1855,87 @@ function deleteItem(id, name) {
     apiCall('DELETE', `/items/${id}`).done(loadItems).fail(xhr => alert(apiErr(xhr)));
 }
 
-function addComment(itemId, itemName, onAdded) {
-    const comment = prompt(`הוספת הערה ל"${itemName}"`);
-    if (comment === null) return;
-    const body = comment.trim();
-    if (!body) return;
+function addComment(itemId, itemName, onAdded, trigger) {
+    const id = Number(itemId) || null;
+    if (!id) return;
 
-    apiCall('POST', `/items/${itemId}/comments`, { body })
+    commentComposerReturnFocus = trigger || document.activeElement;
+    commentComposerContext = {
+        itemId: id,
+        itemName: String(itemName || '').trim()
+    };
+    commentComposerOnAdded = typeof onAdded === 'function' ? onAdded : null;
+
+    const target = commentComposerContext.itemName
+        ? uiText(`לפריט: ${commentComposerContext.itemName}`, `Item: ${commentComposerContext.itemName}`)
+        : '';
+    $('#commentComposerTarget').text(target).toggleClass('hidden', !target);
+    $('#commentComposerBody').val('').removeAttr('aria-invalid');
+    $('#commentComposerError').text('').addClass('hidden');
+    $('#commentComposerModal').removeClass('hidden');
+    $('body').addClass('comment-composer-open');
+    $('#commentComposerBody').trigger('focus');
+}
+
+function hideCommentComposer(restoreFocus = true) {
+    const $modal = $('#commentComposerModal');
+    if (!$modal.length || $modal.hasClass('hidden')) return;
+
+    $modal.addClass('hidden');
+    $('body').removeClass('comment-composer-open');
+    $('#commentComposerBody').val('').removeAttr('aria-invalid');
+    $('#commentComposerError').text('').addClass('hidden');
+    $('#commentComposerTarget').text('').addClass('hidden');
+    commentComposerContext = null;
+    commentComposerOnAdded = null;
+
+    if (restoreFocus && commentComposerReturnFocus && document.contains(commentComposerReturnFocus)) {
+        commentComposerReturnFocus.focus();
+    }
+    commentComposerReturnFocus = null;
+}
+
+function submitComment() {
+    if (!commentComposerContext) return;
+    const body = String($('#commentComposerBody').val() || '').trim();
+    if (!body) {
+        $('#commentComposerBody').attr('aria-invalid', 'true').trigger('focus');
+        $('#commentComposerError').text(uiText('יש להזין הערה', 'Enter a comment')).removeClass('hidden');
+        return;
+    }
+    if (Array.from(body).length > 500) {
+        $('#commentComposerBody').attr('aria-invalid', 'true').trigger('focus');
+        $('#commentComposerError').text(uiText('ההערה יכולה להכיל עד 500 תווים', 'The comment can contain up to 500 characters')).removeClass('hidden');
+        return;
+    }
+
+    const context = {...commentComposerContext};
+    const onAdded = commentComposerOnAdded;
+    const $button = $('#btnSubmitComment').prop('disabled', true).text(uiText('מוסיף...', 'Adding...'));
+    apiCall('POST', `/items/${context.itemId}/comments`, { body })
         .done(() => {
+            hideCommentComposer(false);
             loadItems();
             if (typeof onAdded === 'function') onAdded();
         })
-        .fail(xhr => alert(apiErr(xhr)));
+        .fail(xhr => {
+            $('#commentComposerBody').attr('aria-invalid', 'true');
+            $('#commentComposerError').text(apiErr(xhr)).removeClass('hidden');
+        })
+        .always(() => $button.prop('disabled', false).text(MAIN_LANGUAGE_TEXT[currentLanguage].saveComment));
 }
+
+$('#commentComposerClose, #btnCancelComment').on('click', () => hideCommentComposer());
+$('#commentComposerModal').on('click', event => {
+    if (event.target && event.target.id === 'commentComposerModal') hideCommentComposer();
+});
+$('#commentComposerBody').on('input', function () {
+    $(this).removeAttr('aria-invalid');
+    $('#commentComposerError').text('').addClass('hidden');
+}).on('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') submitComment();
+});
+$('#btnSubmitComment').on('click', submitComment);
 
 function pickItemImage(itemId, itemName) {
     const $input = $('<input type="file" accept="image/*" class="hidden">').appendTo('body');
@@ -1833,11 +1971,13 @@ function adjustContribution(itemId, delta) {
                 const quantity = Math.max(0, Number(updated.quantity) || 0);
                 const myQuantity = Math.max(0, Number(updated.my_contribution_qty) || 0);
                 const remaining = Math.max(0, Number(updated.total_remaining) || 0);
+                const isCreator = Number(currentUserId) === Number(updated.created_by);
+                const canDecrease = isCreator ? quantity > 1 : myQuantity > 0;
 
                 $row.find('.item-qty').text('×' + quantity);
                 $row.find('.qty-btn.minus')
-                    .toggleClass('hidden', myQuantity <= 0)
-                    .prop('disabled', myQuantity <= 0);
+                    .toggleClass('hidden', !canDecrease)
+                    .prop('disabled', !canDecrease);
                 $row.find('.qty-btn.plus').prop('disabled', remaining <= 0);
             } else {
                 $buttons.prop('disabled', false);
@@ -2101,6 +2241,155 @@ function removeMember(userId, username) {
         .fail(xhr => alert(apiErr(xhr)));
 }
 
+// Group management
+function openGroupManagement() {
+    if (!currentGroupId || !currentGroupCanRename) return;
+    closeMobileGroupMenu();
+    $('.nav-btn').removeClass('active').removeAttr('aria-current');
+    showScreen('screenGroupAdmin');
+    $('#btnNotifications, #notifPanel').addClass('hidden');
+    notificationsPanelOpen = false;
+    loadGroupManagement();
+    requestAnimationFrame(syncFixedUiOffsets);
+}
+
+function closeGroupManagement() {
+    if (!currentGroupId) return;
+    showScreen('screenItems');
+    $('.nav-btn').removeClass('active').removeAttr('aria-current');
+    $('.nav-btn[data-tab="items"]').addClass('active').attr('aria-current', 'page');
+    $('#btnNotifications').removeClass('hidden');
+    loadItems();
+    requestAnimationFrame(syncFixedUiOffsets);
+}
+
+function setGroupAdminStatus(message, isError = false) {
+    $('#groupAdminEmailStatus')
+        .text(message || '')
+        .toggleClass('hidden', !message)
+        .toggleClass('is-error', !!isError);
+}
+
+function loadGroupManagement() {
+    if (!currentGroupId || !currentGroupCanRename) return;
+    $('#groupAdminMemberList, #groupAdminContentList').empty();
+    $('#groupAdminMembersEmpty, #groupAdminContentEmpty').addClass('hidden');
+    $('#groupEmailNotifications').prop('disabled', true);
+    setGroupAdminStatus(uiText('טוען הגדרות...', 'Loading settings...'));
+
+    apiCall('GET', `/groups/${currentGroupId}/management`)
+        .done(response => {
+            const group = response && response.group ? response.group : {};
+            const members = response && Array.isArray(response.members) ? response.members : [];
+            const items = response && Array.isArray(response.items) ? response.items : [];
+            $('#groupEmailNotifications').prop('checked', !!group.notify_creator_on_item_taken).prop('disabled', false);
+            renderGroupAdminMembers(members);
+            renderGroupAdminContent(items);
+            setGroupAdminStatus('');
+        })
+        .fail(xhr => {
+            setGroupAdminStatus(apiErr(xhr), true);
+            if (xhr.status === 403) {
+                currentGroupCanRename = false;
+                updateGroupActions();
+                closeGroupManagement();
+            }
+        });
+}
+
+function renderGroupAdminMembers(members) {
+    const $list = $('#groupAdminMemberList').empty();
+    $('#groupAdminMemberCount').text(members.length);
+    $('#groupAdminMembersEmpty').toggleClass('hidden', members.length > 1);
+
+    members.forEach(member => {
+        const isCreator = !!member.is_creator;
+        const role = isCreator ? uiText('יוצר/ת הקבוצה', 'Group creator') : uiText('משתתף/ת', 'Member');
+        const $row = $('<li class="group-admin-row">').append(
+            $('<div class="group-admin-row-copy">').append(
+                $('<strong>').text(member.username || uiText('משתמש/ת', 'User')),
+                $('<span>').text(role)
+            )
+        );
+        if (!isCreator) {
+            $row.append(
+                $('<button type="button" class="group-admin-remove">')
+                    .text(uiText('הסר מהקבוצה', 'Remove from group'))
+                    .on('click', () => removeManagedMember(member.id, member.username))
+            );
+        }
+        $list.append($row);
+    });
+}
+
+function removeManagedMember(userId, username) {
+    if (!currentGroupId || !currentGroupCanRename) return;
+    if (!confirm(uiText(`להסיר את "${username}" מהקבוצה?`, `Remove "${username}" from the group?`))) return;
+    apiCall('DELETE', `/groups/${currentGroupId}/members?user_id=${encodeURIComponent(userId)}`)
+        .done(() => {
+            loadGroupManagement();
+            loadMembers();
+        })
+        .fail(xhr => setGroupAdminStatus(apiErr(xhr), true));
+}
+
+function renderGroupAdminContent(items) {
+    const $list = $('#groupAdminContentList').empty();
+    $('#groupAdminContentCount').text(items.length);
+    $('#groupAdminContentEmpty').toggleClass('hidden', items.length > 0);
+
+    items.forEach(item => {
+        const name = String(item.name || '').trim() || uiText('פריט עם תמונה', 'Image item');
+        const commentCount = Math.max(0, Number(item.comment_count) || 0);
+        const status = Number(item.is_completed) ? uiText('נלקח', 'Taken') : uiText('פעיל', 'Active');
+        const details = uiText(
+            `${item.creator || ''} - ${status}${commentCount ? ` - ${commentCount} הערות` : ''}`,
+            `${item.creator || ''} - ${status}${commentCount ? ` - ${commentCount} comments` : ''}`
+        );
+        $list.append(
+            $('<li class="group-admin-row group-admin-content-row">').append(
+                $('<div class="group-admin-row-copy">').append(
+                    $('<strong>').text(name),
+                    $('<span>').text(details)
+                ),
+                $('<button type="button" class="group-admin-delete">')
+                    .text(uiText('מחק תוכן', 'Delete content'))
+                    .on('click', () => deleteManagedItem(item.id, name))
+            )
+        );
+    });
+}
+
+function deleteManagedItem(itemId, name) {
+    if (!currentGroupId || !currentGroupCanRename) return;
+    if (!confirm(uiText(`למחוק את "${name}" ואת ההערות שלו?`, `Delete "${name}" and its comments?`))) return;
+    apiCall('DELETE', `/items/${itemId}`)
+        .done(() => {
+            loadGroupManagement();
+            loadItems();
+            loadActivity();
+        })
+        .fail(xhr => setGroupAdminStatus(apiErr(xhr), true));
+}
+
+$('#btnGroupAdminBack').on('click', closeGroupManagement);
+$('#groupEmailNotifications').on('change', function () {
+    if (!currentGroupId || !currentGroupCanRename) return;
+    const enabled = this.checked;
+    const $checkbox = $(this).prop('disabled', true);
+    setGroupAdminStatus(uiText('שומר...', 'Saving...'));
+    apiCall('PATCH', `/groups/${currentGroupId}/management`, { notify_creator_on_item_taken: enabled })
+        .done(response => {
+            $checkbox.prop('checked', !!response.notify_creator_on_item_taken);
+            setGroupAdminStatus(uiText('ההגדרה נשמרה', 'Setting saved'));
+        })
+        .fail(xhr => {
+            $checkbox.prop('checked', !enabled);
+            setGroupAdminStatus(apiErr(xhr), true);
+        })
+        .always(() => $checkbox.prop('disabled', false));
+});
+
 // Share
 function buildShareUrl(token) {
     const url = new URL(window.location.href);
@@ -2255,6 +2544,8 @@ $('.nav-btn').on('click', function () {
     $('#screenItems').toggleClass('hidden', tab !== 'items');
     $('#screenActivity').toggleClass('hidden', tab !== 'activity');
     $('#screenMembers').toggleClass('hidden', tab !== 'members');
+    $('#screenGroupAdmin').addClass('hidden');
+    $('#btnNotifications').removeClass('hidden');
     if (tab === 'activity') loadActivity();
     if (tab === 'members') loadMembers();
     requestAnimationFrame(syncFixedUiOffsets);
@@ -2444,13 +2735,15 @@ function apiErr(xhr) {
             'Report already submitted': 'You already submitted an open report for this content.',
             'Item name or image required': 'Enter an item name or select an image.',
             'Contribution limit reached': 'The total quantity limit is 10.',
-            'Too many login attempts': 'Too many login attempts. Try again in 15 minutes.'
+            'Too many login attempts': 'Too many login attempts. Try again in 15 minutes.',
+            'Invalid login identifier': 'The username or email is invalid.',
+            'Invalid credentials': 'The username/email or password is incorrect.'
         };
         if (englishMessages[message]) return englishMessages[message];
         if (message) return message;
         const englishStatus = {
             0: 'Cannot connect to the server. Check the internet connection and try again.',
-            400: 'The request is invalid.', 401: 'The email or password is incorrect, or you need to sign in again.',
+            400: 'The request is invalid.', 401: 'The username/email or password is incorrect, or you need to sign in again.',
             403: 'You do not have permission to perform this action.', 404: 'The requested information was not found.',
             405: 'This action is not supported.', 409: 'The information already exists.', 410: 'The information is no longer available.',
             422: 'Some of the entered information is invalid.', 429: 'Too many attempts. Try again later.',
@@ -2472,7 +2765,8 @@ function apiErr(xhr) {
         'Group deleted': 'הקבוצה נמחקה',
         'Left group': 'עזבת את הקבוצה',
         'Internal Server Error': 'אירעה שגיאה פנימית בשרת',
-        'Invalid credentials': 'האימייל או הסיסמה אינם נכונים',
+        'Invalid credentials': 'שם המשתמש/האימייל או הסיסמה אינם נכונים',
+        'Invalid login identifier': 'שם המשתמש או האימייל אינם תקינים',
         'Invalid email': uiText('כתובת האימייל אינה תקינה', 'The email address is invalid'),
         'Invalid token': 'קישור ההצטרפות אינו תקין',
         'Invite storage unavailable': 'אחסון קישורי השיתוף לא הוגדר במסד הנתונים',
@@ -2546,7 +2840,7 @@ function apiErr(xhr) {
     const statusMessages = {
         0: 'לא ניתן להתחבר לשרת. בדקי את החיבור לאינטרנט ונסי שוב.',
         400: 'הבקשה אינה תקינה',
-        401: 'האימייל או הסיסמה אינם נכונים, או שנדרשת התחברות מחדש',
+        401: 'שם המשתמש/האימייל או הסיסמה אינם נכונים, או שנדרשת התחברות מחדש',
         403: 'אין הרשאה לבצע את הפעולה',
         404: 'המידע המבוקש לא נמצא',
         405: 'הפעולה אינה נתמכת',
