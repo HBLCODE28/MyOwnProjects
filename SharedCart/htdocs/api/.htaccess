@@ -1,3 +1,5 @@
+Options -MultiViews
+
 RewriteEngine On
 
 # Preserve Bearer tokens when PHP runs through CGI/FastCGI.
