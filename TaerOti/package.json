@@ -1,6 +1,6 @@
 {
   "name": "taer-oti",
-  "version": "0.4.8",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/game.test.ts tests/links.test.ts tests/socket.test.ts",
     "test:deep": "npm run typecheck && npm test && npm run build",
-    "test:live": "tsx scripts/live-test.ts"
+    "test:live": "tsx scripts/live-test.ts",
+    "test:players": "tsx scripts/local-test-players.ts"
   },
   "dependencies": {
     "next": "15.5.22",

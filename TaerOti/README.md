@@ -1,4 +1,4 @@
-# תאר אותי - MVP 0.4.8
+# תאר אותי - MVP 0.4.9
 
 אתר Mobile-first בעברית ו-RTL למשחק "תאר אותי".
 
@@ -19,6 +19,7 @@
 - שיתוף הזמנה דרך כפתור "שתף משחק" בלי להציג את ה-URL בממשק, עם הודעת הזמנה קצרה ואימוג'ים ליד הקישור
 - בטלפון, כאשר Web Share זמין, הכפתור פותח את חלון השיתוף של המכשיר; ב-HTTP מקומי או בדפדפן ללא Web Share ההזמנה מועתקת ללוח
 - הצטרפות ללא חשבון
+- משחק יכול להתחיל רק כאשר יש לפחות 4 משתתפים מחוברים בחדר
 - QR חזר ללובי המארגן ומוצג גם במחשב וגם בטלפון; הוא מפנה ישירות לקישור ההזמנה
 - הזנת קוד חדר במובייל גוללת את השדה לאזור הגלוי ומוסיפה מרווח מול המקלדת כדי שהקוד לא יוסתר
 - כותרת הלובי ממורכזת
@@ -86,6 +87,24 @@ ipconfig
 ```text
 http://10.100.102.16:3000
 ```
+
+## משתמשי בדיקה מקומיים ללא כפתור QA
+
+כלי הבדיקה נמצא מחוץ לאתר ואינו מוסיף endpoint או כפתור QA לממשק.
+
+1. הפעילו את השרת עם `START_TAER_OTI.bat`.
+2. צרו חדר רגיל באתר והעתיקו את קוד החדר.
+3. הפעילו `ADD_TEST_PLAYERS.bat`.
+4. הזינו את קוד החדר ואת מספר משתמשי הבדיקה. ברירת המחדל היא 3 - יחד עם המארגן מתקבלים 4 משתתפים, המינימום למשחק.
+5. השאירו את חלון ה-BAT פתוח. משתמשי הבדיקה יסמנו מוכנות וינחשו שמות אקראיים. `Ctrl+C` מנתק אותם.
+
+אפשר גם דרך CMD:
+
+```cmd
+npm run test:players -- 7Q3K9M2R 3 http://localhost:3000
+```
+
+הכלי מסכים להתחבר רק ל-`localhost` או לכתובת פרטית ברשת המקומית, כגון `10.x.x.x` או `192.168.x.x`.
 
 ## בדיקות דרך CMD
 
@@ -201,3 +220,21 @@ npm start
 - אפשרות QA הוסרה מהממשק, מה-Socket API וממנוע המשחק.
 - פריסת Desktop הוקטנה ונבנתה למסכי 1920x1080 בלי להגדיל יתר על המידה כרטיסים וטקסט.
 - תור נסגר מוקדם כאשר כל המנחשים המחוברים והזכאים כבר שלחו ניחוש.
+
+
+## 0.4.9
+
+- Arial נאכף על כל רכיבי הממשק גם ב-Windows/Chrome.
+- משקלי פונט ביניים הוחלפו ב-bold רגיל במקומות רלוונטיים כדי למנוע רינדור שונה בין מחשב לטלפון.
+- פסי הגלילה עוצבו בצבעי הממשק.
+- START_TAER_OTI.bat מוחק את תיקיית .next לפני ההפעלה כדי למנוע טעינת CSS ישן.
+
+
+## Font rendering note
+The UI now forces the local Arial face on every element and uses only Arial regular/bold weights. `START_TAER_OTI.bat` clears `.next` before every launch.
+
+
+## Changes in 0.5.0
+
+- A turn is not skipped when all remaining guesses were auto-filled at the start of that turn; the describer still gets the full 10-second turn.
+- Turn order is reshuffled every round and is guaranteed not to be identical to the previous round.

@@ -10,7 +10,7 @@ export const DEFAULT_TIMINGS = {
   hostTransferGraceMs: 10_000,
 } as const;
 
-const MIN_PLAYERS = 3;
+const MIN_PLAYERS = 4;
 const INVITE_TOKEN_BYTES = 32;
 const RESUME_TOKEN_BYTES = 32;
 
@@ -226,7 +226,7 @@ export class Room {
     if (this.players.length < MIN_PLAYERS) {
       this.clearAllTimers();
       this.phase = 'final';
-      this.notice = 'נותרו פחות משלושה משתתפים, ולכן המשחק הסתיים.';
+      this.notice = `נותרו פחות מ-${MIN_PLAYERS} משתתפים, ולכן המשחק הסתיים.`;
       this.noticeForAll = true;
       this.changed();
       return;
@@ -417,7 +417,8 @@ export class Room {
     this.phase = 'prep';
     this.currentTurnIndex = -1;
     this.assignments = this.createAssignments();
-    this.turnOrder = shuffle(this.players.map((p) => p.id));
+    const previousTurnOrder = [...this.turnOrder];
+    this.turnOrder = this.createTurnOrder(previousTurnOrder);
     this.prepReady = new Set();
     this.activePairs = this.turnOrder.map((describerId) => ({
       describerId,
@@ -449,14 +450,37 @@ export class Room {
   private startTurnTimer() {
     this.clearTimer();
     this.turnEndsAt = Date.now() + this.timings.turnMs;
+
+    // If a player has only one legal option left, the server may fill that
+    // guess automatically. Even when this means every guess is already filled
+    // at the start of the turn, the describer must still get the full turn to
+    // say the word. Therefore an auto-filled turn is never closed here.
     this.autoFillForcedGuesses();
-    const describerId = this.turnOrder[this.currentTurnIndex];
-    const pair = this.activePairs.find((item) => item.describerId === describerId);
-    if (describerId && pair && this.allGuessersDoneForCurrentTurn(pair, describerId)) {
-      this.closeTurn();
-      return;
-    }
     this.timer = setTimeout(() => this.closeTurn(), this.timings.turnMs);
+  }
+
+  private createTurnOrder(previousTurnOrder: string[]) {
+    const playerIds = this.players.map((player) => player.id);
+    if (playerIds.length <= 1) return playerIds;
+
+    const sameOrder = (a: string[], b: string[]) =>
+      a.length === b.length && a.every((id, index) => id === b[index]);
+
+    // Shuffle normally, but guarantee that a new round does not use exactly
+    // the same speaking order as the previous round.
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const candidate = shuffle(playerIds);
+      if (!sameOrder(candidate, previousTurnOrder)) return candidate;
+    }
+
+    // Deterministic fallback in the extremely unlikely case that all retries
+    // produced the same order. Rotating by one always changes the order when
+    // there are at least two players.
+    const fallback = [...playerIds];
+    if (sameOrder(fallback, previousTurnOrder)) {
+      fallback.push(fallback.shift()!);
+    }
+    return fallback;
   }
 
   private availableGuessTargetIds(playerId: string, describerId: string) {

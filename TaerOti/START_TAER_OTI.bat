@@ -40,6 +40,17 @@ if defined LAN_IP (
   set "TAER_OTI_PUBLIC_ORIGIN=http://!LAN_IP!:3000"
 )
 
+rem Clear the Next.js development build cache before startup.
+rem This prevents stale CSS/fonts from older extracted versions from being reused.
+if exist ".next\" (
+  echo Clearing old Next.js cache...
+  rmdir /s /q ".next"
+)
+if exist "node_modules\.cache\" (
+  echo Clearing package cache...
+  rmdir /s /q "node_modules\.cache"
+)
+
 rem Install dependencies only on the first run or when a required package is missing.
 set "NEED_INSTALL="
 if not exist "node_modules\" set "NEED_INSTALL=1"

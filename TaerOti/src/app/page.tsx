@@ -445,7 +445,14 @@ function Lobby({ room, socket, origin, setError }: { room: RoomView; socket: Soc
         </div>
       </div>
       <div className="actions">
-        {room.self.isHost ? <button className="btn btn-primary" onClick={start} disabled={!room.canStart}>התחל משחק</button> : <button className="btn btn-outline" disabled>ממתינים למארגן</button>}
+        {room.self.isHost ? (
+          <>
+            <button className="btn btn-primary" onClick={start} disabled={!room.canStart}>התחל משחק</button>
+            {room.participants.length < room.minPlayers ? (
+              <div className="small center">צריך לפחות {room.minPlayers} משתתפים כדי להתחיל.</div>
+            ) : null}
+          </>
+        ) : <button className="btn btn-outline" disabled>ממתינים למארגן</button>}
       </div>
       <InfoPopup message={roundsPopup} onClose={() => setRoundsPopup('')} />
     </div>

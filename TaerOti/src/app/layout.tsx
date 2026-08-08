@@ -21,8 +21,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="he" dir="rtl">
-      <body>{children}</body>
+    <html lang="he" dir="rtl" style={{ fontFamily: 'Arial, sans-serif' }}>
+      <body style={{ fontFamily: 'Arial, sans-serif' }}>{children}</body>
     </html>
   );
 }

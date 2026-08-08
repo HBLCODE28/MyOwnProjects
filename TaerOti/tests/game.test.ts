@@ -25,6 +25,19 @@ test('host is a visible participant from room creation', () => {
   assert.match(room.code, /^[A-HJ-NP-Z2-9]{8}$/);
 });
 
+test('game requires at least four participants to start', () => {
+  const manager = new GameManager(() => undefined);
+  const { room, player: host } = manager.createRoom('Host', 's1');
+  room.addPlayer('P2', false, 's2');
+  room.addPlayer('P3', false, 's3');
+  assert.equal(room.buildView(host.id).minPlayers, 4);
+  assert.equal(room.buildView(host.id).canStart, false);
+  assert.throws(() => room.startGame(host.id), /לפחות 4/);
+  room.addPlayer('P4', false, 's4');
+  assert.equal(room.buildView(host.id).canStart, true);
+  room.destroy();
+});
+
 test('getRoom is safe for missing values and invite lookup is exact', () => {
   const manager = new GameManager(() => undefined);
   const { room } = manager.createRoom('Host', 's1');
@@ -85,12 +98,14 @@ test('all players can end prep early by marking ready', () => {
   const { room, player: host } = manager.createRoom('Host', 's1');
   const p2 = room.addPlayer('P2', false, 's2');
   const p3 = room.addPlayer('P3', false, 's3');
+  const p4 = room.addPlayer('P4', false, 's4');
   room.startGame(host.id);
   assert.equal(room.phase, 'prep');
   room.markPrepReady(host.id);
   room.markPrepReady(p2.id);
-  assert.equal(room.phase, 'prep');
   room.markPrepReady(p3.id);
+  assert.equal(room.phase, 'prep');
+  room.markPrepReady(p4.id);
   assert.equal(room.phase, 'turn');
   assert.equal(room.prepEndsAt, null);
 });
@@ -128,6 +143,7 @@ test('new game keeps all participants, resets scores and returns everyone to lob
   const { room, player: host } = manager.createRoom('Host', 's1');
   room.addPlayer('P2', false, 's2');
   room.addPlayer('P3', false, 's3');
+  room.addPlayer('P4', false, 's4');
   const idsBefore = room.players.map((p) => p.id);
   const oldInvite = room.inviteToken;
   room.startGame(host.id);
@@ -267,10 +283,12 @@ test('the current describer is visible in the room state but cannot be selected 
   const { room, player: host } = manager.createRoom('Host', 's1');
   const p2 = room.addPlayer('P2', false, 's2');
   const p3 = room.addPlayer('P3', false, 's3');
+  const p4 = room.addPlayer('P4', false, 's4');
   room.startGame(host.id);
   room.markPrepReady(host.id);
   room.markPrepReady(p2.id);
   room.markPrepReady(p3.id);
+  room.markPrepReady(p4.id);
   const describerId = room.turnOrder[room.currentTurnIndex];
   const guesser = room.players.find((player) => player.id !== describerId);
   assert.ok(describerId);
