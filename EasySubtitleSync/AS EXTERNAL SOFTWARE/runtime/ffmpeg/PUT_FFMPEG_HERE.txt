@@ -1,0 +1,1 @@
+For a fully offline package, run BUILD_OFFLINE_PACKAGE.bat on the computer where FFmpeg already works.

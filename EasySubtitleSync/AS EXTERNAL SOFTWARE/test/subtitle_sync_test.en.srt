@@ -1,0 +1,23 @@
+1
+00:00:03,500 --> 00:00:07,500
+Welcome to the subtitle synchronization test.
+
+2
+00:00:09,500 --> 00:00:13,500
+This sentence should help the program find the timing.
+
+3
+00:00:15,500 --> 00:00:19,500
+We are checking whether the subtitles match the spoken audio.
+
+4
+00:00:21,500 --> 00:00:25,500
+If the test works, the subtitles will move automatically.
+
+5
+00:00:27,500 --> 00:00:31,500
+Several matching sentences make the result more reliable.
+
+6
+00:00:33,500 --> 00:00:37,500
+The final sentence confirms that synchronization is complete.
