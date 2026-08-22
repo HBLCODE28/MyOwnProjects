@@ -99,7 +99,7 @@ static const char *const ppsz_filter_options[] = {
     NULL
 };
 
-typedef struct
+struct filter_sys_t
 {
     ab_config_t cfg;
     ab_state_t state;
@@ -111,7 +111,7 @@ typedef struct
     bool full_range;
     bool packed;
     unsigned packed_y_offset;
-} filter_sys_t;
+};
 
 static bool IsFullRange(vlc_fourcc_t chroma)
 {
