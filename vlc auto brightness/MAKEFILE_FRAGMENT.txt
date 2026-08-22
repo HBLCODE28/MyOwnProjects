@@ -1,0 +1,6 @@
+# Add near the other video filter source declarations in modules/video_filter/Makefile.am
+libautobrightness_plugin_la_SOURCES = video_filter/autobrightness.c video_filter/autobrightness_algo.c video_filter/autobrightness_algo.h
+libautobrightness_plugin_la_LIBADD = $(LIBM)
+
+# Add inside video_filter_LTLIBRARIES
+libautobrightness_plugin.la \

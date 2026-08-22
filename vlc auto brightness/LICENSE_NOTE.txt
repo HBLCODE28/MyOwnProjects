@@ -1,0 +1,2 @@
+The Auto Brightness source files in this package are provided for integration with VLC.
+VLC itself is distributed under GPL/LGPL terms depending on the component. When distributing a compiled VLC plugin, review the applicable VLC licensing requirements for the headers and libraries used by your build.
