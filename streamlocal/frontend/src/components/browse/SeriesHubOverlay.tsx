@@ -53,6 +53,8 @@ export function SeriesHubOverlay({
               artworkId={heroArtwork}
               remoteUrl={remoteArtwork}
               label="SERIES"
+              fit="contain"
+              position="center"
             />
           </div>
 
@@ -62,8 +64,9 @@ export function SeriesHubOverlay({
             className="series-hub-close"
             onClick={onClose}
             aria-label="Close series"
+            title="Close"
           >
-            Close
+            ×
           </button>
 
           <div className="series-hub-copy">
@@ -146,6 +149,7 @@ export function SeriesHubOverlay({
                         null
                       }
                       label={`S${String(item.seasonNumber ?? 0).padStart(2, "0")}E${String(item.episodeNumber ?? 0).padStart(2, "0")}`}
+                      fit="cover"
                     />
                   </div>
 
@@ -163,9 +167,7 @@ export function SeriesHubOverlay({
                       </span>
                     </div>
 
-                    {item.overview && (
-                      <p>{item.overview}</p>
-                    )}
+                    {item.overview && <p>{item.overview}</p>}
 
                     <div className="episode-file-meta">
                       {file?.fileName ?? "File unavailable"}

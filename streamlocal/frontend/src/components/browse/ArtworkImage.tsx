@@ -6,6 +6,8 @@ type Props = {
   remoteUrl?: string | null;
   className?: string;
   label: string;
+  fit?: "cover" | "contain";
+  position?: string;
 };
 
 export function ArtworkImage({
@@ -13,6 +15,8 @@ export function ArtworkImage({
   remoteUrl,
   className,
   label,
+  fit = "cover",
+  position = "center",
 }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const [remoteFailed, setRemoteFailed] = useState(false);
@@ -67,6 +71,10 @@ export function ArtworkImage({
       alt=""
       loading="lazy"
       referrerPolicy="no-referrer"
+      style={{
+        objectFit: fit,
+        objectPosition: position,
+      }}
       onError={() => {
         if (!url) setRemoteFailed(true);
       }}

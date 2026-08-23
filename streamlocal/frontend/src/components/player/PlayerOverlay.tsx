@@ -6,6 +6,10 @@ import {
   type PlayableMedia,
 } from "../../services/localPlayback";
 import {
+  getPlaybackProgress,
+  savePlaybackProgress,
+} from "../../services/playbackProgress";
+import {
   playerShortcutFromKeyboardEvent,
   type PlayerShortcutAction,
 } from "../../services/playerShortcuts";
@@ -14,6 +18,7 @@ import "../../styles/player.css";
 type Props = {
   item: MediaItem;
   onClose: () => void;
+  onProgressChanged?: () => void;
 };
 
 type BrowserAudioTrack = {
@@ -88,10 +93,16 @@ function mediaErrorMessage(
   return "The browser could not play this local media file.";
 }
 
-export function PlayerOverlay({ item, onClose }: Props) {
+export function PlayerOverlay({
+  item,
+  onClose,
+  onProgressChanged,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const onCloseRef = useRef(onClose);
+  const onProgressChangedRef = useRef(onProgressChanged);
+  const lastSavedSecondRef = useRef(-1);
 
   const [media, setMedia] = useState<PlayableMedia | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +116,8 @@ export function PlayerOverlay({ item, onClose }: Props) {
 
   useEffect(() => {
     onCloseRef.current = onClose;
-  }, [onClose]);
+    onProgressChangedRef.current = onProgressChanged;
+  }, [onClose, onProgressChanged]);
 
   useEffect(() => {
     let active = true;
@@ -134,6 +146,16 @@ export function PlayerOverlay({ item, onClose }: Props) {
       releasePlayableMedia(loaded);
     };
   }, [item.mediaFileId]);
+
+  async function persistProgress(video: HTMLVideoElement) {
+    const result = await savePlaybackProgress(
+      item,
+      video.currentTime,
+      video.duration,
+    );
+
+    if (result) onProgressChangedRef.current?.();
+  }
 
   async function togglePlayback() {
     const video = videoRef.current;
@@ -252,7 +274,9 @@ export function PlayerOverlay({ item, onClose }: Props) {
         label:
           track.label ||
           track.language ||
-          (track.kind ? `${track.kind} ${index + 1}` : `Audio ${index + 1}`),
+          (track.kind
+            ? `${track.kind} ${index + 1}`
+            : `Audio ${index + 1}`),
       });
     }
 
@@ -270,6 +294,23 @@ export function PlayerOverlay({ item, onClose }: Props) {
     }
 
     setSelectedAudioTrack(index);
+  }
+
+  async function initializeMedia(video: HTMLVideoElement) {
+    setDuration(video.duration);
+    refreshAudioTracks(video);
+
+    const previous = await getPlaybackProgress(item.id);
+
+    if (
+      previous &&
+      !previous.watched &&
+      previous.positionSeconds > 10 &&
+      previous.positionSeconds < video.duration - 10
+    ) {
+      video.currentTime = previous.positionSeconds;
+      setCurrent(previous.positionSeconds);
+    }
   }
 
   function changeVolume(value: number) {
@@ -298,7 +339,12 @@ export function PlayerOverlay({ item, onClose }: Props) {
 
         <button
           className="player-icon-button"
-          onClick={onClose}
+          onClick={async () => {
+            if (videoRef.current) {
+              await persistProgress(videoRef.current);
+            }
+            onClose();
+          }}
           aria-label="Close player"
         >
           Close
@@ -310,12 +356,6 @@ export function PlayerOverlay({ item, onClose }: Props) {
           <div className="player-error">
             <strong>Playback unavailable</strong>
             <p>{error}</p>
-            {media?.extension === "mkv" && (
-              <p className="player-compatibility-note">
-                StreamLocal opened the original local MKV directly. No upload,
-                conversion or modification was performed.
-              </p>
-            )}
           </div>
         )}
 
@@ -330,15 +370,31 @@ export function PlayerOverlay({ item, onClose }: Props) {
             autoPlay
             playsInline
             onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onTimeUpdate={(event) =>
-              setCurrent(event.currentTarget.currentTime)
-            }
+            onPause={(event) => {
+              setPlaying(false);
+              void persistProgress(event.currentTarget);
+            }}
+            onTimeUpdate={(event) => {
+              const video = event.currentTarget;
+              setCurrent(video.currentTime);
+
+              const second = Math.floor(video.currentTime);
+              if (
+                second > 0 &&
+                second % 5 === 0 &&
+                second !== lastSavedSecondRef.current
+              ) {
+                lastSavedSecondRef.current = second;
+                void persistProgress(video);
+              }
+            }}
             onLoadedMetadata={(event) => {
-              setDuration(event.currentTarget.duration);
-              refreshAudioTracks(event.currentTarget);
+              void initializeMedia(event.currentTarget);
             }}
             onCanPlay={(event) => refreshAudioTracks(event.currentTarget)}
+            onEnded={(event) => {
+              void persistProgress(event.currentTarget);
+            }}
             onError={(event) =>
               setError(mediaErrorMessage(event.currentTarget, media))
             }
@@ -376,7 +432,6 @@ export function PlayerOverlay({ item, onClose }: Props) {
               <button className="player-icon-button" onClick={() => seekBy(-10)}>
                 -10s
               </button>
-
               <button className="player-icon-button" onClick={() => seekBy(10)}>
                 +10s
               </button>
@@ -444,13 +499,6 @@ export function PlayerOverlay({ item, onClose }: Props) {
               </button>
             </div>
           </div>
-
-          {audioTracks.length <= 1 && media.extension === "mkv" && (
-            <div className="player-capability-line">
-              Audio-track switching appears only when the browser exposes
-              multiple audio tracks.
-            </div>
-          )}
         </div>
       )}
     </div>

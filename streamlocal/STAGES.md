@@ -556,52 +556,83 @@ Create a Netflix-style series browsing experience without a dedicated detail pag
 - Git commit/tag: Stage 7 series hub and hero consistency commit
 - Known follow-ups: episode-specific remote thumbnails and movie metadata/artwork provider can be added later.
 
-# Stage 8 - TV Episode Playback Workflow
+# Stage 8 - Continue Watching, Movie Artwork and Unified Navigation
 
-**Status:** NOT STARTED
-
-**Depends on:** Stage 7
+**Status:** COMPLETE  
+**Depends on:** Stage 7 - Series Hub and Hero Consistency
 
 ## Goal
 
-Add streaming-service episode behavior for series.
+Make StreamLocal behave more like a real streaming library: persist playback position and watched state, add Continue Watching, add account-free movie artwork, and unify Series Hub navigation with the main application navigation.
 
 ## Tasks
-- [ ] Create backend next-episode resolver.
-- [ ] Resolve next episode within current season.
-- [ ] Continue into next season when appropriate.
-- [ ] Add Previous Episode and Next Episode controls.
-- [ ] Show next-episode countdown near episode completion.
-- [ ] Provide Play Now and Cancel controls.
-- [ ] Autoplay next episode when enabled.
-- [ ] Do not autoplay after movies.
-- [ ] Persist autoplay-next-episode setting.
-- [ ] Support marking an episode watched when user reaches configured credits segment.
-- [ ] Update series and season progress indicators.
 
-## Deliverables
-- [ ] Next episode resolver
-- [ ] Autoplay countdown
-- [ ] Previous/next controls
-- [ ] Series progress
+- [x] Add IndexedDB playback progress records.
+- [x] Upgrade StreamLocal IndexedDB schema without deleting the existing library.
+- [x] Save playback position while a video is playing.
+- [x] Save playback position on pause and player close.
+- [x] Resume unfinished playback automatically.
+- [x] Mark movies watched at >=90% or <=5 minutes remaining.
+- [x] Mark episodes watched at >=90% or <=2 minutes remaining.
+- [x] Add Continue Watching to Home.
+- [x] Add progress bars to movie/continue-watching cards.
+- [x] Add Watched badge.
+- [x] Include playback progress in StreamLocal library backups.
+- [x] Keep encrypted API-key vault excluded from exports.
+- [x] Add Wikipedia as optional movie artwork provider.
+- [x] Wikipedia provider requires no StreamLocal account or API key.
+- [x] Send only movie title/year when movie artwork lookup is explicitly requested.
+- [x] Prefer year-specific Wikipedia film pages.
+- [x] Use Wikipedia lead image as remote movie poster when available.
+- [x] Keep local artwork higher priority than Wikipedia artwork.
+- [x] Show Wikipedia movie artwork in movie cards.
+- [x] Avoid aggressive poster crop in Movie Hero when only portrait art is available.
+- [x] Redesign the StreamLocal navigation bar to match the site aesthetic.
+- [x] Keep the main navigation visible while Series Hub is open.
+- [x] Remove the second text-style Close navigation bar from Series Hub.
+- [x] Use one compact close button inside the Series Hub content.
+- [x] Position Series Hub below the main navigation bar.
+- [x] Use non-destructive contain behavior for Series Hub hero art to prevent extreme zoom/cropping.
+- [x] Preserve Stage 6 J/L/F keyboard-layout fix.
+- [x] Preserve Stage 7 seasons/episodes Series Hub.
+
+## Privacy / online behavior
+
+- TVmaze remains opt-in for series metadata/artwork.
+- Wikipedia movie lookup is opt-in.
+- No local video bytes, local filesystem paths, watch history or API-vault values are sent to either provider.
+- Wikimedia Action API requests use anonymous cross-origin access.
+- StreamLocal still has no application backend.
 
 ## Required tests / verification
-- [ ] S01E01 resolves to S01E02.
-- [ ] Final episode of a season resolves to next season when available.
-- [ ] Final known episode does not produce invalid autoplay.
-- [ ] Cancel stops autoplay.
+
+- [x] Movie watched threshold.
+- [x] Episode watched threshold.
+- [x] Early playback remains unwatched.
+- [x] Wikipedia year-specific film matching.
+- [x] Wikipedia missing-page behavior.
+- [x] Existing unit tests.
+- [x] TypeScript typecheck.
+- [x] Production static build.
+- [x] Browser-only runtime verification.
 
 ## Acceptance criteria
-- [ ] Series can be watched continuously without returning to the library after each episode.
-- [ ] Episode watch state updates correctly.
 
-## Stage completion record
+- [x] Closing an unfinished video stores its position.
+- [x] Opening it again resumes from the stored position.
+- [x] Home shows Continue Watching after meaningful playback.
+- [x] Watched thresholds follow StreamLocal rules.
+- [x] Movies can receive posters without requiring a personal account/API key.
+- [x] Series Hub no longer looks like it has a second navigation bar.
+- [x] Main StreamLocal navigation remains visually consistent.
+- [x] Series Hub artwork is not forcibly zoomed/cropped when its source framing is unsuitable.
+- [x] Original media files remain untouched.
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+## Completion record
 
----
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 8 continue watching, movie artwork and navigation commit
+- Known limitation: Wikipedia does not guarantee that every film article has a usable lead poster image. Missing movie artwork can still be supplied locally or manually.
 
 # Stage 9 - Subtitle System
 
@@ -987,6 +1018,7 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 
 

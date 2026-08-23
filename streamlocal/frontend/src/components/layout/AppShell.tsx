@@ -1,32 +1,49 @@
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import "../../styles/appShell.css";
+import "../../styles/stage8BrowseAdditions.css";
 
-const navItems = [
-  ["Home", "/"],
-  ["Movies", "/movies"],
-  ["Series", "/series"],
-  ["Identify", "/identify"],
-  ["Library", "/library"],
-] as const;
+type Props = {
+  children: ReactNode;
+};
 
-export function AppShell({ children }: { children: ReactNode }) {
+const links = [
+  { to: "/", label: "Home", end: true },
+  { to: "/movies", label: "Movies" },
+  { to: "/series", label: "Series" },
+  { to: "/identify", label: "Identify" },
+  { to: "/library", label: "Library" },
+  { to: "/settings", label: "Settings" },
+];
+
+export function AppShell({ children }: Props) {
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <NavLink to="/" className="brand" end>
-          <span className="brand-mark">SL</span>
+      <header className="streamlocal-nav">
+        <NavLink className="streamlocal-brand" to="/">
+          <span className="streamlocal-brand-mark">SL</span>
           <span>StreamLocal</span>
         </NavLink>
-        <nav className="main-nav">
-          {navItems.map(([label, path]) => (
-            <NavLink key={path} to={path} end={path === "/"} className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-              {label}
+
+        <nav className="streamlocal-nav-links" aria-label="Main navigation">
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={link.end}
+              className={({ isActive }) =>
+                isActive
+                  ? "streamlocal-nav-link active"
+                  : "streamlocal-nav-link"
+              }
+            >
+              {link.label}
             </NavLink>
           ))}
         </nav>
-        <NavLink to="/settings" className="settings-link">Settings</NavLink>
       </header>
-      <main>{children}</main>
+
+      <main className="app-main">{children}</main>
     </div>
   );
 }

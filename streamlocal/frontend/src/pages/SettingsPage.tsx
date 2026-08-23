@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApiKeyVault } from "../components/settings/ApiKeyVault";
 import { TvmazeProviderCard } from "../components/settings/TvmazeProviderCard";
+import { WikipediaMovieProviderCard } from "../components/settings/WikipediaMovieProviderCard";
 import { db, requestPersistentStorage } from "../db/streamlocalDb";
 import {
   exportStreamLocalBackup,
@@ -22,24 +23,18 @@ export function SettingsPage() {
 
   async function exportBackup() {
     const blob = await exportStreamLocalBackup();
-    downloadBlob(
-      blob,
-      `StreamLocal-Backup-${new Date().toISOString().slice(0, 10)}.zip`,
-    );
+    downloadBlob(blob, `StreamLocal-Backup-${new Date().toISOString().slice(0, 10)}.zip`);
     setStatus("Backup exported.");
   }
 
   async function importBackup(file: File | undefined) {
     if (!file) return;
     await importStreamLocalBackup(file);
-    setStatus(
-      "Backup imported. Reconnect each media folder in Library.",
-    );
+    setStatus("Backup imported. Reconnect each media folder in Library.");
   }
 
   async function persistence() {
     const granted = await requestPersistentStorage();
-
     setStatus(
       granted
         ? "Browser storage is protected. StreamLocal data is stored locally in IndexedDB and the browser marked it as persistent."
@@ -48,13 +43,7 @@ export function SettingsPage() {
   }
 
   async function clearLibrary() {
-    if (
-      !window.confirm(
-        "Clear the StreamLocal browser database on this computer? Video files are not touched.",
-      )
-    ) {
-      return;
-    }
+    if (!window.confirm("Clear the StreamLocal browser database on this computer? Video files are not touched.")) return;
 
     await db.transaction(
       "rw",
@@ -65,6 +54,7 @@ export function SettingsPage() {
         db.series,
         db.artwork,
         db.settings,
+        db.playbackProgress,
       ],
       async () => {
         await Promise.all([
@@ -74,6 +64,7 @@ export function SettingsPage() {
           db.series.clear(),
           db.artwork.clear(),
           db.settings.clear(),
+          db.playbackProgress.clear(),
         ]);
       },
     );
@@ -87,23 +78,19 @@ export function SettingsPage() {
       <h1>Settings</h1>
 
       <p className="settings-intro">
-        StreamLocal has no account or server database. Library data stays in
-        this browser profile. Optional online metadata is used only when you
-        explicitly request it.
+        StreamLocal keeps your library local. Optional online artwork is used only
+        when you explicitly request it.
       </p>
 
       {status && <div className="scan-summary">{status}</div>}
 
       <TvmazeProviderCard />
+      <WikipediaMovieProviderCard />
       <ApiKeyVault />
 
       <section className="settings-card">
         <h2>Browser storage</h2>
-        <p>
-          This checks whether the browser is willing to protect StreamLocal
-          storage from automatic cleanup. IndexedDB still works when this
-          returns false.
-        </p>
+        <p>IndexedDB still works even when the browser does not grant protected persistence.</p>
         <button className="secondary-button" onClick={persistence}>
           Check persistent storage
         </button>
@@ -111,25 +98,14 @@ export function SettingsPage() {
 
       <section className="settings-card">
         <h2>Move to another computer</h2>
-        <p>
-          Export metadata and local artwork to a ZIP. Encrypted API
-          credentials are not exported. On the other computer import the
-          library and reconnect your media folders.
-        </p>
-
         <div className="settings-actions">
-          <button className="primary-button" onClick={exportBackup}>
-            Export library
-          </button>
-
+          <button className="primary-button" onClick={exportBackup}>Export library</button>
           <label className="secondary-button file-button">
             Import library
             <input
               type="file"
               accept=".zip,application/zip"
-              onChange={(event) =>
-                importBackup(event.target.files?.[0])
-              }
+              onChange={(event) => importBackup(event.target.files?.[0])}
             />
           </label>
         </div>
@@ -137,10 +113,6 @@ export function SettingsPage() {
 
       <section className="settings-card danger-zone">
         <h2>Clear local database</h2>
-        <p>
-          This clears IndexedDB including the encrypted API-key vault. It never
-          deletes your video files.
-        </p>
         <button className="danger-button" onClick={clearLibrary}>
           Clear StreamLocal data
         </button>

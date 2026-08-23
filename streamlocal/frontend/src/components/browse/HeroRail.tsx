@@ -21,14 +21,8 @@ function chooseFeatured(
   const availableMovie =
     movies.find(({ file }) => file?.available) ?? movies[0];
 
-  if (availableSeries) {
-    return { kind: "series", series: availableSeries };
-  }
-
-  if (availableMovie) {
-    return { kind: "movie", movie: availableMovie };
-  }
-
+  if (availableSeries) return { kind: "series", series: availableSeries };
+  if (availableMovie) return { kind: "movie", movie: availableMovie };
   return null;
 }
 
@@ -65,6 +59,7 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
               null
             }
             label="FEATURED"
+            fit="cover"
           />
         </div>
 
@@ -95,15 +90,17 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
   }
 
   const { item } = featured.movie;
-  const localBackdrop =
+  const localArtwork =
     item.backdropArtworkId ?? item.posterArtworkId ?? null;
 
   return (
-    <section className="browse-hero">
-      <div className="browse-hero-bg">
+    <section className="browse-hero movie-featured-hero">
+      <div className="browse-hero-bg movie-featured-art">
         <ArtworkImage
-          artworkId={localBackdrop}
+          artworkId={localArtwork}
+          remoteUrl={item.remoteBackdropUrl ?? item.remotePosterUrl ?? null}
           label="FEATURED"
+          fit={item.backdropArtworkId || item.remoteBackdropUrl ? "cover" : "contain"}
         />
       </div>
 

@@ -7,28 +7,24 @@ import { SeriesHubOverlay } from "../components/browse/SeriesHubOverlay";
 import { PlayerOverlay } from "../components/player/PlayerOverlay";
 import type { MediaItem } from "../types/library";
 import type { SeriesCard as SeriesCardModel } from "../services/browseSelectors";
-import {
-  loadBrowseData,
-  type BrowseData,
-} from "../services/browseData";
+import { loadBrowseData, type BrowseData } from "../services/browseData";
 import "../styles/browse.css";
 
 export function HomePage() {
   const [data, setData] = useState<BrowseData | null>(null);
-  const [selectedSeries, setSelectedSeries] =
-    useState<SeriesCardModel | null>(null);
+  const [selectedSeries, setSelectedSeries] = useState<SeriesCardModel | null>(null);
   const [playing, setPlaying] = useState<MediaItem | null>(null);
 
+  async function refresh() {
+    setData(await loadBrowseData());
+  }
+
   useEffect(() => {
-    loadBrowseData().then(setData);
+    void refresh();
   }, []);
 
   if (!data) {
-    return (
-      <div className="page browse-page">
-        <div className="library-empty">Loading StreamLocal...</div>
-      </div>
-    );
+    return <div className="page browse-page"><div className="library-empty">Loading StreamLocal...</div></div>;
   }
 
   const latestMovies = data.movies.slice(0, 10);
@@ -42,40 +38,44 @@ export function HomePage() {
         onOpenSeries={setSelectedSeries}
       />
 
+      {data.continueWatching.length > 0 && (
+        <section className="browse-section">
+          <div className="section-title-row">
+            <div>
+              <p className="eyebrow">RESUME</p>
+              <h2>Continue Watching</h2>
+            </div>
+          </div>
+
+          <div className="rail-grid">
+            {data.continueWatching.map(({ item, file, progress }) => (
+              <MediaCard
+                key={item.id}
+                item={item}
+                file={file}
+                progress={progress}
+                onPlay={setPlaying}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="browse-metrics">
-        <div>
-          <strong>{data.counts.movies}</strong>
-          <span>movies</span>
-        </div>
-        <div>
-          <strong>{data.counts.episodes}</strong>
-          <span>episodes</span>
-        </div>
-        <div>
-          <strong>{data.counts.availableItems}</strong>
-          <span>available</span>
-        </div>
-        <div>
-          <strong>{data.counts.needsMatch}</strong>
-          <span>needs match</span>
-        </div>
+        <div><strong>{data.counts.movies}</strong><span>movies</span></div>
+        <div><strong>{data.counts.episodes}</strong><span>episodes</span></div>
+        <div><strong>{data.counts.availableItems}</strong><span>available</span></div>
+        <div><strong>{data.counts.needsMatch}</strong><span>needs match</span></div>
       </section>
 
       <section className="browse-section">
         <div className="section-title-row">
-          <div>
-            <p className="eyebrow">LOCAL MOVIES</p>
-            <h2>Movies</h2>
-          </div>
-          <Link className="secondary-button" to="/movies">
-            View all
-          </Link>
+          <div><p className="eyebrow">LOCAL MOVIES</p><h2>Movies</h2></div>
+          <Link className="secondary-button" to="/movies">View all</Link>
         </div>
 
         {latestMovies.length === 0 ? (
-          <div className="library-empty">
-            Add and identify local movies to fill this row.
-          </div>
+          <div className="library-empty">Add and identify local movies to fill this row.</div>
         ) : (
           <div className="rail-grid">
             {latestMovies.map(({ item, file }) => (
@@ -84,6 +84,7 @@ export function HomePage() {
                 item={item}
                 file={file}
                 label="MOVIE"
+                progress={data.progressByItemId[item.id]}
                 onPlay={setPlaying}
               />
             ))}
@@ -93,30 +94,19 @@ export function HomePage() {
 
       <section className="browse-section">
         <div className="section-title-row">
-          <div>
-            <p className="eyebrow">LOCAL SERIES</p>
-            <h2>Series</h2>
-          </div>
-          <Link className="secondary-button" to="/series">
-            View all
-          </Link>
+          <div><p className="eyebrow">LOCAL SERIES</p><h2>Series</h2></div>
+          <Link className="secondary-button" to="/series">View all</Link>
         </div>
 
-        {latestSeries.length === 0 ? (
-          <div className="library-empty">
-            Add and identify local episodes to fill this row.
-          </div>
-        ) : (
-          <div className="series-grid compact">
-            {latestSeries.map((card) => (
-              <SeriesCard
-                key={card.series.id}
-                card={card}
-                onOpen={setSelectedSeries}
-              />
-            ))}
-          </div>
-        )}
+        <div className="series-grid compact">
+          {latestSeries.map((card) => (
+            <SeriesCard
+              key={card.series.id}
+              card={card}
+              onOpen={setSelectedSeries}
+            />
+          ))}
+        </div>
       </section>
 
       {selectedSeries && !playing && (
@@ -131,6 +121,7 @@ export function HomePage() {
         <PlayerOverlay
           item={playing}
           onClose={() => setPlaying(null)}
+          onProgressChanged={() => void refresh()}
         />
       )}
     </div>
