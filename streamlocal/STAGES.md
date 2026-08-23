@@ -103,7 +103,7 @@ Prepare the existing Git repository so all later work follows one predictable st
 
 # Stage 1 - Foundation
 
-**Status:** NOT STARTED
+**Status:** COMPLETE
 
 **Depends on:** Stage 0
 
@@ -112,46 +112,46 @@ Prepare the existing Git repository so all later work follows one predictable st
 Create the runnable StreamLocal application shell with React, FastAPI, SQLite and migrations.
 
 ## Tasks
-- [ ] Create React + TypeScript + Vite frontend.
-- [ ] Create Python FastAPI backend.
-- [ ] Add SQLAlchemy 2.x and SQLite database bootstrap.
-- [ ] Configure Alembic migrations.
-- [ ] Create backend configuration layer for application paths, localhost host and port.
-- [ ] Use %LOCALAPPDATA%\StreamLocal as the default application-data root.
-- [ ] Create GET /api/v1/health.
-- [ ] Health response must report backend status, database status and FFmpeg availability.
-- [ ] Create basic frontend API client.
-- [ ] Create top-level application routes and navigation shell.
-- [ ] Create an original dark streaming-service visual foundation.
-- [ ] Create PowerShell development scripts for starting frontend and backend.
-- [ ] Add backend health endpoint tests.
-- [ ] Document local development commands in README.md.
+- [x] Create React + TypeScript + Vite frontend.
+- [x] Create Python FastAPI backend.
+- [x] Add SQLAlchemy 2.x and SQLite database bootstrap.
+- [x] Configure Alembic migrations.
+- [x] Create backend configuration layer for application paths, localhost host and port.
+- [x] Use %LOCALAPPDATA%\StreamLocal as the default application-data root.
+- [x] Create GET /api/v1/health.
+- [x] Health response must report backend status, database status and FFmpeg availability.
+- [x] Create basic frontend API client.
+- [x] Create top-level application routes and navigation shell.
+- [x] Create an original dark streaming-service visual foundation.
+- [x] Create PowerShell development scripts for starting frontend and backend.
+- [x] Add backend health endpoint tests.
+- [x] Document local development commands in README.md.
 
 ## Deliverables
-- [ ] Runnable frontend
-- [ ] Runnable backend
-- [ ] SQLite initialization
-- [ ] Alembic migration setup
-- [ ] Health API
-- [ ] Development scripts
-- [ ] Initial UI shell
+- [x] Runnable frontend
+- [x] Runnable backend
+- [x] SQLite initialization
+- [x] Alembic migration setup
+- [x] Health API
+- [x] Development scripts
+- [x] Initial UI shell
 
 ## Required tests / verification
-- [ ] Backend unit/API test suite passes.
-- [ ] Frontend TypeScript compilation succeeds.
-- [ ] GET /api/v1/health returns HTTP 200.
-- [ ] SQLite file is created in application data, not in Git-tracked source folders.
+- [x] Backend unit/API test suite passes.
+- [x] Frontend TypeScript compilation succeeds.
+- [x] GET /api/v1/health returns HTTP 200.
+- [x] SQLite file is created in application data, not in Git-tracked source folders.
 
 ## Acceptance criteria
-- [ ] Application opens in a desktop browser from localhost.
-- [ ] Frontend can call the backend.
-- [ ] Database migrations can run from an empty installation.
-- [ ] No media scanning or playback is required yet.
+- [x] Application opens in a desktop browser from localhost.
+- [x] Frontend can call the backend.
+- [x] Database migrations can run from an empty installation.
+- [x] No media scanning or playback is required yet.
 
 ## Stage completion record
 
-- Completion date: 
-- Git commit/tag: 
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 1 foundation commit
 - Known follow-ups: None
 
 ---
@@ -921,4 +921,5 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 

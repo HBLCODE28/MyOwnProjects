@@ -1,0 +1,31 @@
+STREAMLOCAL STAGE 1 INSTALLATION
+
+1. Extract the contents of this package directly into:
+   C:\Users\Cyber_User\Documents\Projects\streamlocal
+
+   The package directories backend/, frontend/, scripts/, docs/ must merge
+   with the directories created during Stage 0.
+
+2. Keep SPEC.md and STAGES.md already in the project root.
+
+3. Open PowerShell in the StreamLocal project directory.
+
+4. Run:
+   powershell -ExecutionPolicy Bypass -File .\stage1-apply.ps1
+
+The script:
+- verifies Stage 0 is COMPLETE,
+- installs Python/Node dependencies,
+- runs Alembic migrations,
+- runs backend tests,
+- type-checks and builds the frontend,
+- checks that SQLite was created under %LOCALAPPDATA%\StreamLocal,
+- marks Stage 1 COMPLETE only after verification,
+- commits only StreamLocal files using:
+  Stage 1: foundation
+
+After completion:
+  powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+
+Open:
+  http://127.0.0.1:5173
