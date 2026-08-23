@@ -6,11 +6,11 @@ $Frontend = Join-Path $ProjectRoot "frontend"
 
 Push-Location $Frontend
 try {
-    npm run build
-    if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
+    & npm run build
+    if ($LASTEXITCODE -ne 0) { throw "Build failed." }
 }
 finally {
     Pop-Location
 }
 
-Write-Host "Frontend build complete: frontend\dist" -ForegroundColor Green
+Write-Host "Static build created in frontend\dist" -ForegroundColor Green

@@ -1,4 +1,4 @@
-# StreamLocal - Full Product and Technical Specification
+﻿# StreamLocal - Full Product and Technical Specification
 
 Version: 1.0  
 Target platform: Windows desktop  
@@ -3048,3 +3048,14 @@ The user experience should center around:
 - minimal manual file management after initial library setup
 
 The application should treat the physical files as a media source and the local database as the product experience layer.
+
+<!-- STREAMLOCAL_BROWSER_ONLY_ARCHITECTURE -->
+## Architecture Update - Stage 3 Browser-Only
+
+As of Stage 3, StreamLocal's product runtime is a static browser application/PWA.
+
+The prior FastAPI/SQLAlchemy/SQLite runtime architecture is superseded for the active implementation. The browser stores application data in IndexedDB and reads user-approved media folders using the File System Access API. No external metadata API is used.
+
+Node.js/Vite remain development/build tools only. Production output is static rontend/dist content and does not require Python or a database server.
+
+File System Access requires a supported browser and secure context. Production deployment should use a stable HTTPS origin/PWA. Direct ile:// deployment is not the supported path.

@@ -212,61 +212,98 @@ Allow the user to configure permanent media folders and scan MP4/MKV files into 
 
 ---
 
-# Stage 3 - Media Recognition and Metadata
+# Stage 3 - Browser-Only Media Recognition
 
-**Status:** NOT STARTED
-
-**Depends on:** Stage 2
+**Status:** COMPLETE  
+**Depends on:** Stage 2 - Persistent Media Library
 
 ## Goal
 
-Automatically identify movies and TV episodes and enrich them with cached metadata.
+Move StreamLocal to a browser-only architecture and identify/organize movies and TV episodes locally without an application backend or external metadata API.
 
 ## Tasks
-- [ ] Integrate guessit or equivalent parser for filename recognition.
-- [ ] Normalize common release tokens such as 1080p, WEB-DL, x264, HEVC and BluRay.
-- [ ] Recognize common movie naming patterns.
-- [ ] Recognize S01E01, 1x01 and similar episode formats.
-- [ ] Build logical Series -> Season -> Episode relationships independently of physical folder layout.
-- [ ] Integrate TMDb as the initial metadata provider.
-- [ ] Store TMDb API credential outside committed source.
-- [ ] Create metadata search and match service.
-- [ ] Use title similarity, year and media type to rank matches.
-- [ ] Auto-accept only high-confidence matches.
-- [ ] Mark ambiguous items as Needs Match.
-- [ ] Fetch title, original title, overview, genres, year/release date, runtime, poster, backdrop, season artwork and episode stills.
-- [ ] Do not fetch cast or external ratings as core requirements.
-- [ ] Cache metadata and artwork locally for offline use.
-- [ ] Create manual rematch and metadata correction UI.
-- [ ] Allow local-only metadata when no API key or internet is available.
+
+- [x] Remove runtime dependency on FastAPI, Python, SQLAlchemy, Alembic and SQLite.
+- [x] Store StreamLocal library data in IndexedDB.
+- [x] Request persistent browser storage when supported.
+- [x] Use the File System Access API for user-selected Windows folders.
+- [x] Request read-only folder access.
+- [x] Scan MP4 and MKV recursively.
+- [x] Preserve unavailable file records instead of deleting them.
+- [x] Use Web Crypto SHA-256 fingerprints from the first/last file chunks.
+- [x] Reconcile a moved/renamed file by fingerprint where possible.
+- [x] Parse movie filenames locally in TypeScript.
+- [x] Parse S01E01, S1E1 and 1x01 episode patterns.
+- [x] Use folder names when the episode filename does not contain the series title.
+- [x] Remove common release/codec/resolution noise from filenames.
+- [x] Create local Series grouping and season/episode numbering.
+- [x] Use confidence levels and Needs Match rather than forcing weak recognition.
+- [x] Add an Identify screen.
+- [x] Add manual Edit / Identify metadata.
+- [x] Ensure manual metadata is not silently overwritten by automatic recognition.
+- [x] Add Reset to Automatic.
+- [x] Support local JSON/NFO sidecar metadata.
+- [x] Detect common local poster/backdrop filenames.
+- [x] Allow manual JPG/PNG/WebP poster and backdrop selection.
+- [x] Store artwork locally in IndexedDB.
+- [x] Add StreamLocal ZIP export/import.
+- [x] Exclude filesystem permission handles from backup.
+- [x] Require folder reconnect after importing on another computer.
+- [x] Add a PWA manifest and offline application-shell service worker.
+- [x] Produce a static frontend build in frontend/dist.
+- [x] Make recognition perform no external metadata/API requests.
+- [x] Keep original media read-only and never rename/move/delete source video files.
 
 ## Deliverables
-- [ ] Filename parser
-- [ ] Movie/TV classifier
-- [ ] TMDb integration
-- [ ] Metadata cache
-- [ ] Artwork cache
-- [ ] Manual match/correction workflow
+
+- Browser-only IndexedDB database.
+- File System Access based library scanner.
+- Local TypeScript movie/episode recognition.
+- Series grouping.
+- Local metadata editor.
+- Local artwork storage.
+- Import/export ZIP workflow.
+- Static PWA build.
+- Node-only development/build/test scripts.
 
 ## Required tests / verification
-- [ ] Known movie filename samples parse correctly.
-- [ ] Known episode filename samples parse season and episode correctly.
-- [ ] Cached metadata remains visible when internet is unavailable.
-- [ ] Manual edits are not overwritten when metadata is locked.
+
+- [x] Movie filename parsing.
+- [x] SxxExx parsing.
+- [x] 1x01 parsing.
+- [x] Folder-aware episode parsing.
+- [x] Series grouping.
+- [x] Manual metadata survives recognition.
+- [x] Recognition makes no fetch/API call.
+- [x] Backup excludes filesystem handles.
+- [x] TypeScript typecheck.
+- [x] Production static build.
+- [x] No backend API references remain in frontend/src.
+- [x] No backend directory remains in the Stage 3 runtime project.
 
 ## Acceptance criteria
-- [ ] Common media filenames are organized automatically.
-- [ ] Movies and series appear as logical entities.
-- [ ] Metadata and artwork are cached locally.
-- [ ] Incorrect automatic matches can be corrected without editing the DB manually.
 
-## Stage completion record
+- [x] StreamLocal runtime does not require Python.
+- [x] StreamLocal runtime does not require FastAPI.
+- [x] StreamLocal runtime does not require SQLite or a database server.
+- [x] No external metadata API is used.
+- [x] No API key/token exists in the application.
+- [x] Library metadata persists in IndexedDB.
+- [x] User-selected folders can be scanned in a supported Chromium browser.
+- [x] Movie/episode recognition works locally.
+- [x] Series are grouped locally.
+- [x] Needs Match and manual correction work.
+- [x] Local artwork works.
+- [x] Export/import works for moving library metadata to another computer.
+- [x] Imported folders require explicit reconnect permission on the new computer.
+- [x] Recognition works offline.
+- [x] Original media files are not modified.
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+## Completion record
 
----
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 3 browser-only media recognition commit
+- Known follow-ups: Browser-native MKV/codec limitations are handled in later playback stages. Production use should be from a stable HTTPS origin/PWA rather than file://.
 
 # Stage 4 - Streaming-Style Browse UI
 
@@ -921,6 +958,7 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 
 

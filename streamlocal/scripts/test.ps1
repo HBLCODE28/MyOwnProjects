@@ -2,42 +2,24 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$Backend = Join-Path $ProjectRoot "backend"
 $Frontend = Join-Path $ProjectRoot "frontend"
-$VenvPython = Join-Path $Backend ".venv\Scripts\python.exe"
 
-if (-not (Test-Path $VenvPython)) {
-    throw "Backend virtual environment is missing. Run scripts\bootstrap.ps1 first."
-}
-
-Write-Host "Running backend tests..." -ForegroundColor Cyan
-Push-Location $Backend
-try {
-    & $VenvPython -m pytest
-    if ($LASTEXITCODE -ne 0) { throw "Backend tests failed." }
-}
-finally {
-    Pop-Location
-}
-
-Write-Host "Running frontend typecheck..." -ForegroundColor Cyan
 Push-Location $Frontend
 try {
+    Write-Host "Running browser-only unit tests..." -ForegroundColor Cyan
+    & npm test
+    if ($LASTEXITCODE -ne 0) { throw "Unit tests failed." }
+
+    Write-Host "Running TypeScript typecheck..." -ForegroundColor Cyan
     & npm run typecheck
-    if ($LASTEXITCODE -ne 0) { throw "Frontend typecheck failed." }
-}
-finally {
-    Pop-Location
-}
+    if ($LASTEXITCODE -ne 0) { throw "TypeScript typecheck failed." }
 
-Write-Host "Running frontend production build..." -ForegroundColor Cyan
-Push-Location $Frontend
-try {
+    Write-Host "Building static StreamLocal PWA..." -ForegroundColor Cyan
     & npm run build
-    if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
+    if ($LASTEXITCODE -ne 0) { throw "Production build failed." }
 }
 finally {
     Pop-Location
 }
 
-Write-Host "Stage 1 verification passed." -ForegroundColor Green
+Write-Host "Stage 3 browser-only verification passed." -ForegroundColor Green

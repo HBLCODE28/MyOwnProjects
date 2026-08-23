@@ -1,0 +1,10 @@
+.settings-page { padding-top:72px; max-width:980px; }
+.settings-page h1 { margin:0; font-size:68px; letter-spacing:-.055em; }
+.settings-intro { max-width:720px; color:#8e9096; line-height:1.7; }
+.settings-card { margin-top:18px; padding:24px; border:1px solid rgba(255,255,255,.075); border-radius:16px; background:rgba(255,255,255,.022); }
+.settings-card h2 { margin-top:0; }
+.settings-card p { color:#85878d; line-height:1.6; }
+.settings-actions { display:flex; gap:10px; }
+.file-button { cursor:pointer; }
+.file-button input { display:none; }
+.danger-zone { border-color:rgba(255,100,100,.12); }
