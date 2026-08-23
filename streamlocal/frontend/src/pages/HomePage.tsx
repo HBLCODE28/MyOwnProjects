@@ -3,11 +3,14 @@ import { Link } from "react-router-dom";
 import { HeroRail } from "../components/browse/HeroRail";
 import { MediaCard } from "../components/browse/MediaCard";
 import { SeriesCard } from "../components/browse/SeriesCard";
+import { PlayerOverlay } from "../components/player/PlayerOverlay";
+import type { MediaItem } from "../types/library";
 import { loadBrowseData, type BrowseData } from "../services/browseData";
 import "../styles/browse.css";
 
 export function HomePage() {
   const [data, setData] = useState<BrowseData | null>(null);
+  const [playing, setPlaying] = useState<MediaItem | null>(null);
 
   useEffect(() => {
     loadBrowseData().then(setData);
@@ -41,7 +44,7 @@ export function HomePage() {
         ) : (
           <div className="rail-grid">
             {latestMovies.map(({ item, file }) => (
-              <MediaCard key={item.id} item={item} file={file} label="MOVIE" />
+              <MediaCard key={item.id} item={item} file={file} label="MOVIE" onPlay={setPlaying} />
             ))}
           </div>
         )}
@@ -57,11 +60,13 @@ export function HomePage() {
         ) : (
           <div className="series-grid compact">
             {latestSeries.map((card) => (
-              <SeriesCard key={card.series.id} card={card} />
+              <SeriesCard key={card.series.id} card={card} onPlay={setPlaying} />
             ))}
           </div>
         )}
       </section>
+
+      {playing && <PlayerOverlay item={playing} onClose={() => setPlaying(null)} />}
     </div>
   );
 }

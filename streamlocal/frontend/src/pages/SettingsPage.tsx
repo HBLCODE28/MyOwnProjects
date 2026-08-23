@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ApiKeyVault } from "../components/settings/ApiKeyVault";
 import { db, requestPersistentStorage } from "../db/streamlocalDb";
 import { exportStreamLocalBackup, importStreamLocalBackup } from "../services/backup";
 import "../styles/settings.css";
@@ -76,11 +77,13 @@ export function SettingsPage() {
       <p className="eyebrow">LOCAL DATA</p>
       <h1>Settings</h1>
       <p className="settings-intro">
-        StreamLocal has no account, API token or server database. Your library data
-        stays in this browser profile.
+        StreamLocal has no account or server database. Library data stays in this browser
+        profile. Optional API credentials can be stored in the encrypted local vault below.
       </p>
 
       {status && <div className="scan-summary">{status}</div>}
+
+      <ApiKeyVault />
 
       <section className="settings-card">
         <h2>Browser storage</h2>
@@ -96,8 +99,9 @@ export function SettingsPage() {
       <section className="settings-card">
         <h2>Move to another computer</h2>
         <p>
-          Export metadata and local artwork to a ZIP. On the other computer import it,
-          then reconnect your media folders.
+          Export metadata and local artwork to a ZIP. Encrypted API credentials are not
+          exported. On the other computer import the library, reconnect folders, then create
+          or unlock a local API-key vault separately.
         </p>
         <div className="settings-actions">
           <button className="primary-button" onClick={exportBackup}>
@@ -117,7 +121,7 @@ export function SettingsPage() {
       <section className="settings-card danger-zone">
         <h2>Clear local database</h2>
         <p>
-          This only clears IndexedDB and artwork stored by StreamLocal. It never deletes
+          This clears IndexedDB including the encrypted API-key vault. It never deletes
           your video files.
         </p>
         <button className="danger-button" onClick={clearLibrary}>

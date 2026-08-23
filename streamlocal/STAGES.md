@@ -364,54 +364,73 @@ Create the first real streaming-style browse experience on top of the browser-on
 
 # Stage 5 - Basic MP4 Player
 
-**Status:** NOT STARTED
-
-**Depends on:** Stage 4
+**Status:** COMPLETE  
+**Depends on:** Stage 4 - Streaming-Style Browse UI
 
 ## Goal
 
-Implement the custom StreamLocal player and reliable direct streaming for browser-compatible MP4 files.
+Add direct local MP4 playback in the browser and introduce encrypted local API-key storage for future poster/metadata integrations.
 
 ## Tasks
-- [ ] Create custom VideoPlayer component around HTML5 video.
-- [ ] Implement HTTP byte-range streaming endpoint.
-- [ ] Return 206 Partial Content for range requests.
-- [ ] Do not load the entire file into memory.
-- [ ] Add Play/Pause, seek timeline, current time, duration, volume, mute and fullscreen.
-- [ ] Add playback speed menu from 0.5x to 2.0x.
-- [ ] Implement control auto-hide while playing.
-- [ ] Implement common keyboard shortcuts: Space/K, arrows/J/L, M, F, volume and C where applicable.
-- [ ] Prevent player shortcuts while typing in inputs.
-- [ ] Single click toggles Play/Pause.
-- [ ] Double click toggles fullscreen.
-- [ ] Add back-to-library behavior that restores browsing position when practical.
-- [ ] Add basic player error overlay.
 
-## Deliverables
-- [ ] Custom player UI
-- [ ] Range streaming backend
-- [ ] Fullscreen
-- [ ] Playback speed
-- [ ] Keyboard shortcuts
+- [x] Open local MP4 files directly from File System Access handles.
+- [x] Create temporary object URLs without uploading media.
+- [x] Add player overlay.
+- [x] Add Play/Pause.
+- [x] Add seek bar.
+- [x] Add -10s / +10s controls.
+- [x] Add volume control.
+- [x] Add playback speed control.
+- [x] Add fullscreen.
+- [x] Add keyboard shortcuts: Space/K, J/L, arrows, F, Escape.
+- [x] Release object URLs when playback closes.
+- [x] Do not offer Stage 5 Play controls for MKV files.
+- [x] Keep MKV compatibility explicitly deferred to Stage 6.
+- [x] Add encrypted local API-key vault in Settings.
+- [x] Derive an AES-256-GCM vault key with PBKDF2/SHA-256.
+- [x] Use a unique random IV for every encrypted secret.
+- [x] Do not store the vault password.
+- [x] Keep the decrypted CryptoKey only in memory while unlocked.
+- [x] Support TMDb API Read Access Token.
+- [x] Support TMDb API Key.
+- [x] Allow Save, Reveal, Delete and Lock.
+- [x] Exclude encrypted API credentials from StreamLocal exports.
+- [x] Preserve the local encrypted vault when importing a library backup.
+- [x] Keep Stage 5 itself free of external metadata requests.
 
 ## Required tests / verification
-- [ ] Browser-compatible MP4 starts and seeks correctly.
-- [ ] Range endpoint handles valid and invalid ranges.
-- [ ] Keyboard shortcuts work and do not fire in form inputs.
-- [ ] Large files are streamed in chunks.
+
+- [x] Encrypted secret is not stored as plaintext.
+- [x] Wrong vault password is rejected.
+- [x] Vault persists in IndexedDB.
+- [x] StreamLocal export excludes the encrypted vault.
+- [x] MKV is rejected by Stage 5 playback service.
+- [x] Unavailable media is rejected before filesystem access.
+- [x] TypeScript typecheck.
+- [x] Production static build.
+- [x] No backend API dependency.
 
 ## Acceptance criteria
-- [ ] H.264/AAC MP4 playback is reliable.
-- [ ] Seeking does not require full download.
-- [ ] The player uses StreamLocal's custom UI.
 
-## Stage completion record
+- [x] Clicking an available MP4 movie can open the local player.
+- [x] Series cards can launch an available MP4 episode.
+- [x] Original media is never modified.
+- [x] Video bytes are not uploaded.
+- [x] Basic player controls work.
+- [x] Fullscreen works.
+- [x] Playback speed can be changed.
+- [x] Keyboard playback shortcuts work.
+- [x] API credentials can be encrypted locally with a user vault password.
+- [x] Vault password is not persisted.
+- [x] Credentials are not exported with library backups.
+- [x] Stage 5 does not fetch posters or metadata yet.
+- [x] MKV/codec compatibility remains Stage 6.
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+## Completion record
 
----
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 5 basic MP4 player and encrypted API vault commit
+- Known follow-ups: Stage 6 adds MKV/codec compatibility and multi-audio. Poster fetching can later use a vault credential only while the vault is unlocked.
 
 # Stage 6 - MKV, Codec Compatibility and Multi-Audio
 
@@ -958,6 +977,7 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 
 

@@ -1,0 +1,160 @@
+.player-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #030304;
+  color: #fff;
+}
+
+.player-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 82px;
+  padding: 16px 28px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: rgba(5,5,7,.92);
+}
+
+.player-topbar .eyebrow {
+  margin-bottom: 5px;
+}
+
+.player-topbar h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.player-stage {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  background: #000;
+}
+
+.player-stage video {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 170px);
+  object-fit: contain;
+  background: #000;
+}
+
+.player-loading,
+.player-error {
+  padding: 30px;
+  color: #93949a;
+  text-align: center;
+}
+
+.player-error strong {
+  color: #fff;
+  font-size: 20px;
+}
+
+.player-error p {
+  max-width: 680px;
+  line-height: 1.6;
+}
+
+.player-controls {
+  padding: 12px 20px 17px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  background: rgba(8,8,10,.96);
+}
+
+.player-seek {
+  width: 100%;
+}
+
+.player-control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.player-control-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.player-icon-button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  color: #f0f0f2;
+  background: rgba(255,255,255,.055);
+  font-weight: 700;
+}
+
+.player-time {
+  min-width: 140px;
+  color: #aaaab0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-volume,
+.player-speed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aaaab0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.player-volume input {
+  width: 110px;
+}
+
+.player-speed select {
+  min-height: 36px;
+  padding: 0 9px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 7px;
+  color: #fff;
+  background: #151519;
+}
+
+.playable-card {
+  cursor: pointer;
+  outline: none;
+}
+
+.playable-card:focus-visible .media-card-art,
+.playable-card:focus-visible .series-card-art,
+.playable-card:hover .media-card-art,
+.playable-card:hover .series-card-art {
+  border-color: rgba(177,160,255,.52);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0,0,0,.32);
+}
+
+.media-card-art,
+.series-card-art {
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.card-play {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  padding: 6px 9px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 999px;
+  color: #f2efff;
+  background: rgba(7,7,10,.78);
+  backdrop-filter: blur(10px);
+  font-size: 10px;
+  font-weight: 800;
+}

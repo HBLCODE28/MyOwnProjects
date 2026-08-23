@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { HeroRail } from "../components/browse/HeroRail";
 import { MediaCard } from "../components/browse/MediaCard";
+import { PlayerOverlay } from "../components/player/PlayerOverlay";
+import type { MediaItem } from "../types/library";
 import { loadBrowseData, type BrowseData } from "../services/browseData";
 import { filterMovies } from "../services/browseSelectors";
 import "../styles/browse.css";
@@ -8,6 +10,7 @@ import "../styles/browse.css";
 export function MoviesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
   const [query, setQuery] = useState("");
+  const [playing, setPlaying] = useState<MediaItem | null>(null);
 
   useEffect(() => {
     loadBrowseData().then(setData);
@@ -44,10 +47,12 @@ export function MoviesPage() {
       ) : (
         <section className="poster-grid">
           {movies.map(({ item, file }) => (
-            <MediaCard key={item.id} item={item} file={file} label="MOVIE" />
+            <MediaCard key={item.id} item={item} file={file} label="MOVIE" onPlay={setPlaying} />
           ))}
         </section>
       )}
+
+      {playing && <PlayerOverlay item={playing} onClose={() => setPlaying(null)} />}
     </div>
   );
 }

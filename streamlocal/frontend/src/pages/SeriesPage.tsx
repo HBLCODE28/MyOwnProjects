@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { HeroRail } from "../components/browse/HeroRail";
 import { SeriesCard } from "../components/browse/SeriesCard";
+import { PlayerOverlay } from "../components/player/PlayerOverlay";
+import type { MediaItem } from "../types/library";
 import { loadBrowseData, type BrowseData } from "../services/browseData";
 import { filterSeries } from "../services/browseSelectors";
 import "../styles/browse.css";
@@ -8,6 +10,7 @@ import "../styles/browse.css";
 export function SeriesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
   const [query, setQuery] = useState("");
+  const [playing, setPlaying] = useState<MediaItem | null>(null);
 
   useEffect(() => {
     loadBrowseData().then(setData);
@@ -44,10 +47,12 @@ export function SeriesPage() {
       ) : (
         <section className="series-grid">
           {series.map((card) => (
-            <SeriesCard key={card.series.id} card={card} />
+            <SeriesCard key={card.series.id} card={card} onPlay={setPlaying} />
           ))}
         </section>
       )}
+
+      {playing && <PlayerOverlay item={playing} onClose={() => setPlaying(null)} />}
     </div>
   );
 }
