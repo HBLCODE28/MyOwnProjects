@@ -714,56 +714,80 @@ Polish local viewing state and playback UX: distinguish an episode that the user
 - Git commit/tag: Stage 9 immersive player and viewing state commit
 - Known limitation: Wikipedia is a fallback artwork source, not a dedicated movie-poster database, so some movies will correctly report "Matching page without image".
 
-# Stage 10 - Automatic Subtitle Synchronization
+# Stage 10 - Centered Player, Reliable Movie Posters and 20-Minute Test Media
 
-**Status:** NOT STARTED
-
-**Depends on:** Stage 9
+**Status:** COMPLETE  
+**Depends on:** Stage 9 - Episode Viewing State, Immersive Player and Artwork Reliability
 
 ## Goal
 
-Automatically correct SRT timing against the video's audio while preserving the original subtitle.
+Polish the immersive player layout, improve the probability of finding movie posters without requiring personal registration, and provide reproducible 20-minute local MP4 fixtures for real playback/progress testing.
 
 ## Tasks
-- [ ] Integrate ffsubsync or a technically equivalent local audio-based synchronization method.
-- [ ] Create background subtitle synchronization job.
-- [ ] Extract/reference audio efficiently.
-- [ ] Generate synchronized subtitle copy in StreamLocal cache.
-- [ ] Never overwrite the original SRT.
-- [ ] Store source checksum, media fingerprint, offset/correction data, algorithm and confidence when available.
-- [ ] Invalidate synchronized output if source subtitle or target media changes.
-- [ ] Add Auto Sync action in subtitle menu.
-- [ ] Display synchronization progress.
-- [ ] Reload corrected subtitle track after successful synchronization.
-- [ ] On failure, preserve original track and manual offset controls.
-- [ ] Log technical synchronization errors.
-- [ ] Add setting for manual-only, ask, or automatic-on-first-use behavior.
 
-## Deliverables
-- [ ] Auto-sync service
-- [ ] Background job
-- [ ] Sync cache
-- [ ] Auto Sync player action
-- [ ] Failure fallback
+- [x] Center the video relative to the full player viewport.
+- [x] Stop the bottom controls from pushing the video upward.
+- [x] Convert player controls to a fixed bottom overlay.
+- [x] Keep the video centered horizontally and vertically.
+- [x] Keep floating Close visible above video and controls.
+- [x] Keep the StreamLocal navbar hidden during actual playback.
+- [x] Preserve Fullscreen, J/L/F and all existing player controls.
+- [x] Add a multi-provider movie-poster lookup.
+- [x] Query The Preservation Network / Movie Posters Database public basic search first.
+- [x] Fall back to Wikipedia when the poster database does not yield a confident image.
+- [x] Match poster-database results against movie title and year before accepting.
+- [x] Continue to prefer local artwork over all remote artwork.
+- [x] Replace the old Wikipedia-only Settings action with one `Find movie posters` action.
+- [x] Add automated poster matching tests.
+- [x] Add `scripts/download-test-media.ps1`.
+- [x] Download an open H.264 Big Buck Bunny engineering sample only when the user runs the test-media helper.
+- [x] Create two exact 20:00 MP4 test files using FFmpeg stream looping/remuxing.
+- [x] Create one movie filename and one S01E01 episode filename.
+- [x] Keep generated test videos outside Git.
+- [x] Document the test-media workflow.
+
+## Test media
+
+The helper creates:
+
+- `test-media/StreamLocal.Test.Movie.2026.mp4`
+- `test-media/StreamLocal.Test.Show.S01E01.mp4`
+
+Both are exactly 20 minutes and are intended for local StreamLocal testing.
+
+## Privacy / networking
+
+- Movie artwork requests contain title/year only.
+- Test media is downloaded only when the user explicitly runs the helper.
+- No video playback data is uploaded.
+- No StreamLocal backend is introduced.
 
 ## Required tests / verification
-- [ ] Known constant-offset SRT sample is corrected.
-- [ ] Original subtitle file hash remains unchanged.
-- [ ] Failed sync leaves original subtitles usable.
-- [ ] Cached synchronization is reused for unchanged source/target.
+
+- [x] Exact title/year poster result accepted.
+- [x] Wrong-title poster result rejected.
+- [x] Existing Wikipedia fallback tests.
+- [x] Existing playback state tests.
+- [x] Existing keyboard shortcut tests.
+- [x] TypeScript typecheck.
+- [x] Production static build.
+- [x] Browser-only runtime verification.
 
 ## Acceptance criteria
-- [ ] User can request automatic SRT synchronization from the player.
-- [ ] Successful sync persists for later playback.
-- [ ] Failures do not block video playback.
 
-## Stage completion record
+- [x] Non-fullscreen video appears visually centered in the player viewport.
+- [x] Controls remain at the bottom without shrinking the stage into a top-heavy layout.
+- [x] Close remains accessible.
+- [x] Settings has one movie-poster lookup that uses more than Wikipedia alone.
+- [x] A poster is not accepted from a clearly different movie.
+- [x] User can generate real 20-minute MP4 movie/episode test fixtures locally.
+- [x] Generated test media is never staged or committed.
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+## Completion record
 
----
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 10 centered player, movie posters and test media commit
+- Known limitation: public poster services can still have gaps, rate limits or CORS/availability changes. Local artwork remains the deterministic fallback.
 
 # Stage 11 - Timeline Preview Thumbnails
 
@@ -1045,6 +1069,7 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 
 

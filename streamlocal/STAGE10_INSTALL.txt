@@ -1,0 +1,47 @@
+STREAMLOCAL - STAGE 10
+
+Stage 10 includes:
+- Player video centered in the full viewport.
+- Bottom controls overlay instead of pushing video upward.
+- Movie posters from a poster-database search first, Wikipedia fallback second.
+- Two exact 20-minute local test MP4 fixtures created on demand.
+
+INSTALL
+
+1. Extract into:
+   C:\Users\Cyber_User\Documents\Projects\streamlocal
+
+2. Choose Replace/Merge.
+
+3. Run:
+   powershell -ExecutionPolicy Bypass -File .\stage10-browser-apply.ps1
+
+4. Start the app:
+   powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+
+MOVIE POSTERS
+
+Settings
+-> Find movie posters
+
+The result now reports:
+- Poster DB saved
+- Wikipedia saved
+- No poster
+- Failed
+
+20-MINUTE TEST VIDEOS
+
+From the StreamLocal project directory:
+
+powershell -ExecutionPolicy Bypass -File .\scripts\download-test-media.ps1
+
+This creates:
+
+test-media\StreamLocal.Test.Movie.2026.mp4
+test-media\StreamLocal.Test.Show.S01E01.mp4
+
+Both are exactly 20:00.
+
+If FFmpeg is missing, the helper tells you how to install it. StreamLocal itself
+still does not require FFmpeg at runtime.

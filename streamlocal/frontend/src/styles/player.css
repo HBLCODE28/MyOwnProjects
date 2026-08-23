@@ -11,8 +11,6 @@ body.player-open .streamlocal-nav {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
   background: #000;
   color: #fff;
 }
@@ -42,19 +40,24 @@ body.player-open .streamlocal-nav {
 }
 
 .player-stage {
-  position: relative;
-  display: grid;
-  min-height: 0;
-  place-items: center;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 42px 28px 118px;
   overflow: hidden;
   background: #000;
 }
 
 .player-stage video {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(96vw, 1600px);
+  max-height: calc(100vh - 150px);
   object-fit: contain;
+  object-position: center center;
   background: #000;
 }
 
@@ -76,11 +79,20 @@ body.player-open .streamlocal-nav {
 }
 
 .player-controls {
-  position: relative;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 1002;
   padding: 10px 20px 15px;
   border-top: 1px solid rgba(255,255,255,.07);
-  background: rgba(7,7,9,.97);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(7,7,9,.84),
+      rgba(7,7,9,.98)
+    );
+  backdrop-filter: blur(12px);
 }
 
 .player-now-playing {
@@ -161,6 +173,15 @@ body.player-open .streamlocal-nav {
 }
 
 @media (max-width: 900px) {
+  .player-stage {
+    padding: 36px 12px 188px;
+  }
+
+  .player-stage video {
+    max-width: 100%;
+    max-height: calc(100vh - 220px);
+  }
+
   .player-control-row {
     align-items: stretch;
     flex-direction: column;
