@@ -4,64 +4,114 @@ import { ArtworkImage } from "./ArtworkImage";
 type Props = {
   movies: MovieCard[];
   series: SeriesCard[];
+  onOpenSeries?: (series: SeriesCard) => void;
 };
 
-export function HeroRail({ movies, series }: Props) {
-  const featuredMovie =
-    movies.find(({ file }) => file?.available) ?? movies[0];
-  const featuredSeries =
+type Featured =
+  | { kind: "movie"; movie: MovieCard }
+  | { kind: "series"; series: SeriesCard };
+
+function chooseFeatured(
+  movies: MovieCard[],
+  series: SeriesCard[],
+): Featured | null {
+  const availableSeries =
     series.find((card) => card.availableEpisodeCount > 0) ?? series[0];
 
-  if (!featuredMovie && !featuredSeries) {
+  const availableMovie =
+    movies.find(({ file }) => file?.available) ?? movies[0];
+
+  if (availableSeries) {
+    return { kind: "series", series: availableSeries };
+  }
+
+  if (availableMovie) {
+    return { kind: "movie", movie: availableMovie };
+  }
+
+  return null;
+}
+
+export function HeroRail({ movies, series, onOpenSeries }: Props) {
+  const featured = chooseFeatured(movies, series);
+
+  if (!featured) {
     return (
       <section className="browse-hero empty-hero">
         <p className="eyebrow">STREAMLOCAL</p>
-        <h1>Build your local streaming shelf.</h1>
+        <h1>Your local player.</h1>
         <p>Add a folder in Library, then identify your media locally.</p>
       </section>
     );
   }
 
-  const title =
-    featuredMovie?.item.title ??
-    featuredSeries?.series.title ??
-    "StreamLocal";
-  const year =
-    featuredMovie?.item.year ?? featuredSeries?.series.year;
-  const overview =
-    featuredMovie?.item.overview || featuredSeries?.series.overview;
+  if (featured.kind === "series") {
+    const card = featured.series;
+    const localBackdrop =
+      card.series.backdropArtworkId ??
+      card.series.posterArtworkId ??
+      card.seasons[0]?.episodes[0]?.item.backdropArtworkId ??
+      card.seasons[0]?.episodes[0]?.item.posterArtworkId ??
+      null;
 
-  const backdrop =
-    featuredMovie?.item.backdropArtworkId ??
-    featuredMovie?.item.posterArtworkId ??
-    featuredSeries?.series.backdropArtworkId ??
-    featuredSeries?.series.posterArtworkId ??
-    null;
+    return (
+      <section className="browse-hero">
+        <div className="browse-hero-bg">
+          <ArtworkImage
+            artworkId={localBackdrop}
+            remoteUrl={
+              card.series.remoteBackdropUrl ??
+              card.series.remotePosterUrl ??
+              null
+            }
+            label="FEATURED"
+          />
+        </div>
 
-  const remoteArtwork =
-    !featuredMovie && featuredSeries
-      ? featuredSeries.series.remotePosterUrl ?? null
-      : null;
+        <div className="browse-hero-content">
+          <p className="eyebrow">FEATURED SERIES</p>
+          <h1>{card.series.title}</h1>
+          <p>
+            {[
+              card.series.year,
+              `${card.seasons.length} season${card.seasons.length === 1 ? "" : "s"}`,
+              card.series.overview || null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+
+          {onOpenSeries && (
+            <button
+              className="primary-button hero-primary-action"
+              onClick={() => onOpenSeries(card)}
+            >
+              View series
+            </button>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  const { item } = featured.movie;
+  const localBackdrop =
+    item.backdropArtworkId ?? item.posterArtworkId ?? null;
 
   return (
     <section className="browse-hero">
       <div className="browse-hero-bg">
         <ArtworkImage
-          artworkId={backdrop}
-          remoteUrl={remoteArtwork}
+          artworkId={localBackdrop}
           label="FEATURED"
         />
       </div>
 
       <div className="browse-hero-content">
-        <p className="eyebrow">FEATURED LOCAL TITLE</p>
-        <h1>{title}</h1>
+        <p className="eyebrow">FEATURED MOVIE</p>
+        <h1>{item.title}</h1>
         <p>
-          {[
-            year,
-            featuredMovie ? "Movie" : "Series",
-            overview ? overview : "Local metadata",
-          ]
+          {[item.year, "Movie", item.overview || null]
             .filter(Boolean)
             .join(" · ")}
         </p>

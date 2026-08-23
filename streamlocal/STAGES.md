@@ -504,64 +504,57 @@ Extend the browser-only player from MP4-only playback to direct MP4/MKV playback
 - Git commit/tag: Stage 6 browser media compatibility commit
 - Known limitation: Chromium currently does not reliably expose the standard `audioTracks` API, so full multi-audio selection cannot be guaranteed in a pure browser-only application. Codec support also depends on the installed browser and OS.
 
-# Stage 7 - Watch Progress, Watched State and Personal Lists
+# Stage 7 - Series Hub and Hero Consistency
 
-**Status:** NOT STARTED
-
-**Depends on:** Stage 6
+**Status:** COMPLETE  
+**Depends on:** Stage 6 - MKV and Browser Media Compatibility
 
 ## Goal
 
-Make StreamLocal remember what the user watched and where playback stopped.
+Create a Netflix-style series browsing experience without a dedicated detail page, fix mixed Movie/Series hero metadata, and use horizontal series artwork in horizontal cards.
 
 ## Tasks
-- [ ] Create playback_state migration/model.
-- [ ] Save progress approximately every 5 seconds plus pause, seek and exit events.
-- [ ] Do not write on every browser timeupdate event.
-- [ ] Resume unfinished media from saved position.
-- [ ] Ignore trivial resume positions under about 30 seconds.
-- [ ] Mark movies watched at 90% or when no more than 5 minutes remain.
-- [ ] Mark episodes watched at 90% or when no more than 2 minutes remain.
-- [ ] Use StreamLocal playback tracking as the authoritative watched signal.
-- [ ] Do not automatically mark watched solely from Windows Last Access Time.
-- [ ] Optionally store external-access hints for future use.
-- [ ] Show a clear V/checkmark for watched movies and episodes.
-- [ ] Calculate series/season watched state from episodes.
-- [ ] Implement Continue Watching.
-- [ ] Implement Recently Watched.
-- [ ] Create manual Mark Watched / Mark Unwatched actions.
-- [ ] Create favorites and watchlist persistent state.
-- [ ] Refresh Home state immediately after leaving the player.
 
-## Deliverables
-- [ ] Playback progress persistence
-- [ ] Resume
-- [ ] Watched checkmarks
-- [ ] Continue Watching
-- [ ] Recently Watched
-- [ ] Favorites
-- [ ] Watchlist
-
-## Required tests / verification
-- [ ] Progress survives restart.
-- [ ] Movie and episode watched thresholds work.
-- [ ] Mark Unwatched resets state according to chosen default.
-- [ ] Continue Watching excludes completed and trivial-start items.
-- [ ] Favorite and Watchlist are separate persistent flags.
+- [x] Fix featured Hero so a single entity supplies title, type, year, overview and artwork.
+- [x] Never combine a movie title/type with a series overview.
+- [x] Prefer a real series entity for Home featured content when series exist.
+- [x] Keep Movies page Hero movie-only.
+- [x] Add a Series Hub overlay instead of a dedicated detail page.
+- [x] Open Series Hub from Home and Series cards.
+- [x] Show series title, year, genres, overview, season count and episode count.
+- [x] Add season selector.
+- [x] Add episode list ordered by season/episode.
+- [x] Show SxxExx labels.
+- [x] Show episode title.
+- [x] Show episode filename and availability.
+- [x] Launch any available MP4/MKV episode from the hub.
+- [x] Keep the hub open while returning from player.
+- [x] Upgrade TVmaze artwork lookup to use /shows/:id/images.
+- [x] Prefer TVmaze `background` artwork for horizontal cards/hero.
+- [x] Fall back to TVmaze `banner`, then portrait poster only when needed.
+- [x] Use CSS `object-fit: cover` so artwork fills cards without stretching.
+- [x] Keep local backdrop/poster higher priority than remote artwork.
+- [x] Keep exact series-title matching before attaching remote metadata.
+- [x] Preserve Stage 6 J/L/F keyboard-layout fix.
 
 ## Acceptance criteria
-- [ ] User can stop and later resume playback.
-- [ ] Completed content is marked with V/check.
-- [ ] Home rows reflect current history.
-- [ ] Filesystem last-access time is not treated as authoritative viewing history.
 
-## Stage completion record
+- [x] Home Hero shows correct title and correct media type from the same entity.
+- [x] A series Hero says FEATURED SERIES, not Movie.
+- [x] Horizontal Series cards use horizontal TVmaze artwork when available.
+- [x] Artwork fills its frame without being squeezed or distorted.
+- [x] Clicking a series opens its Series Hub.
+- [x] User can choose a season.
+- [x] User can see and select individual episodes.
+- [x] Play opens the chosen local episode.
+- [x] No dedicated series route/page is required.
+- [x] Original video files remain local and untouched.
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+## Completion record
 
----
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 7 series hub and hero consistency commit
+- Known follow-ups: episode-specific remote thumbnails and movie metadata/artwork provider can be added later.
 
 # Stage 8 - TV Episode Playback Workflow
 
@@ -994,6 +987,7 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 
 

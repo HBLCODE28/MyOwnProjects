@@ -1,0 +1,243 @@
+.series-hub-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  overflow-y: auto;
+  padding: 34px;
+  background: rgba(2, 2, 4, .78);
+  backdrop-filter: blur(16px);
+}
+
+.series-hub {
+  width: min(1180px, calc(100vw - 68px));
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 22px;
+  background: #0a0b0e;
+  box-shadow: 0 28px 90px rgba(0,0,0,.55);
+}
+
+.series-hub-hero {
+  position: relative;
+  min-height: 430px;
+  overflow: hidden;
+}
+
+.series-hub-art {
+  position: absolute;
+  inset: 0;
+}
+
+.series-hub-art img,
+.series-hub-art .artwork-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.series-hub-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(7,8,10,.98) 0%, rgba(7,8,10,.78) 42%, rgba(7,8,10,.18) 100%),
+    linear-gradient(0deg, #0a0b0e 0%, rgba(10,11,14,.25) 54%, rgba(10,11,14,.05) 100%);
+}
+
+.series-hub-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  padding: 76px 54px 52px;
+}
+
+.series-hub-copy h2 {
+  margin: 0;
+  font-size: clamp(48px, 7vw, 82px);
+  line-height: .96;
+  letter-spacing: -.055em;
+}
+
+.series-hub-meta {
+  margin-top: 18px;
+  color: #b7b8be;
+  font-size: 13px;
+}
+
+.series-hub-overview {
+  max-width: 760px;
+  margin-top: 18px;
+  color: #c7c8ce;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.series-hub-close {
+  position: absolute;
+  z-index: 4;
+  top: 20px;
+  right: 20px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(0,0,0,.62);
+  font-weight: 800;
+}
+
+.series-hub-body {
+  padding: 0 36px 36px;
+}
+
+.series-hub-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.series-hub-toolbar h3 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.series-season-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #8a8b92;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.series-season-select select {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px;
+  color: #fff;
+  background: #141519;
+}
+
+.episode-list {
+  display: grid;
+  gap: 10px;
+}
+
+.episode-row {
+  display: grid;
+  grid-template-columns: 44px 190px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 13px;
+  background: rgba(255,255,255,.018);
+}
+
+.episode-number {
+  color: #686a72;
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.episode-thumbnail {
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border-radius: 9px;
+  background: #111216;
+}
+
+.episode-thumbnail img,
+.episode-thumbnail .artwork-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.episode-copy {
+  min-width: 0;
+}
+
+.episode-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.episode-title-row h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.episode-title-row span {
+  flex: 0 0 auto;
+  color: #777981;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.episode-copy p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 7px 0 0;
+  color: #85878f;
+  font-size: 12px;
+  line-height: 1.55;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.episode-file-meta {
+  overflow: hidden;
+  margin-top: 7px;
+  color: #55575e;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.episode-actions {
+  min-width: 88px;
+  text-align: right;
+}
+
+.episode-unavailable {
+  color: #7c7e85;
+  font-size: 11px;
+}
+
+.hero-primary-action {
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .series-hub-backdrop {
+    padding: 14px;
+  }
+
+  .series-hub {
+    width: calc(100vw - 28px);
+  }
+
+  .series-hub-copy {
+    padding: 70px 24px 32px;
+  }
+
+  .series-hub-body {
+    padding: 0 18px 24px;
+  }
+
+  .episode-row {
+    grid-template-columns: 34px 120px minmax(0, 1fr);
+  }
+
+  .episode-actions {
+    grid-column: 2 / -1;
+    text-align: left;
+  }
+}

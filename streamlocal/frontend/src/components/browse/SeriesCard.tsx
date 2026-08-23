@@ -1,56 +1,49 @@
-import type { MediaItem } from "../../types/library";
 import type { SeriesCard as SeriesCardModel } from "../../services/browseSelectors";
 import { ArtworkImage } from "./ArtworkImage";
 
 type Props = {
   card: SeriesCardModel;
-  onPlay?: (item: MediaItem) => void;
+  onOpen?: (card: SeriesCardModel) => void;
 };
 
-export function SeriesCard({ card, onPlay }: Props) {
-  const latestSeason = card.seasons.at(-1);
-  const firstEpisode = latestSeason?.episodes[0]?.item;
-
-  const playable = card.seasons
-    .flatMap((season) => season.episodes)
-    .find(
-      ({ file }) =>
-        file?.available &&
-        (file.extension.toLowerCase() === "mp4" ||
-          file.extension.toLowerCase() === "mkv"),
-    )?.item;
+export function SeriesCard({ card, onOpen }: Props) {
+  const firstEpisode = card.seasons[0]?.episodes[0]?.item;
 
   return (
     <article
-      className={`series-card ${playable && onPlay ? "playable-card" : ""}`}
-      onClick={() => {
-        if (playable && onPlay) onPlay(playable);
-      }}
+      className={`series-card ${onOpen ? "playable-card" : ""}`}
+      onClick={() => onOpen?.(card)}
       onKeyDown={(event) => {
         if (
           (event.key === "Enter" || event.key === " ") &&
-          playable &&
-          onPlay
+          onOpen
         ) {
           event.preventDefault();
-          onPlay(playable);
+          onOpen(card);
         }
       }}
-      tabIndex={playable && onPlay ? 0 : undefined}
-      role={playable && onPlay ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      role={onOpen ? "button" : undefined}
     >
       <div className="series-card-art">
         <ArtworkImage
           artworkId={
+            card.series.backdropArtworkId ??
+            firstEpisode?.backdropArtworkId ??
             card.series.posterArtworkId ??
             firstEpisode?.posterArtworkId ??
             null
           }
-          remoteUrl={card.series.remotePosterUrl ?? null}
+          remoteUrl={
+            card.series.remoteBackdropUrl ??
+            card.series.remotePosterUrl ??
+            null
+          }
           label="SERIES"
         />
-        {playable && onPlay && (
-          <span className="card-play">Play first available</span>
+
+        {onOpen && (
+          <span className="card-play">View episodes</span>
         )}
       </div>
 
