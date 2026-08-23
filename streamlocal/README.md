@@ -1,87 +1,50 @@
 # StreamLocal
 
-StreamLocal is a Windows local-first movie and TV library/player that runs through a localhost web application.
+StreamLocal is a Windows local-first movie and TV library/player running through a localhost web application.
 
 ## Current implementation
 
-Stage 1 - Foundation.
+Stage 2 - Persistent Media Library.
 
 Implemented:
+- Persistent Windows media folders.
+- MP4 and MKV discovery.
+- SQLite library records under `%LOCALAPPDATA%\StreamLocal`.
+- Lightweight file fingerprinting for move/rename reconciliation.
+- Missing-file state without deleting media records.
+- FFprobe technical metadata when available.
+- Embedded audio/subtitle stream discovery.
+- Debounced filesystem monitoring with watchdog.
+- Native Windows folder chooser.
+- Library screen with Add, Rescan and Remove.
+- Original source media is never moved, renamed, edited or deleted.
 
-- React + TypeScript + Vite frontend.
-- FastAPI backend.
-- SQLite database in `%LOCALAPPDATA%\StreamLocal`.
-- SQLAlchemy 2.x.
-- Alembic migrations.
-- `/api/v1/health`.
-- Original dark desktop application shell.
-- Windows PowerShell bootstrap, development, build and test scripts.
+Movie/series filename recognition and online metadata begin in Stage 3.
 
-Media scanning and playback intentionally begin in later Stages.
+## Development
 
-## Requirements for development
-
-- Windows 10/11.
-- Python 3.11 or newer.
-- Node.js 20 or newer.
-- Git.
-
-FFmpeg is optional in Stage 1. The health endpoint reports whether it is available.
-
-## Setup
-
-From the StreamLocal project directory:
+Install/update dependencies and migrations:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 ```
 
-This creates `backend\.venv`, installs Python dependencies, runs Alembic migrations and runs `npm install`.
-
-## Development
+Run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
 ```
 
-Development URLs:
-
-- Frontend: `http://127.0.0.1:5173`
-- Backend: `http://127.0.0.1:4310`
-- Health: `http://127.0.0.1:4310/api/v1/health`
-
-Vite proxies `/api` requests to the backend.
-
-## Verification
+Verify:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\test.ps1
 ```
 
-The Stage 1 verification runs:
+URLs:
+- UI: `http://127.0.0.1:5173`
+- Backend: `http://127.0.0.1:4310`
+- Health: `http://127.0.0.1:4310/api/v1/health`
 
-- backend pytest suite,
-- frontend TypeScript checking,
-- frontend production build.
-
-## Database
-
-The local SQLite DB is not stored inside the Git repository.
-
-Default path:
-
-```text
-%LOCALAPPDATA%\StreamLocal\data\streamlocal.db
-```
-
-Migrations can be run manually:
-
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m alembic upgrade head
-```
-
-## Project documents
-
-- `SPEC.md` - product and technical specification.
-- `STAGES.md` - authoritative development plan and progress tracker.
+Local DB:
+`%LOCALAPPDATA%\StreamLocal\data\streamlocal.db`

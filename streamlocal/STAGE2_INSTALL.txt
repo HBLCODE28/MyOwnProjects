@@ -1,0 +1,20 @@
+STREAMLOCAL STAGE 2
+
+1. Extract this ZIP directly into the existing StreamLocal project folder.
+   Allow merge/replace for backend/, frontend/, docs/ and the new root script.
+
+2. Open PowerShell in the StreamLocal folder.
+
+3. Run:
+   powershell -ExecutionPolicy Bypass -File .\stage2-apply.ps1
+
+The script requires Stage 1 COMPLETE, updates dependencies, applies migration
+0002_library, runs tests and frontend build, runs a temporary MP4/MKV scan,
+updates STAGES.md, and commits:
+
+Stage 2: persistent media library
+
+After success:
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+
+Open Library and add a real folder.

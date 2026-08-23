@@ -158,7 +158,7 @@ Create the runnable StreamLocal application shell with React, FastAPI, SQLite an
 
 # Stage 2 - Persistent Media Library
 
-**Status:** NOT STARTED
+**Status:** COMPLETE
 
 **Depends on:** Stage 1
 
@@ -167,47 +167,47 @@ Create the runnable StreamLocal application shell with React, FastAPI, SQLite an
 Allow the user to configure permanent media folders and scan MP4/MKV files into the local database.
 
 ## Tasks
-- [ ] Create library_sources database model and migration.
-- [ ] Create media_items and media_files base models and migrations.
-- [ ] Create Library Source API endpoints: list, add, update, remove and rescan.
-- [ ] Validate Windows folder paths before adding a source.
-- [ ] Support source types automatic, movies and tv.
-- [ ] Recursively discover .mp4 and .mkv files.
-- [ ] Integrate FFprobe and save technical metadata such as duration, codecs, resolution and audio/subtitle stream information.
-- [ ] Create lightweight file fingerprinting based on file size, timestamps and partial hashes.
-- [ ] Do not full-hash large media files by default.
-- [ ] Skip unchanged files during subsequent scans.
-- [ ] Add filesystem monitoring using watchdog.
-- [ ] Debounce filesystem events before scanning.
-- [ ] Mark missing files as unavailable instead of deleting their database history.
-- [ ] Provide manual Rescan action and visible scan status.
-- [ ] Create basic Library Management page showing sources and discovered files.
+- [x] Create library_sources database model and migration.
+- [x] Create media_items and media_files base models and migrations.
+- [x] Create Library Source API endpoints: list, add, update, remove and rescan.
+- [x] Validate Windows folder paths before adding a source.
+- [x] Support source types automatic, movies and tv.
+- [x] Recursively discover .mp4 and .mkv files.
+- [x] Integrate FFprobe and save technical metadata such as duration, codecs, resolution and audio/subtitle stream information.
+- [x] Create lightweight file fingerprinting based on file size, timestamps and partial hashes.
+- [x] Do not full-hash large media files by default.
+- [x] Skip unchanged files during subsequent scans.
+- [x] Add filesystem monitoring using watchdog.
+- [x] Debounce filesystem events before scanning.
+- [x] Mark missing files as unavailable instead of deleting their database history.
+- [x] Provide manual Rescan action and visible scan status.
+- [x] Create basic Library Management page showing sources and discovered files.
 
 ## Deliverables
-- [ ] Persistent source configuration
-- [ ] MP4/MKV scanner
-- [ ] FFprobe integration
-- [ ] File fingerprint service
-- [ ] Filesystem watcher
-- [ ] Library management source view
+- [x] Persistent source configuration
+- [x] MP4/MKV scanner
+- [x] FFprobe integration
+- [x] File fingerprint service
+- [x] Filesystem watcher
+- [x] Library management source view
 
 ## Required tests / verification
-- [ ] Adding a folder imports supported media.
-- [ ] Unsupported extensions are ignored.
-- [ ] Second scan does not re-probe unchanged files unnecessarily.
-- [ ] Renamed or moved files can be reconciled when fingerprint matches.
-- [ ] Removing a source never deletes physical video files.
+- [x] Adding a folder imports supported media.
+- [x] Unsupported extensions are ignored.
+- [x] Second scan does not re-probe unchanged files unnecessarily.
+- [x] Renamed or moved files can be reconciled when fingerprint matches.
+- [x] Removing a source never deletes physical video files.
 
 ## Acceptance criteria
-- [ ] Library survives application restart.
-- [ ] At least MP4 and MKV are discovered.
-- [ ] Technical metadata is persisted.
-- [ ] Unavailable files retain watch-history-compatible database records.
+- [x] Library survives application restart.
+- [x] At least MP4 and MKV are discovered.
+- [x] Technical metadata is persisted.
+- [x] Unavailable files retain watch-history-compatible database records.
 
 ## Stage completion record
 
-- Completion date: 
-- Git commit/tag: 
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 2 persistent media library commit
 - Known follow-ups: None
 
 ---
@@ -921,5 +921,6 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 

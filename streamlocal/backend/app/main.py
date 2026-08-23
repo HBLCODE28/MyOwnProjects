@@ -1,26 +1,20 @@
 from contextlib import asynccontextmanager
-from pathlib import Path
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-
 from app.api.v1.router import api_router
 from app.config import get_settings
-
+from app.services.watcher_service import watcher_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     get_settings().ensure_directories()
-    yield
+    watcher_manager.start()
+    try:
+        yield
+    finally:
+        watcher_manager.stop()
 
-
-app = FastAPI(
-    title="StreamLocal",
-    version="0.1.0",
-    lifespan=lifespan,
-)
-
+app = FastAPI(title="StreamLocal", version="0.2.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -33,18 +27,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(api_router)
 
-
 @app.get("/")
-def root() -> dict[str, str]:
-    return {
-        "name": "StreamLocal",
-        "status": "backend-online",
-        "health": "/api/v1/health",
-    }
-
-
-# Stage 15 will serve the production frontend from FastAPI. The import is kept
-# deliberately simple in Stage 1 so development remains frontend:5173/backend:4310.
+def root():
+    return {"name": "StreamLocal", "status": "backend-online", "health": "/api/v1/health"}
