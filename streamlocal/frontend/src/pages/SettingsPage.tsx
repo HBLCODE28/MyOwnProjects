@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { ApiKeyVault } from "../components/settings/ApiKeyVault";
+import { TvmazeProviderCard } from "../components/settings/TvmazeProviderCard";
 import { db, requestPersistentStorage } from "../db/streamlocalDb";
-import { exportStreamLocalBackup, importStreamLocalBackup } from "../services/backup";
+import {
+  exportStreamLocalBackup,
+  importStreamLocalBackup,
+} from "../services/backup";
 import "../styles/settings.css";
 
 function downloadBlob(blob: Blob, fileName: string) {
@@ -18,14 +22,19 @@ export function SettingsPage() {
 
   async function exportBackup() {
     const blob = await exportStreamLocalBackup();
-    downloadBlob(blob, `StreamLocal-Backup-${new Date().toISOString().slice(0, 10)}.zip`);
+    downloadBlob(
+      blob,
+      `StreamLocal-Backup-${new Date().toISOString().slice(0, 10)}.zip`,
+    );
     setStatus("Backup exported.");
   }
 
   async function importBackup(file: File | undefined) {
     if (!file) return;
     await importStreamLocalBackup(file);
-    setStatus("Backup imported. Reconnect each media folder in Library.");
+    setStatus(
+      "Backup imported. Reconnect each media folder in Library.",
+    );
   }
 
   async function persistence() {
@@ -76,20 +85,24 @@ export function SettingsPage() {
     <div className="page settings-page">
       <p className="eyebrow">LOCAL DATA</p>
       <h1>Settings</h1>
+
       <p className="settings-intro">
-        StreamLocal has no account or server database. Library data stays in this browser
-        profile. Optional API credentials can be stored in the encrypted local vault below.
+        StreamLocal has no account or server database. Library data stays in
+        this browser profile. Optional online metadata is used only when you
+        explicitly request it.
       </p>
 
       {status && <div className="scan-summary">{status}</div>}
 
+      <TvmazeProviderCard />
       <ApiKeyVault />
 
       <section className="settings-card">
         <h2>Browser storage</h2>
         <p>
-          This checks whether the browser is willing to protect StreamLocal storage
-          from automatic cleanup. IndexedDB still works when this returns false.
+          This checks whether the browser is willing to protect StreamLocal
+          storage from automatic cleanup. IndexedDB still works when this
+          returns false.
         </p>
         <button className="secondary-button" onClick={persistence}>
           Check persistent storage
@@ -99,20 +112,24 @@ export function SettingsPage() {
       <section className="settings-card">
         <h2>Move to another computer</h2>
         <p>
-          Export metadata and local artwork to a ZIP. Encrypted API credentials are not
-          exported. On the other computer import the library, reconnect folders, then create
-          or unlock a local API-key vault separately.
+          Export metadata and local artwork to a ZIP. Encrypted API
+          credentials are not exported. On the other computer import the
+          library and reconnect your media folders.
         </p>
+
         <div className="settings-actions">
           <button className="primary-button" onClick={exportBackup}>
             Export library
           </button>
+
           <label className="secondary-button file-button">
             Import library
             <input
               type="file"
               accept=".zip,application/zip"
-              onChange={(event) => importBackup(event.target.files?.[0])}
+              onChange={(event) =>
+                importBackup(event.target.files?.[0])
+              }
             />
           </label>
         </div>
@@ -121,8 +138,8 @@ export function SettingsPage() {
       <section className="settings-card danger-zone">
         <h2>Clear local database</h2>
         <p>
-          This clears IndexedDB including the encrypted API-key vault. It never deletes
-          your video files.
+          This clears IndexedDB including the encrypted API-key vault. It never
+          deletes your video files.
         </p>
         <button className="danger-button" onClick={clearLibrary}>
           Clear StreamLocal data

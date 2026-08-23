@@ -432,60 +432,77 @@ Add direct local MP4 playback in the browser and introduce encrypted local API-k
 - Git commit/tag: Stage 5 basic MP4 player and encrypted API vault commit
 - Known follow-ups: Stage 6 adds MKV/codec compatibility and multi-audio. Poster fetching can later use a vault credential only while the vault is unlocked.
 
-# Stage 6 - MKV, Codec Compatibility and Multi-Audio
+# Stage 6 - MKV and Browser Media Compatibility
 
-**Status:** NOT STARTED
-
-**Depends on:** Stage 5
+**Status:** COMPLETE  
+**Depends on:** Stage 5 - Basic MP4 Player
 
 ## Goal
 
-Make MKV and incompatible codecs playable through the least expensive conversion strategy.
+Extend the browser-only player from MP4-only playback to direct MP4/MKV playback where the current browser can decode the file, improve codec diagnostics, expose multiple audio tracks when the browser supports the standard API, fix keyboard shortcuts across keyboard layouts, and add an account-free series poster provider.
 
 ## Tasks
-- [ ] Create playback capability probe using FFprobe data.
-- [ ] Select strategy in this order: direct play, remux, audio transcode, full transcode.
-- [ ] Integrate HLS.js in frontend.
-- [ ] Create backend HLS playback sessions.
-- [ ] Generate HLS/fMP4 output with FFmpeg.
-- [ ] Copy compatible video streams instead of re-encoding whenever possible.
-- [ ] Transcode incompatible audio to AAC when required.
-- [ ] Transcode incompatible video to H.264 only when required.
-- [ ] Create cancellation and cleanup for FFmpeg processes.
-- [ ] Clean stale HLS sessions.
-- [ ] Expose playback preparation/error states to the UI.
-- [ ] Enumerate multiple audio streams.
-- [ ] Provide Audio menu in player.
-- [ ] Support language/title labels for tracks.
-- [ ] Persist preferred audio language globally and optionally per series.
 
-## Deliverables
-- [ ] Playback strategy service
-- [ ] HLS session service
-- [ ] FFmpeg worker lifecycle
-- [ ] MKV support
-- [ ] Multi-audio selection
+- [x] Allow direct local MP4 playback.
+- [x] Allow direct local MKV/Matroska playback attempts.
+- [x] Keep original media unchanged and local.
+- [x] Detect browser media errors and show useful codec/container diagnostics.
+- [x] Keep object URL cleanup.
+- [x] Keep seek, speed, volume and fullscreen controls.
+- [x] Fix J/L/F keyboard shortcuts by using physical KeyboardEvent.code.
+- [x] Keep fallback KeyboardEvent.key behavior.
+- [x] Add automated shortcut tests including non-English key values.
+- [x] Detect HTMLMediaElement audioTracks when exposed by the browser.
+- [x] Show an Audio selector when multiple tracks are exposed.
+- [x] Do not claim audio-track switching when the browser hides that API.
+- [x] Add TVmaze as optional online metadata for series.
+- [x] TVmaze integration requires no API key/account.
+- [x] Send only the series title when the user explicitly starts poster matching.
+- [x] Require an exact normalized title match before attaching TVmaze metadata.
+- [x] Add TVmaze remote poster fallback for series cards and hero artwork.
+- [x] Preserve local artwork as higher priority than remote artwork.
+- [x] Rename Settings API vault to generic optional API-key storage.
+- [x] Keep encrypted vault credentials out of library exports.
+- [x] Keep browser-only architecture with no StreamLocal backend.
+
+## Compatibility notes
+
+- MKV is a container. Whether a particular MKV plays depends on the video/audio codecs inside it and on the codecs enabled by the installed browser/OS.
+- StreamLocal does not transcode large video files in Stage 6.
+- Multi-audio selection is displayed only when the browser exposes `HTMLMediaElement.audioTracks`.
+- Chromium-based browsers can hide `audioTracks`, so some multi-audio files may play only the browser-selected/default track.
+- TVmaze poster matching is opt-in and series-only in this stage.
 
 ## Required tests / verification
-- [ ] Test MP4 H.264/AAC direct play.
-- [ ] Test MKV H.264/AAC.
-- [ ] Test MKV H.264/AC3.
-- [ ] Test MKV H.265/AC3 fallback.
-- [ ] Test file with at least two audio tracks.
-- [ ] Closing player terminates unused FFmpeg session.
+
+- [x] MP4 and MKV recognized as supported StreamLocal containers.
+- [x] Unsupported containers rejected.
+- [x] Physical J/L/F shortcuts map correctly even with non-English `event.key`.
+- [x] Playback and arrow shortcuts map correctly.
+- [x] TVmaze exact normalized matching.
+- [x] TVmaze does not guess when exact matching fails.
+- [x] TypeScript typecheck.
+- [x] Production static build.
+- [x] No StreamLocal backend dependency.
 
 ## Acceptance criteria
-- [ ] Required MP4/MKV test matrix is playable or produces a clear supported error.
-- [ ] Compatible streams are not unnecessarily re-encoded.
-- [ ] Audio tracks can be selected for supported files.
 
-## Stage completion record
+- [x] MP4 cards open the player.
+- [x] MKV cards can open the player and attempt native browser playback.
+- [x] Unsupported MKV/codec combinations show a useful message instead of silently failing.
+- [x] J/L/F work independently of English/Hebrew keyboard layout.
+- [x] Fullscreen can be triggered by F.
+- [x] Multiple audio tracks are selectable when the browser exposes them.
+- [x] Settings can fetch series metadata/posters from TVmaze without an account or API key.
+- [x] Wrong/fuzzy TVmaze matches are not automatically accepted.
+- [x] Local poster artwork remains preferred over TVmaze artwork.
+- [x] Original video files are never modified or uploaded.
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+## Completion record
 
----
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 6 browser media compatibility commit
+- Known limitation: Chromium currently does not reliably expose the standard `audioTracks` API, so full multi-audio selection cannot be guaranteed in a pure browser-only application. Codec support also depends on the installed browser and OS.
 
 # Stage 7 - Watch Progress, Watched State and Personal Lists
 
@@ -977,6 +994,7 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 
 

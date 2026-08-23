@@ -1,0 +1,47 @@
+STREAMLOCAL - STAGE 6
+
+IMPORTANT:
+You do NOT need the separate Stage 5 keyboard-shortcut fix.
+The J/L/F fix is included in this Stage 6 package.
+
+Stage 6 adds:
+- MP4 + MKV direct browser playback attempts.
+- Better codec/container errors.
+- J/L/F keyboard-layout fix.
+- Multiple-audio selector when the browser exposes audioTracks.
+- TVmaze series poster/metadata lookup without an account or API key.
+- Generic encrypted API-key vault for optional future providers.
+
+INSTALL
+
+1. Extract this ZIP into:
+   C:\Users\Cyber_User\Documents\Projects\streamlocal
+
+2. Choose Replace/Merge.
+
+3. Run:
+   powershell -ExecutionPolicy Bypass -File .\stage6-browser-apply.ps1
+
+4. After success:
+   powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+
+CHECK
+
+Player:
+- MP4 plays.
+- Try an MKV.
+- J = back 10 seconds.
+- L = forward 10 seconds.
+- F = fullscreen.
+- Test while Windows keyboard language is Hebrew.
+- If an MKV fails, StreamLocal should show a codec/container message.
+
+Settings:
+- Find series posters with TVmaze.
+- No TVmaze account or API key is required.
+- Return to Home/Series and confirm matched series posters appear.
+
+Multi-audio:
+- If the browser exposes multiple audio tracks, an Audio selector appears.
+- Chromium may not expose audioTracks, so the selector cannot be guaranteed
+  in a pure browser-only app.

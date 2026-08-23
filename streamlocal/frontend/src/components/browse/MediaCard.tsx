@@ -9,9 +9,13 @@ type Props = {
 };
 
 export function MediaCard({ item, file, label, onPlay }: Props) {
-  const isMp4 = file?.extension.toLowerCase() === "mp4";
-  const status = file?.available ? (isMp4 ? "Available" : "MKV · Stage 6") : "Unavailable";
-  const canPlay = Boolean(file?.available && isMp4);
+  const playableContainer =
+    file?.extension.toLowerCase() === "mp4" ||
+    file?.extension.toLowerCase() === "mkv";
+  const canPlay = Boolean(file?.available && playableContainer);
+  const status = file?.available
+    ? `${file.extension.toUpperCase()} · Available`
+    : "Unavailable";
 
   return (
     <article
@@ -20,7 +24,11 @@ export function MediaCard({ item, file, label, onPlay }: Props) {
         if (canPlay && onPlay) onPlay(item);
       }}
       onKeyDown={(event) => {
-        if ((event.key === "Enter" || event.key === " ") && canPlay && onPlay) {
+        if (
+          (event.key === "Enter" || event.key === " ") &&
+          canPlay &&
+          onPlay
+        ) {
           event.preventDefault();
           onPlay(item);
         }
@@ -29,8 +37,13 @@ export function MediaCard({ item, file, label, onPlay }: Props) {
       role={canPlay && onPlay ? "button" : undefined}
     >
       <div className="media-card-art">
-        <ArtworkImage artworkId={item.posterArtworkId} label={label ?? item.type.toUpperCase()} />
-        {!file?.available && <span className="card-unavailable">Unavailable</span>}
+        <ArtworkImage
+          artworkId={item.posterArtworkId}
+          label={label ?? item.type.toUpperCase()}
+        />
+        {!file?.available && (
+          <span className="card-unavailable">Unavailable</span>
+        )}
         {canPlay && onPlay && <span className="card-play">Play</span>}
       </div>
 

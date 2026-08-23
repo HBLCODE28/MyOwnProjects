@@ -19,9 +19,7 @@
   background: rgba(5,5,7,.92);
 }
 
-.player-topbar .eyebrow {
-  margin-bottom: 5px;
-}
+.player-topbar .eyebrow { margin-bottom: 5px; }
 
 .player-topbar h2 {
   margin: 0;
@@ -62,15 +60,19 @@
   line-height: 1.6;
 }
 
+.player-compatibility-note,
+.player-capability-line {
+  color: #74767d;
+  font-size: 11px;
+}
+
 .player-controls {
   padding: 12px 20px 17px;
   border-top: 1px solid rgba(255,255,255,.06);
   background: rgba(8,8,10,.96);
 }
 
-.player-seek {
-  width: 100%;
-}
+.player-seek { width: 100%; }
 
 .player-control-row {
   display: flex;
@@ -113,9 +115,7 @@
   font-weight: 700;
 }
 
-.player-volume input {
-  width: 110px;
-}
+.player-volume input { width: 110px; }
 
 .player-speed select {
   min-height: 36px;
@@ -124,6 +124,11 @@
   border-radius: 7px;
   color: #fff;
   background: #151519;
+}
+
+.player-capability-line {
+  margin-top: 9px;
+  text-align: right;
 }
 
 .playable-card {
@@ -157,4 +162,15 @@
   backdrop-filter: blur(10px);
   font-size: 10px;
   font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .player-control-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .player-control-group {
+    flex-wrap: wrap;
+  }
 }

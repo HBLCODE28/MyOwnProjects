@@ -20,14 +20,14 @@ type SecretField = {
 
 const SECRET_FIELDS: SecretField[] = [
   {
-    id: "tmdbReadAccessToken",
-    label: "TMDb API Read Access Token",
-    help: "Recommended for future poster/metadata requests.",
+    id: "customMetadataApiKey",
+    label: "Custom metadata API key",
+    help: "Optional encrypted slot for a future metadata provider that requires a key.",
   },
   {
-    id: "tmdbApiKey",
-    label: "TMDb API Key",
-    help: "Alternative TMDb v3 credential.",
+    id: "customPosterApiKey",
+    label: "Custom poster API key",
+    help: "Optional encrypted slot for a future artwork provider that requires a key.",
   },
 ];
 
@@ -40,8 +40,7 @@ export function ApiKeyVault() {
   const [message, setMessage] = useState<string | null>(null);
 
   async function refreshState() {
-    const hasVault = await vaultExists();
-    setExists(hasVault);
+    setExists(await vaultExists());
     setUnlocked(vaultIsUnlocked());
     setStoredIds(await listSecretIds());
   }
@@ -55,10 +54,16 @@ export function ApiKeyVault() {
     try {
       await createVault(password);
       setPassword("");
-      setMessage("Encrypted API key vault created and unlocked for this session.");
+      setMessage(
+        "Encrypted API key vault created and unlocked for this session.",
+      );
       await refreshState();
     } catch (value) {
-      setMessage(value instanceof Error ? value.message : "Vault could not be created.");
+      setMessage(
+        value instanceof Error
+          ? value.message
+          : "Vault could not be created.",
+      );
     }
   }
 
@@ -70,7 +75,11 @@ export function ApiKeyVault() {
       setMessage("API key vault unlocked for this browser session.");
       await refreshState();
     } catch (value) {
-      setMessage(value instanceof Error ? value.message : "Vault could not be unlocked.");
+      setMessage(
+        value instanceof Error
+          ? value.message
+          : "Vault could not be unlocked.",
+      );
     }
   }
 
@@ -86,8 +95,12 @@ export function ApiKeyVault() {
       setValues((current) => ({ ...current, [id]: "" }));
       setMessage("API credential encrypted and saved locally.");
       await refreshState();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Credential could not be saved.");
+    } catch (value) {
+      setMessage(
+        value instanceof Error
+          ? value.message
+          : "Credential could not be saved.",
+      );
     }
   }
 
@@ -95,9 +108,17 @@ export function ApiKeyVault() {
     try {
       const value = await readSecret(id);
       setValues((current) => ({ ...current, [id]: value ?? "" }));
-      setMessage(value ? "Credential decrypted into the field for this session." : "No saved credential.");
+      setMessage(
+        value
+          ? "Credential decrypted into the field for this session."
+          : "No saved credential.",
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Credential could not be read.");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Credential could not be read.",
+      );
     }
   }
 
@@ -116,7 +137,14 @@ export function ApiKeyVault() {
   }
 
   async function removeVault() {
-    if (!window.confirm("Delete the encrypted API key vault and all saved credentials?")) return;
+    if (
+      !window.confirm(
+        "Delete the encrypted API key vault and all saved credentials?",
+      )
+    ) {
+      return;
+    }
+
     await deleteVault();
     setValues({});
     setMessage("Encrypted API key vault deleted.");
@@ -125,10 +153,10 @@ export function ApiKeyVault() {
 
   return (
     <section className="settings-card">
-      <h2>Encrypted API keys</h2>
+      <h2>Encrypted optional API keys</h2>
       <p>
-        API credentials are encrypted before being stored in IndexedDB. The vault password
-        is not stored, and the decrypted key remains only in memory while the vault is unlocked.
+        TVmaze does not need a key. This encrypted vault remains available for
+        other metadata or poster providers that you may choose later.
       </p>
 
       {!exists && (
@@ -143,7 +171,9 @@ export function ApiKeyVault() {
               placeholder="At least 8 characters"
             />
           </label>
-          <button className="primary-button" onClick={create}>Create encrypted vault</button>
+          <button className="primary-button" onClick={create}>
+            Create encrypted vault
+          </button>
         </div>
       )}
 
@@ -158,7 +188,9 @@ export function ApiKeyVault() {
               onChange={(event) => setPassword(event.target.value)}
             />
           </label>
-          <button className="primary-button" onClick={unlock}>Unlock vault</button>
+          <button className="primary-button" onClick={unlock}>
+            Unlock vault
+          </button>
         </div>
       )}
 
@@ -167,12 +199,14 @@ export function ApiKeyVault() {
           <div className="vault-fields">
             {SECRET_FIELDS.map((field) => {
               const saved = storedIds.includes(field.id);
+
               return (
                 <div className="vault-field" key={field.id}>
                   <div>
                     <strong>{field.label}</strong>
                     <p>{field.help}</p>
                   </div>
+
                   <input
                     type="password"
                     value={values[field.id] ?? ""}
@@ -182,18 +216,31 @@ export function ApiKeyVault() {
                         [field.id]: event.target.value,
                       }))
                     }
-                    placeholder={saved ? "Saved - reveal or replace" : "Enter credential"}
+                    placeholder={
+                      saved ? "Saved - reveal or replace" : "Enter credential"
+                    }
                   />
+
                   <div className="vault-actions">
-                    <button className="primary-button" onClick={() => save(field.id)}>
+                    <button
+                      className="primary-button"
+                      onClick={() => save(field.id)}
+                    >
                       Save encrypted
                     </button>
+
                     {saved && (
                       <>
-                        <button className="secondary-button" onClick={() => reveal(field.id)}>
+                        <button
+                          className="secondary-button"
+                          onClick={() => reveal(field.id)}
+                        >
                           Reveal
                         </button>
-                        <button className="danger-button" onClick={() => remove(field.id)}>
+                        <button
+                          className="danger-button"
+                          onClick={() => remove(field.id)}
+                        >
                           Delete
                         </button>
                       </>
@@ -205,8 +252,12 @@ export function ApiKeyVault() {
           </div>
 
           <div className="vault-footer">
-            <button className="secondary-button" onClick={lock}>Lock vault</button>
-            <button className="danger-button" onClick={removeVault}>Delete vault</button>
+            <button className="secondary-button" onClick={lock}>
+              Lock vault
+            </button>
+            <button className="danger-button" onClick={removeVault}>
+              Delete vault
+            </button>
           </div>
         </>
       )}
@@ -214,8 +265,8 @@ export function ApiKeyVault() {
       {message && <div className="scan-summary">{message}</div>}
 
       <p className="vault-security-note">
-        The encrypted credentials are not included in StreamLocal library exports. Future
-        poster integrations can use a credential only after the vault is unlocked.
+        Vault credentials stay encrypted in IndexedDB and are excluded from
+        StreamLocal library exports.
       </p>
     </section>
   );
