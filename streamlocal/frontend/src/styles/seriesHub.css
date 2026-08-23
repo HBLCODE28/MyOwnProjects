@@ -7,7 +7,7 @@
   z-index: 180;
   overflow-y: auto;
   padding: 22px 34px 34px;
-  background: rgba(2, 2, 4, .8);
+  background: rgba(2,2,4,.8);
   backdrop-filter: blur(16px);
 }
 
@@ -25,9 +25,7 @@
   position: relative;
   min-height: 430px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 75% 30%, rgba(130,110,255,.08), transparent 38%),
-    #07080a;
+  background: #07080a;
 }
 
 .series-hub-art {
@@ -38,17 +36,8 @@
   background: #07080a;
 }
 
-.series-hub-art::before {
-  content: "";
-  position: absolute;
-  inset: -25px;
-  background: rgba(255,255,255,.015);
-}
-
 .series-hub-art img,
 .series-hub-art .artwork-placeholder {
-  position: relative;
-  z-index: 1;
   width: 100%;
   height: 100%;
 }
@@ -112,15 +101,28 @@
 
 .series-hub-toolbar {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 18px;
 }
 
-.series-hub-toolbar h3 {
+.series-season-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.series-season-heading h3 {
   margin: 0;
   font-size: 28px;
+}
+
+.series-episodes-label {
+  color: #9a86ff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .14em;
 }
 
 .series-season-select {
@@ -148,13 +150,21 @@
 
 .episode-row {
   display: grid;
-  grid-template-columns: 44px 190px minmax(0, 1fr) auto;
+  grid-template-columns: 44px 190px minmax(0,1fr) auto;
   gap: 16px;
   align-items: center;
   padding: 12px;
   border: 1px solid rgba(255,255,255,.06);
   border-radius: 13px;
   background: rgba(255,255,255,.018);
+}
+
+.episode-row-started {
+  border-color: rgba(157,137,255,.18);
+}
+
+.episode-row-watched {
+  opacity: .78;
 }
 
 .episode-number {
@@ -165,6 +175,7 @@
 }
 
 .episode-thumbnail {
+  position: relative;
   overflow: hidden;
   aspect-ratio: 16 / 9;
   border-radius: 9px;
@@ -175,6 +186,42 @@
 .episode-thumbnail .artwork-placeholder {
   width: 100%;
   height: 100%;
+}
+
+.episode-state {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.episode-state.started {
+  color: #eeeaff;
+  background: rgba(102,78,205,.82);
+}
+
+.episode-state.watched {
+  color: #e3e4e8;
+  background: rgba(30,31,36,.82);
+}
+
+.episode-progress-track {
+  position: absolute;
+  right: 7px;
+  bottom: 6px;
+  left: 7px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.24);
+}
+
+.episode-progress-value {
+  height: 100%;
+  background: #a38eff;
 }
 
 .episode-copy {
@@ -221,7 +268,7 @@
 }
 
 .episode-actions {
-  min-width: 88px;
+  min-width: 92px;
   text-align: right;
 }
 
@@ -247,8 +294,14 @@
     padding: 0 18px 24px;
   }
 
+  .series-hub-toolbar,
+  .series-season-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .episode-row {
-    grid-template-columns: 34px 120px minmax(0, 1fr);
+    grid-template-columns: 34px 120px minmax(0,1fr);
   }
 
   .episode-actions {

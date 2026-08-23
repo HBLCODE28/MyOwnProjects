@@ -1,17 +1,22 @@
 import { useMemo, useState } from "react";
-import type { MediaItem } from "../../types/library";
+import type {
+  MediaItem,
+  PlaybackProgress,
+} from "../../types/library";
 import type { SeriesCard } from "../../services/browseSelectors";
 import { ArtworkImage } from "./ArtworkImage";
 import "../../styles/seriesHub.css";
 
 type Props = {
   card: SeriesCard;
+  progressByItemId?: Record<string, PlaybackProgress>;
   onClose: () => void;
   onPlay: (item: MediaItem) => void;
 };
 
 export function SeriesHubOverlay({
   card,
+  progressByItemId = {},
   onClose,
   onPlay,
 }: Props) {
@@ -39,10 +44,7 @@ export function SeriesHubOverlay({
     null;
 
   return (
-    <div
-      className="series-hub-backdrop"
-      onMouseDown={onClose}
-    >
+    <div className="series-hub-backdrop" onMouseDown={onClose}>
       <section
         className="series-hub"
         onMouseDown={(event) => event.stopPropagation()}
@@ -94,11 +96,11 @@ export function SeriesHubOverlay({
 
         <div className="series-hub-body">
           <div className="series-hub-toolbar">
-            <div>
-              <p className="eyebrow">EPISODES</p>
+            <div className="series-season-heading">
               <h3>
                 Season {season?.seasonNumber ?? seasonNumber}
               </h3>
+              <span className="series-episodes-label">EPISODES</span>
             </div>
 
             <label className="series-season-select">
@@ -129,8 +131,24 @@ export function SeriesHubOverlay({
                   file?.extension.toLowerCase() ?? "",
                 );
 
+              const progress = progressByItemId[item.id];
+              const state = progress?.watched
+                ? "Watched"
+                : progress?.started
+                  ? "Started"
+                  : null;
+
               return (
-                <article className="episode-row" key={item.id}>
+                <article
+                  className={`episode-row ${
+                    progress?.watched
+                      ? "episode-row-watched"
+                      : progress?.started
+                        ? "episode-row-started"
+                        : ""
+                  }`}
+                  key={item.id}
+                >
                   <div className="episode-number">
                     {item.episodeNumber ?? "-"}
                   </div>
@@ -151,6 +169,34 @@ export function SeriesHubOverlay({
                       label={`S${String(item.seasonNumber ?? 0).padStart(2, "0")}E${String(item.episodeNumber ?? 0).padStart(2, "0")}`}
                       fit="cover"
                     />
+
+                    {state && (
+                      <span
+                        className={
+                          progress?.watched
+                            ? "episode-state watched"
+                            : "episode-state started"
+                        }
+                      >
+                        {state}
+                      </span>
+                    )}
+
+                    {progress &&
+                      progress.percent > 0 &&
+                      !progress.watched && (
+                        <div className="episode-progress-track">
+                          <div
+                            className="episode-progress-value"
+                            style={{
+                              width: `${Math.max(
+                                2,
+                                Math.min(100, progress.percent * 100),
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      )}
                   </div>
 
                   <div className="episode-copy">
@@ -180,7 +226,11 @@ export function SeriesHubOverlay({
                         className="primary-button"
                         onClick={() => onPlay(item)}
                       >
-                        Play
+                        {progress?.started && !progress.watched
+                          ? "Resume"
+                          : progress?.watched
+                            ? "Play again"
+                            : "Play"}
                       </button>
                     ) : (
                       <span className="episode-unavailable">

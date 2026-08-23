@@ -17,18 +17,31 @@ import "../styles/browse.css";
 export function SeriesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
   const [query, setQuery] = useState("");
-  const [selectedSeries, setSelectedSeries] =
-    useState<SeriesCardModel | null>(null);
+  const [selectedSeriesId, setSelectedSeriesId] =
+    useState<string | null>(null);
   const [playing, setPlaying] = useState<MediaItem | null>(null);
 
+  async function refresh() {
+    setData(await loadBrowseData());
+  }
+
   useEffect(() => {
-    loadBrowseData().then(setData);
+    void refresh();
   }, []);
 
   const series = useMemo(
     () => filterSeries(data?.series ?? [], query),
     [data?.series, query],
   );
+
+  const selectedSeries =
+    data?.series.find(
+      (card) => card.series.id === selectedSeriesId,
+    ) ?? null;
+
+  function openSeries(card: SeriesCardModel) {
+    setSelectedSeriesId(card.series.id);
+  }
 
   if (!data) {
     return (
@@ -43,7 +56,7 @@ export function SeriesPage() {
       <HeroRail
         movies={data.movies}
         series={data.series}
-        onOpenSeries={setSelectedSeries}
+        onOpenSeries={openSeries}
       />
 
       <section className="browse-toolbar">
@@ -70,7 +83,7 @@ export function SeriesPage() {
             <SeriesCard
               key={card.series.id}
               card={card}
-              onOpen={setSelectedSeries}
+              onOpen={openSeries}
             />
           ))}
         </section>
@@ -79,7 +92,8 @@ export function SeriesPage() {
       {selectedSeries && !playing && (
         <SeriesHubOverlay
           card={selectedSeries}
-          onClose={() => setSelectedSeries(null)}
+          progressByItemId={data.progressByItemId}
+          onClose={() => setSelectedSeriesId(null)}
           onPlay={setPlaying}
         />
       )}
@@ -88,6 +102,7 @@ export function SeriesPage() {
         <PlayerOverlay
           item={playing}
           onClose={() => setPlaying(null)}
+          onProgressChanged={() => void refresh()}
         />
       )}
     </div>

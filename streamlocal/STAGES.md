@@ -634,58 +634,85 @@ Make StreamLocal behave more like a real streaming library: persist playback pos
 - Git commit/tag: Stage 8 continue watching, movie artwork and navigation commit
 - Known limitation: Wikipedia does not guarantee that every film article has a usable lead poster image. Missing movie artwork can still be supplied locally or manually.
 
-# Stage 9 - Subtitle System
+# Stage 9 - Episode Viewing State, Immersive Player and Artwork Reliability
 
-**Status:** NOT STARTED
-
-**Depends on:** Stage 6; can be developed after Stage 8 in project order
+**Status:** COMPLETE  
+**Depends on:** Stage 8 - Continue Watching, Movie Artwork and Unified Navigation
 
 ## Goal
 
-Support external SRT, text subtitle tracks, language selection and manual synchronization controls.
+Polish local viewing state and playback UX: distinguish an episode that the user opened from one that is fully watched, make the non-fullscreen player truly immersive, refine Series Hub information layout, make the main navigation feel native to StreamLocal, and make movie-poster lookup report only real artwork updates.
 
 ## Tasks
-- [ ] Detect external .srt files using common naming patterns.
-- [ ] Store subtitle tracks and language labels.
-- [ ] Convert SRT to WebVTT without modifying the original file.
-- [ ] Detect embedded text subtitles using FFprobe.
-- [ ] Extract compatible embedded text tracks through FFmpeg.
-- [ ] Add subtitle selection menu to player.
-- [ ] Add Off option.
-- [ ] Implement preferred subtitle language.
-- [ ] Add manual subtitle offset controls.
-- [ ] Support at least +/-0.5 second adjustments and Reset.
-- [ ] Optionally add +/-0.1 second fine controls.
-- [ ] Cache generated VTT files.
-- [ ] Invalidate subtitle cache when the source file changes.
-- [ ] Handle unsupported image subtitle formats without crashing playback.
 
-## Deliverables
-- [ ] SRT discovery
-- [ ] SRT-to-VTT conversion
-- [ ] Embedded text subtitle extraction
-- [ ] Subtitle menu
-- [ ] Manual offset
+- [x] Add local `started` state to playback progress.
+- [x] Add local `firstPlayedAt` timestamp.
+- [x] Mark an episode/movie Started as soon as the local player opens.
+- [x] Keep Started separate from Watched.
+- [x] Keep existing Watched thresholds:
+  - Movie: >=90% OR <=5 minutes remaining.
+  - Episode: >=90% OR <=2 minutes remaining.
+- [x] Show Started badge in Series Hub.
+- [x] Show Watched badge in Series Hub.
+- [x] Show Resume for started unfinished episodes.
+- [x] Show Play again for watched episodes.
+- [x] Show episode progress bar.
+- [x] Keep viewing state in IndexedDB only.
+- [x] Update Series Hub from fresh browse data after player state changes.
+- [x] Move EPISODES label next to Season heading.
+- [x] Remove player top navigation/header.
+- [x] Hide StreamLocal main navbar while PlayerOverlay is open.
+- [x] Make PlayerOverlay cover the complete viewport above all application UI.
+- [x] Keep a floating Close button permanently visible in non-fullscreen playback.
+- [x] Keep playback controls and title inside the player only.
+- [x] Preserve keyboard shortcuts and fullscreen.
+- [x] Restyle main StreamLocal navigation with stronger application-specific styling.
+- [x] Keep Series Hub below the main navbar when not playing.
+- [x] Change Wikipedia artwork accounting:
+  - Matched page is not the same as saved poster.
+  - Count a poster update only when a real image URL is returned.
+- [x] Prefer Wikipedia's generated thumbnail over very large/unusual originals.
+- [x] Show separate counts for page match, poster saved, page without image, no page and failure.
+- [x] Keep local movie artwork higher priority than Wikipedia artwork.
+
+## Privacy
+
+- Started/Watched/progress/history stay in local IndexedDB.
+- They are not sent to TVmaze or Wikipedia.
+- Video files and filesystem paths are never uploaded.
+- Wikipedia requests still contain only movie title/year when explicitly requested.
 
 ## Required tests / verification
-- [ ] External SRT works with MP4.
-- [ ] External SRT works with MKV/HLS playback.
-- [ ] Language labels are displayed.
-- [ ] Manual offset visibly changes cue timing.
-- [ ] Original SRT remains untouched.
+
+- [x] Opening an episode records Started without marking it Watched.
+- [x] Existing movie watched thresholds.
+- [x] Existing episode watched thresholds.
+- [x] Wikipedia year-specific matching.
+- [x] Wikipedia thumbnail preference.
+- [x] Wikipedia missing-page behavior.
+- [x] Existing keyboard shortcut tests.
+- [x] TypeScript typecheck.
+- [x] Production static build.
+- [x] Browser-only runtime verification.
 
 ## Acceptance criteria
-- [ ] User can select external SRT subtitles.
-- [ ] Common embedded text subtitles work where technically supported.
-- [ ] Manual synchronization adjustment is reliable.
 
-## Stage completion record
+- [x] Player hides site navigation while playing.
+- [x] Close is always visible when not fullscreen.
+- [x] Closing early still marks an episode Started.
+- [x] Closing early does not incorrectly mark an episode Watched.
+- [x] Series Hub visually distinguishes Started and Watched.
+- [x] EPISODES appears beside the selected season heading.
+- [x] Main navbar uses StreamLocal-specific styling.
+- [x] Wikipedia does not claim a poster was updated when no image was saved.
+- [x] Movie cards can display a newly saved Wikipedia image after reloading browse data.
+- [x] Original media remains untouched.
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+## Completion record
 
----
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 9 immersive player and viewing state commit
+- Known limitation: Wikipedia is a fallback artwork source, not a dedicated movie-poster database, so some movies will correctly report "Matching page without image".
 
 # Stage 10 - Automatic Subtitle Synchronization
 
@@ -1018,6 +1045,7 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 
 

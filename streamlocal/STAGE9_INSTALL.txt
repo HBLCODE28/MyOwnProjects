@@ -1,0 +1,61 @@
+STREAMLOCAL - STAGE 9
+
+This stage contains all fixes requested after Stage 8.
+
+PLAYER
+- Site navbar is hidden while the video player is open.
+- The video occupies the full application viewport.
+- A floating X Close button is always visible in the upper-right corner.
+- Controls and now-playing title remain inside the player.
+- Fullscreen and keyboard shortcuts remain supported.
+
+EPISODE VIEWING STATE
+- Opening a local video immediately stores Started locally.
+- Started is NOT the same as Watched.
+- Watched rules remain:
+  Movie: >=90% OR <=5 minutes remaining.
+  Episode: >=90% OR <=2 minutes remaining.
+- Series Hub shows Started / Watched.
+- Started unfinished episode shows Resume.
+- Watched episode shows Play again.
+
+SERIES HUB
+- EPISODES is beside Season 1 / Season 2 etc.
+- Progress bar appears on partially watched episodes.
+
+NAVIGATION
+- Main StreamLocal navbar is restyled.
+- It remains visible in normal pages and Series Hub.
+- It disappears only while actual video playback is open.
+
+WIKIPEDIA MOVIE POSTERS
+- Matched article and saved poster are now separate statistics.
+- Posters saved increments only when an actual image URL is obtained.
+- Browser-friendly Wikipedia thumbnail is preferred.
+- Re-run Settings -> Find movie posters with Wikipedia after installing.
+
+INSTALL
+
+1. Extract into:
+   C:\Users\Cyber_User\Documents\Projects\streamlocal
+
+2. Choose Replace/Merge.
+
+3. Run:
+   powershell -ExecutionPolicy Bypass -File .\stage9-browser-apply.ps1
+
+4. After success:
+   powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+
+CHECK
+
+- Open an episode and immediately close it.
+  It should show Started, not Watched.
+- Open the same episode again.
+  The button should say Resume if meaningful position was stored.
+- Watch near the end.
+  It should become Watched.
+- Open a video outside fullscreen.
+  StreamLocal navbar should disappear and X must remain visible.
+- Settings -> Find movie posters with Wikipedia.
+  Check the "Posters saved" number, then go to Movies.

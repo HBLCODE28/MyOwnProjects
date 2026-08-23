@@ -7,12 +7,16 @@ import { SeriesHubOverlay } from "../components/browse/SeriesHubOverlay";
 import { PlayerOverlay } from "../components/player/PlayerOverlay";
 import type { MediaItem } from "../types/library";
 import type { SeriesCard as SeriesCardModel } from "../services/browseSelectors";
-import { loadBrowseData, type BrowseData } from "../services/browseData";
+import {
+  loadBrowseData,
+  type BrowseData,
+} from "../services/browseData";
 import "../styles/browse.css";
 
 export function HomePage() {
   const [data, setData] = useState<BrowseData | null>(null);
-  const [selectedSeries, setSelectedSeries] = useState<SeriesCardModel | null>(null);
+  const [selectedSeriesId, setSelectedSeriesId] =
+    useState<string | null>(null);
   const [playing, setPlaying] = useState<MediaItem | null>(null);
 
   async function refresh() {
@@ -24,18 +28,30 @@ export function HomePage() {
   }, []);
 
   if (!data) {
-    return <div className="page browse-page"><div className="library-empty">Loading StreamLocal...</div></div>;
+    return (
+      <div className="page browse-page">
+        <div className="library-empty">Loading StreamLocal...</div>
+      </div>
+    );
   }
 
   const latestMovies = data.movies.slice(0, 10);
   const latestSeries = data.series.slice(0, 8);
+  const selectedSeries =
+    data.series.find(
+      (card) => card.series.id === selectedSeriesId,
+    ) ?? null;
+
+  function openSeries(card: SeriesCardModel) {
+    setSelectedSeriesId(card.series.id);
+  }
 
   return (
     <div className="page browse-page">
       <HeroRail
         movies={data.movies}
         series={data.series}
-        onOpenSeries={setSelectedSeries}
+        onOpenSeries={openSeries}
       />
 
       {data.continueWatching.length > 0 && (
@@ -48,54 +64,74 @@ export function HomePage() {
           </div>
 
           <div className="rail-grid">
-            {data.continueWatching.map(({ item, file, progress }) => (
-              <MediaCard
-                key={item.id}
-                item={item}
-                file={file}
-                progress={progress}
-                onPlay={setPlaying}
-              />
-            ))}
+            {data.continueWatching.map(
+              ({ item, file, progress }) => (
+                <MediaCard
+                  key={item.id}
+                  item={item}
+                  file={file}
+                  progress={progress}
+                  onPlay={setPlaying}
+                />
+              ),
+            )}
           </div>
         </section>
       )}
 
       <section className="browse-metrics">
-        <div><strong>{data.counts.movies}</strong><span>movies</span></div>
-        <div><strong>{data.counts.episodes}</strong><span>episodes</span></div>
-        <div><strong>{data.counts.availableItems}</strong><span>available</span></div>
-        <div><strong>{data.counts.needsMatch}</strong><span>needs match</span></div>
+        <div>
+          <strong>{data.counts.movies}</strong>
+          <span>movies</span>
+        </div>
+        <div>
+          <strong>{data.counts.episodes}</strong>
+          <span>episodes</span>
+        </div>
+        <div>
+          <strong>{data.counts.availableItems}</strong>
+          <span>available</span>
+        </div>
+        <div>
+          <strong>{data.counts.needsMatch}</strong>
+          <span>needs match</span>
+        </div>
       </section>
 
       <section className="browse-section">
         <div className="section-title-row">
-          <div><p className="eyebrow">LOCAL MOVIES</p><h2>Movies</h2></div>
-          <Link className="secondary-button" to="/movies">View all</Link>
+          <div>
+            <p className="eyebrow">LOCAL MOVIES</p>
+            <h2>Movies</h2>
+          </div>
+          <Link className="secondary-button" to="/movies">
+            View all
+          </Link>
         </div>
 
-        {latestMovies.length === 0 ? (
-          <div className="library-empty">Add and identify local movies to fill this row.</div>
-        ) : (
-          <div className="rail-grid">
-            {latestMovies.map(({ item, file }) => (
-              <MediaCard
-                key={item.id}
-                item={item}
-                file={file}
-                label="MOVIE"
-                progress={data.progressByItemId[item.id]}
-                onPlay={setPlaying}
-              />
-            ))}
-          </div>
-        )}
+        <div className="rail-grid">
+          {latestMovies.map(({ item, file }) => (
+            <MediaCard
+              key={item.id}
+              item={item}
+              file={file}
+              label="MOVIE"
+              progress={data.progressByItemId[item.id]}
+              onPlay={setPlaying}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="browse-section">
         <div className="section-title-row">
-          <div><p className="eyebrow">LOCAL SERIES</p><h2>Series</h2></div>
-          <Link className="secondary-button" to="/series">View all</Link>
+          <div>
+            <p className="eyebrow">LOCAL SERIES</p>
+            <h2>Series</h2>
+          </div>
+          <Link className="secondary-button" to="/series">
+            View all
+          </Link>
         </div>
 
         <div className="series-grid compact">
@@ -103,7 +139,7 @@ export function HomePage() {
             <SeriesCard
               key={card.series.id}
               card={card}
-              onOpen={setSelectedSeries}
+              onOpen={openSeries}
             />
           ))}
         </div>
@@ -112,7 +148,8 @@ export function HomePage() {
       {selectedSeries && !playing && (
         <SeriesHubOverlay
           card={selectedSeries}
-          onClose={() => setSelectedSeries(null)}
+          progressByItemId={data.progressByItemId}
+          onClose={() => setSelectedSeriesId(null)}
           onPlay={setPlaying}
         />
       )}

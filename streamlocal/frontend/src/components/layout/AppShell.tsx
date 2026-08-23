@@ -22,10 +22,13 @@ export function AppShell({ children }: Props) {
       <header className="streamlocal-nav">
         <NavLink className="streamlocal-brand" to="/">
           <span className="streamlocal-brand-mark">SL</span>
-          <span>StreamLocal</span>
+          <span className="streamlocal-brand-name">StreamLocal</span>
         </NavLink>
 
-        <nav className="streamlocal-nav-links" aria-label="Main navigation">
+        <nav
+          className="streamlocal-nav-links"
+          aria-label="Main navigation"
+        >
           {links.map((link) => (
             <NavLink
               key={link.to}

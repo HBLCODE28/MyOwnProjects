@@ -7,6 +7,7 @@ import {
 } from "../../services/localPlayback";
 import {
   getPlaybackProgress,
+  markPlaybackStarted,
   savePlaybackProgress,
 } from "../../services/playbackProgress";
 import {
@@ -120,6 +121,17 @@ export function PlayerOverlay({
   }, [onClose, onProgressChanged]);
 
   useEffect(() => {
+    document.body.classList.add("player-open");
+    void markPlaybackStarted(item).then(() => {
+      onProgressChangedRef.current?.();
+    });
+
+    return () => {
+      document.body.classList.remove("player-open");
+    };
+  }, [item]);
+
+  useEffect(() => {
     let active = true;
     let loaded: PlayableMedia | null = null;
 
@@ -155,6 +167,14 @@ export function PlayerOverlay({
     );
 
     if (result) onProgressChangedRef.current?.();
+  }
+
+  async function closePlayer() {
+    if (videoRef.current) {
+      await persistProgress(videoRef.current);
+    }
+
+    onCloseRef.current();
   }
 
   async function togglePlayback() {
@@ -234,7 +254,9 @@ export function PlayerOverlay({
         void toggleFullscreen();
         break;
       case "close":
-        if (!document.fullscreenElement) onCloseRef.current();
+        if (!document.fullscreenElement) {
+          void closePlayer();
+        }
         break;
     }
   }
@@ -329,27 +351,14 @@ export function PlayerOverlay({
 
   return (
     <div className="player-backdrop" ref={shellRef}>
-      <div className="player-topbar">
-        <div>
-          <p className="eyebrow">
-            LOCAL PLAYBACK {media ? `· ${media.extension.toUpperCase()}` : ""}
-          </p>
-          <h2>{item.episodeTitle || item.title}</h2>
-        </div>
-
-        <button
-          className="player-icon-button"
-          onClick={async () => {
-            if (videoRef.current) {
-              await persistProgress(videoRef.current);
-            }
-            onClose();
-          }}
-          aria-label="Close player"
-        >
-          Close
-        </button>
-      </div>
+      <button
+        className="player-close-floating"
+        onClick={() => void closePlayer()}
+        aria-label="Close player"
+        title="Close"
+      >
+        ×
+      </button>
 
       <div className="player-stage">
         {error && (
@@ -405,6 +414,11 @@ export function PlayerOverlay({
 
       {media && !error && (
         <div className="player-controls">
+          <div className="player-now-playing">
+            <span className="eyebrow">LOCAL PLAYBACK</span>
+            <strong>{item.episodeTitle || item.title}</strong>
+          </div>
+
           <input
             className="player-seek"
             type="range"
@@ -432,6 +446,7 @@ export function PlayerOverlay({
               <button className="player-icon-button" onClick={() => seekBy(-10)}>
                 -10s
               </button>
+
               <button className="player-icon-button" onClick={() => seekBy(10)}>
                 +10s
               </button>
