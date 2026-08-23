@@ -29,10 +29,11 @@ export function SettingsPage() {
 
   async function persistence() {
     const granted = await requestPersistentStorage();
+
     setStatus(
       granted
-        ? "Persistent browser storage is enabled."
-        : "The browser did not grant persistent storage.",
+        ? "Browser storage is protected. StreamLocal data is stored locally in IndexedDB and the browser marked it as persistent."
+        : "Browser storage is active. StreamLocal data is stored locally in IndexedDB, but the browser did not mark it as protected from automatic cleanup. Use Export Library for important backups.",
     );
   }
 
@@ -84,11 +85,11 @@ export function SettingsPage() {
       <section className="settings-card">
         <h2>Browser storage</h2>
         <p>
-          Ask the browser to keep StreamLocal storage persistent rather than treating it
-          as disposable site data.
+          This checks whether the browser is willing to protect StreamLocal storage
+          from automatic cleanup. IndexedDB still works when this returns false.
         </p>
         <button className="secondary-button" onClick={persistence}>
-          Request persistent storage
+          Check persistent storage
         </button>
       </section>
 

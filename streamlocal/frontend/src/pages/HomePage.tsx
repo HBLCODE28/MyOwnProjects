@@ -1,38 +1,66 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { HeroRail } from "../components/browse/HeroRail";
+import { MediaCard } from "../components/browse/MediaCard";
+import { SeriesCard } from "../components/browse/SeriesCard";
+import { loadBrowseData, type BrowseData } from "../services/browseData";
+import "../styles/browse.css";
 
 export function HomePage() {
+  const [data, setData] = useState<BrowseData | null>(null);
+
+  useEffect(() => {
+    loadBrowseData().then(setData);
+  }, []);
+
+  if (!data) {
+    return <div className="page browse-page"><div className="library-empty">Loading StreamLocal...</div></div>;
+  }
+
+  const latestMovies = data.movies.slice(0, 10);
+  const latestSeries = data.series.slice(0, 8);
+
   return (
-    <div className="page home-page">
-      <section className="hero-shell">
-        <div className="hero-glow" />
-        <div className="hero-content">
-          <p className="eyebrow">LOCAL LIBRARY. YOUR MACHINE.</p>
-          <h1>Your local player.</h1>
-          <p className="hero-copy">
-            StreamLocal runs in your browser, reads only folders you choose, and stores
-            your library locally with no server database and no external metadata API.
-          </p>
+    <div className="page browse-page">
+      <HeroRail movies={data.movies} series={data.series} />
 
-          <div className="hero-actions">
-            <Link className="primary-button" to="/library">Open library</Link>
-            <span className="health-badge ok">Browser-only</span>
-          </div>
-        </div>
-
-        <div className="hero-art" aria-hidden="true">
-          <div className="orb orb-a" />
-          <div className="orb orb-b" />
-          <div className="media-frame">
-            <span className="frame-label">STREAMLOCAL</span>
-            <span className="frame-time">INDEXEDDB · LOCAL FILES</span>
-          </div>
-        </div>
+      <section className="browse-metrics">
+        <div><strong>{data.counts.movies}</strong><span>movies</span></div>
+        <div><strong>{data.counts.episodes}</strong><span>episodes</span></div>
+        <div><strong>{data.counts.availableItems}</strong><span>available</span></div>
+        <div><strong>{data.counts.needsMatch}</strong><span>needs match</span></div>
       </section>
 
-      <section className="foundation-grid">
-        <article><span className="card-number">01</span><h2>No backend</h2><p>No Python, FastAPI or server database is required when using StreamLocal.</p></article>
-        <article><span className="card-number">02</span><h2>Private by design</h2><p>Identification uses filenames and folders locally. Nothing is sent to a metadata API.</p></article>
-        <article><span className="card-number">03</span><h2>Portable library</h2><p>Export your metadata and artwork, then reconnect media folders on another computer.</p></article>
+      <section className="browse-section">
+        <div className="section-title-row">
+          <div><p className="eyebrow">LOCAL MOVIES</p><h2>Movies</h2></div>
+          <Link className="secondary-button" to="/movies">View all</Link>
+        </div>
+        {latestMovies.length === 0 ? (
+          <div className="library-empty">Add and identify local movies to fill this row.</div>
+        ) : (
+          <div className="rail-grid">
+            {latestMovies.map(({ item, file }) => (
+              <MediaCard key={item.id} item={item} file={file} label="MOVIE" />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="browse-section">
+        <div className="section-title-row">
+          <div><p className="eyebrow">LOCAL SERIES</p><h2>Series</h2></div>
+          <Link className="secondary-button" to="/series">View all</Link>
+        </div>
+        {latestSeries.length === 0 ? (
+          <div className="library-empty">Add and identify local episodes to fill this row.</div>
+        ) : (
+          <div className="series-grid compact">
+            {latestSeries.map((card) => (
+              <SeriesCard key={card.series.id} card={card} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

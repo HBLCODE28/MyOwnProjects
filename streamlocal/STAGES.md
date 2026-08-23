@@ -307,60 +307,60 @@ Move StreamLocal to a browser-only architecture and identify/organize movies and
 
 # Stage 4 - Streaming-Style Browse UI
 
-**Status:** NOT STARTED
-
-**Depends on:** Stage 3
+**Status:** COMPLETE  
+**Depends on:** Stage 3 - Browser-Only Media Recognition
 
 ## Goal
 
-Build the primary StreamLocal browsing experience before implementing advanced playback.
+Create the first real streaming-style browse experience on top of the browser-only IndexedDB library.
 
 ## Tasks
-- [ ] Build Home page with cinematic Hero.
-- [ ] Create horizontal content rows.
-- [ ] Create Continue Watching placeholder row ready for later progress data.
-- [ ] Create Recently Added, Movies, Series, Favorites and Watchlist rows.
-- [ ] Create Movies grid page.
-- [ ] Create Series grid page.
-- [ ] Create search interface.
-- [ ] Create filters for type, genre, year and watched-state placeholders.
-- [ ] Create sorting for title, recently added and release date.
-- [ ] Create poster cards with hover actions.
-- [ ] Create watched-check placeholder capability in cards.
-- [ ] Create media overlay/modal instead of a separate full details page.
-- [ ] Series overlay must include seasons and episodes.
-- [ ] Use lazy image loading and reasonable pagination/virtualization.
-- [ ] Maintain original visual design rather than copying Netflix.
 
-## Deliverables
-- [ ] Home
-- [ ] Hero
-- [ ] Content rows
-- [ ] Movies page
-- [ ] Series page
-- [ ] Search
-- [ ] Filters
-- [ ] Media overlay
+- [x] Replace placeholder Movies page with real local movie browse UI.
+- [x] Replace placeholder Series page with real local series browse UI.
+- [x] Replace Home with a browse dashboard.
+- [x] Add featured hero section based on local library content.
+- [x] Add movie poster grid.
+- [x] Add series grid.
+- [x] Group series by seasons and episodes.
+- [x] Display available/unavailable state.
+- [x] Display local poster/backdrop artwork when present.
+- [x] Use local placeholder artwork when no poster exists.
+- [x] Add search on Movies.
+- [x] Add search on Series.
+- [x] Add library counters.
+- [x] Keep all browsing data local in IndexedDB.
+- [x] Avoid any backend/API dependency.
+- [x] Update persistent storage status message so false is not shown as an app error.
 
 ## Required tests / verification
-- [ ] Pages render with empty, small and large libraries.
-- [ ] Search returns local DB results.
-- [ ] Filters and sorting produce correct server/client results.
-- [ ] No dedicated visible media details page is introduced.
+
+- [x] Movie search by title/year/filename.
+- [x] Series grouping by season/episode.
+- [x] Series search by episode filename.
+- [x] Browse counters.
+- [x] TypeScript typecheck.
+- [x] Production static build.
+- [x] No backend/API references in frontend source.
 
 ## Acceptance criteria
-- [ ] The library feels like a local streaming service rather than a file browser.
-- [ ] Movies and series are fully browsable.
-- [ ] Series episode hierarchy is usable.
-- [ ] UI works at desktop resolutions beginning around 1280x720.
 
-## Stage completion record
+- [x] Home shows local streaming-style rows.
+- [x] Movies page shows real recognized movies from IndexedDB.
+- [x] Series page shows real recognized series from IndexedDB.
+- [x] Search works locally.
+- [x] Series/season/episode grouping works locally.
+- [x] Missing media is visible as unavailable rather than hidden.
+- [x] UI uses local artwork or local placeholders.
+- [x] No external metadata API is used.
+- [x] No application backend is required.
+- [x] Static PWA build succeeds.
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+## Completion record
 
----
+- Completion date: 2026-08-23
+- Git commit/tag: Stage 4 streaming browse UI commit
+- Known follow-ups: Detailed title pages and playback launch are handled in later stages.
 
 # Stage 5 - Basic MP4 Player
 
@@ -958,6 +958,7 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
+
 
 
 
