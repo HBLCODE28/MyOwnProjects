@@ -1,0 +1,113 @@
+﻿# ---------------------------------------------------------------------------
+# StreamLocal - local configuration and secrets
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+dist/
+build/
+*.egg-info/
+
+# Node / Vite / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE / OS
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# StreamLocal runtime data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+logs/
+cache/
+temp/
+tmp/
+data/*
+!data/.gitkeep
+.localdata/
+runtime/
+backend/runtime/
+
+# Generated playback/transcoding data
+*.m3u8
+*.m4s
+*.ts
+*.vtt.generated
+*.sync.srt
+hls/
+streams/
+transcodes/
+timeline/
+thumbnails/
+posters/
+backdrops/
+
+# User media - never commit video/subtitle libraries
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wmv
+*.webm
+*.m4v
+*.srt
+*.ass
+*.ssa
+*.sub
+
+# FFmpeg binaries / large local tools
+tools/ffmpeg/*
+!tools/ffmpeg/.gitkeep
+ffmpeg.exe
+ffprobe.exe
+ffplay.exe
+
+# Packaging / installers
+*.exe
+*.msi
+*.msix
+*.appx
+installer-output/
+release/
+releases/
+
+# Misc generated files
+*.log
+*.tmp
+*.bak
