@@ -67,7 +67,7 @@ backend/runtime/
 # Generated playback/transcoding data
 *.m3u8
 *.m4s
-*.ts
+/streams/**/*.ts
 *.vtt.generated
 *.sync.srt
 hls/
