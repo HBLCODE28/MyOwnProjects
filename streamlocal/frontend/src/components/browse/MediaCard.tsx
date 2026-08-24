@@ -10,6 +10,7 @@ type Props = {
   file: MediaFile | undefined;
   label?: string;
   progress?: PlaybackProgress | null;
+  continueLabel?: string;
   onPlay?: (item: MediaItem) => void;
 };
 
@@ -18,6 +19,7 @@ export function MediaCard({
   file,
   label,
   progress,
+  continueLabel,
   onPlay,
 }: Props) {
   const playableContainer =
@@ -63,7 +65,7 @@ export function MediaCard({
           <span className="card-watched">Watched</span>
         )}
 
-        {canPlay && onPlay && <span className="card-play">Play</span>}
+        {canPlay && onPlay && <span className="card-play">{continueLabel ?? "Play"}</span>}
 
         {progress && progress.percent > 0 && !progress.watched && (
           <div className="card-progress-track">

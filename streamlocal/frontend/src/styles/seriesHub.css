@@ -64,6 +64,15 @@
   letter-spacing: -.055em;
 }
 
+.series-hub-logo {
+  display: block;
+  width: min(520px, 82%);
+  height: 118px;
+  margin: 0 0 12px;
+  object-fit: contain;
+  object-position: left center;
+}
+
 .series-hub-meta {
   margin-top: 18px;
   color: #b7b8be;
@@ -76,6 +85,73 @@
   color: #c7c8ce;
   font-size: 15px;
   line-height: 1.7;
+}
+
+.series-hub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.series-viewing-panel {
+  display: grid;
+  grid-template-columns: minmax(220px, .8fr) minmax(0, 1.2fr);
+  gap: 20px;
+  align-items: center;
+  margin: 0 0 26px;
+  padding: 18px;
+  border: 1px solid rgba(160,140,255,.2);
+  border-radius: 14px;
+  background: linear-gradient(120deg, rgba(126,102,255,.12), rgba(255,255,255,.025));
+}
+
+.series-viewing-panel strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 16px;
+}
+
+.series-viewing-panel p:not(.eyebrow) {
+  margin: 7px 0 0;
+  color: #8e9098;
+  font-size: 12px;
+}
+
+.series-viewing-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.series-viewing-controls select {
+  flex: 1 1 240px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px;
+  color: #fff;
+  background: #141519;
+}
+
+.text-button {
+  border: 0;
+  color: #aaa0ff;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.text-button:hover {
+  color: #fff;
+}
+
+.series-viewing-message {
+  grid-column: 1 / -1;
+  color: #bdb8ff;
+  font-size: 11px;
 }
 
 .series-hub-close {
@@ -292,6 +368,14 @@
 
   .series-hub-body {
     padding: 0 18px 24px;
+  }
+
+  .series-viewing-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .series-viewing-controls {
+    justify-content: flex-start;
   }
 
   .series-hub-toolbar,

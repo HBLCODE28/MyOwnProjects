@@ -65,7 +65,17 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
 
         <div className="browse-hero-content">
           <p className="eyebrow">FEATURED SERIES</p>
-          <h1>{card.series.title}</h1>
+          {(card.series.logoArtworkId || card.seasons[0]?.episodes[0]?.item.logoArtworkId) ? (
+            <ArtworkImage
+              className="featured-logo"
+              artworkId={card.series.logoArtworkId ?? card.seasons[0]?.episodes[0]?.item.logoArtworkId ?? null}
+              label={card.series.title}
+              fit="contain"
+              position="left center"
+            />
+          ) : (
+            <h1>{card.series.title}</h1>
+          )}
           <p>
             {[
               card.series.year,
@@ -106,7 +116,17 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
 
       <div className="browse-hero-content">
         <p className="eyebrow">FEATURED MOVIE</p>
-        <h1>{item.title}</h1>
+        {item.logoArtworkId ? (
+          <ArtworkImage
+            className="featured-logo"
+            artworkId={item.logoArtworkId}
+            label={item.title}
+            fit="contain"
+            position="left center"
+          />
+        ) : (
+          <h1>{item.title}</h1>
+        )}
         <p>
           {[item.year, "Movie", item.overview || null]
             .filter(Boolean)

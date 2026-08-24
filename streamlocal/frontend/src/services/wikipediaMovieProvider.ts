@@ -115,12 +115,20 @@ export async function findWikipediaMovie(
 } | null> {
   let pages = await queryPages(candidateTitles(title, year));
 
-  if (pages.length === 0) return null;
-
-  if (!pages.some((page) => page.thumbnail?.source || page.original?.source)) {
-    const searchTitles = await searchPageTitles(title, year);
+  if (
+    pages.length === 0 ||
+    !pages.some((page) => page.thumbnail?.source || page.original?.source)
+  ) {
+    let searchTitles: string[] = [];
+    try {
+      searchTitles = await searchPageTitles(title, year);
+    } catch {
+      searchTitles = [];
+    }
     if (searchTitles.length > 0) pages = await queryPages(searchTitles);
   }
+
+  if (pages.length === 0) return null;
 
   const wanted = normalizeTitle(title);
   const chosen = pages

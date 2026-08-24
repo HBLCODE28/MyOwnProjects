@@ -102,7 +102,7 @@ export function MetadataEditor({ item, onClose, onSaved }: Props) {
   }
 
   async function selectArtwork(
-    kind: "poster" | "backdrop",
+    kind: "poster" | "backdrop" | "logo",
     file: File | undefined,
   ) {
     if (!file) return;
@@ -268,6 +268,17 @@ export function MetadataEditor({ item, onClose, onSaved }: Props) {
               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
               onChange={(event) =>
                 selectArtwork("backdrop", event.target.files?.[0])
+              }
+            />
+          </label>
+
+          <label>
+            Logo (optional)
+            <input
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+              onChange={(event) =>
+                selectArtwork("logo", event.target.files?.[0])
               }
             />
           </label>

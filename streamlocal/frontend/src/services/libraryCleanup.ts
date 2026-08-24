@@ -68,10 +68,12 @@ export async function removeUnavailableEntries(): Promise<UnavailableCleanupResu
       for (const item of remainingItemsAfterSeries) {
         if (item.posterArtworkId) referencedArtworkIds.add(item.posterArtworkId);
         if (item.backdropArtworkId) referencedArtworkIds.add(item.backdropArtworkId);
+        if (item.logoArtworkId) referencedArtworkIds.add(item.logoArtworkId);
       }
       for (const series of remainingSeries) {
         if (series.posterArtworkId) referencedArtworkIds.add(series.posterArtworkId);
         if (series.backdropArtworkId) referencedArtworkIds.add(series.backdropArtworkId);
+        if (series.logoArtworkId) referencedArtworkIds.add(series.logoArtworkId);
       }
 
       const artworkRows = await db.artwork.toArray();

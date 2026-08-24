@@ -106,6 +106,7 @@ export function SeriesPage() {
           progressByItemId={data.progressByItemId}
           onClose={() => setSelectedSeriesId(null)}
           onPlay={setPlaying}
+          onProgressChanged={() => void refresh()}
         />
       )}
 

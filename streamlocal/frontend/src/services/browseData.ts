@@ -20,7 +20,8 @@ export type BrowseData = {
   continueWatching: Array<{
     item: MediaItem;
     file: MediaFile | undefined;
-    progress: PlaybackProgress;
+    progress?: PlaybackProgress;
+    reason: "resume" | "next_episode";
   }>;
   counts: {
     movies: number;
@@ -72,9 +73,49 @@ export async function loadBrowseData(): Promise<BrowseData> {
           item,
           file: fileById.get(item.mediaFileId),
           progress,
+          reason: "resume" as const,
         },
       ];
     });
+
+  const progressByItem = new Map(progressRows.map((row) => [row.mediaItemId, row]));
+  const episodesBySeries = new Map<string, MediaItem[]>();
+  for (const episode of episodeItems) {
+    if (!episode.seriesId) continue;
+    const episodes = episodesBySeries.get(episode.seriesId) ?? [];
+    episodes.push(episode);
+    episodesBySeries.set(episode.seriesId, episodes);
+  }
+
+  const nextEpisodeRows = progressRows
+    .filter((row) => row.watched)
+    .flatMap((progress) => {
+      const watched = itemById.get(progress.mediaItemId);
+      if (!watched?.seriesId) return [];
+      const episodes = (episodesBySeries.get(watched.seriesId) ?? []).sort(
+        (a, b) =>
+          (a.seasonNumber ?? 0) - (b.seasonNumber ?? 0) ||
+          (a.episodeNumber ?? 0) - (b.episodeNumber ?? 0),
+      );
+      const index = episodes.findIndex((episode) => episode.id === watched.id);
+      const next = index >= 0 ? episodes[index + 1] : undefined;
+      const nextFile = next ? fileById.get(next.mediaFileId) : undefined;
+      const nextProgress = next ? progressByItem.get(next.id) : undefined;
+      if (!next || !nextFile?.available || nextProgress?.watched) return [];
+      return [{ item: next, file: nextFile, progress: nextProgress, reason: "next_episode" as const }];
+    });
+
+  const seenContinueIds = new Set<string>();
+  const continueWatching = [...continueRows, ...nextEpisodeRows]
+    .filter((entry) => {
+      if (seenContinueIds.has(entry.item.id)) return false;
+      seenContinueIds.add(entry.item.id);
+      return true;
+    })
+    .sort((a, b) =>
+      (b.progress?.lastPlayedAt ?? 0) - (a.progress?.lastPlayedAt ?? 0),
+    )
+    .slice(0, 12);
 
   return {
     movies,
@@ -82,7 +123,7 @@ export async function loadBrowseData(): Promise<BrowseData> {
     items,
     files,
     progressByItemId,
-    continueWatching: continueRows,
+    continueWatching,
     counts: libraryCounts(items, files),
   };
 }

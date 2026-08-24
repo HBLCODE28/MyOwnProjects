@@ -42,6 +42,7 @@ export type MediaItem = {
   manuallyEdited: boolean;
   posterArtworkId: string | null;
   backdropArtworkId: string | null;
+  logoArtworkId?: string | null;
   remotePosterUrl?: string | null;
   remoteBackdropUrl?: string | null;
   metadataProvider?: "wikipedia" | null;
@@ -59,6 +60,7 @@ export type Series = {
   genres: string[];
   posterArtworkId: string | null;
   backdropArtworkId: string | null;
+  logoArtworkId?: string | null;
   remotePosterUrl?: string | null;
   remoteBackdropUrl?: string | null;
   metadataProvider?: "tvmaze" | null;
@@ -69,7 +71,7 @@ export type Series = {
 
 export type Artwork = {
   id: string;
-  kind: "poster" | "backdrop";
+  kind: "poster" | "backdrop" | "logo";
   mimeType: string;
   fileName: string;
   blob: Blob;

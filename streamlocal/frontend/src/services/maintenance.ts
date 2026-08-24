@@ -34,10 +34,12 @@ export async function clearUnreferencedArtwork(): Promise<number> {
   for (const item of items) {
     if (item.posterArtworkId) referenced.add(item.posterArtworkId);
     if (item.backdropArtworkId) referenced.add(item.backdropArtworkId);
+    if (item.logoArtworkId) referenced.add(item.logoArtworkId);
   }
   for (const row of series) {
     if (row.posterArtworkId) referenced.add(row.posterArtworkId);
     if (row.backdropArtworkId) referenced.add(row.backdropArtworkId);
+    if (row.logoArtworkId) referenced.add(row.logoArtworkId);
   }
   const orphaned = artwork.filter((row) => !referenced.has(row.id));
   await db.artwork.bulkDelete(orphaned.map((row) => row.id));

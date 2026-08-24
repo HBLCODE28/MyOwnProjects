@@ -3,6 +3,7 @@ import { attachArtworkToItem, storeArtwork } from "./artwork";
 
 const POSTERS = ["poster.jpg", "poster.jpeg", "poster.png", "poster.webp", "folder.jpg", "cover.jpg"];
 const BACKDROPS = ["backdrop.jpg", "backdrop.jpeg", "backdrop.png", "backdrop.webp", "fanart.jpg", "background.jpg"];
+const LOGOS = ["logo.png", "logo.jpg", "logo.jpeg", "logo.webp", "clearlogo.png", "clearlogo.webp"];
 
 async function parentDirectory(
   root: FileSystemDirectoryHandle,
@@ -61,6 +62,15 @@ export async function detectAndAttachLocalArtwork(
     if (backdrop) {
       const artworkId = await storeArtwork(backdrop, "backdrop");
       await attachArtworkToItem(itemId, artworkId, "backdrop", false);
+    }
+  }
+
+  const withLogo = await db.mediaItems.get(itemId);
+  if (!withLogo?.logoArtworkId) {
+    const logo = await firstExistingImage(directory, LOGOS);
+    if (logo) {
+      const artworkId = await storeArtwork(logo, "logo");
+      await attachArtworkToItem(itemId, artworkId, "logo", false);
     }
   }
 }

@@ -48,7 +48,7 @@ describe("Wikipedia movie provider", () => {
           headers: { "Content-Type": "application/json" },
         },
       ),
-    );
+      );
 
     const result = await findWikipediaMovie("Dune", 2021);
 
@@ -57,8 +57,8 @@ describe("Wikipedia movie provider", () => {
   });
 
   it("returns null when Wikipedia has no matching page", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(
         JSON.stringify({
           query: {
             pages: {
@@ -73,11 +73,51 @@ describe("Wikipedia movie provider", () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         },
-      ),
-    );
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({ query: { search: [] } }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ));
 
     await expect(
       findWikipediaMovie("Missing Movie", 2025),
     ).resolves.toBeNull();
+  });
+
+  it("falls back to Wikipedia search when the guessed title is missing", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ query: { pages: { "-1": { title: "DUNE 2021", missing: true } } } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ query: { search: [{ title: "Dune (2021 film)" }] } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            query: {
+              pages: {
+                "2": {
+                  pageid: 2,
+                  title: "Dune (2021 film)",
+                  thumbnail: { source: "https://example.test/dune.jpg", width: 700, height: 1000 },
+                },
+              },
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    await expect(findWikipediaMovie("Dune 2021", null)).resolves.toMatchObject({
+      pageId: "2",
+      posterUrl: "https://example.test/dune.jpg",
+    });
   });
 });

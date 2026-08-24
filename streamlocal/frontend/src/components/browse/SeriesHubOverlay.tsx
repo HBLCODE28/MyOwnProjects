@@ -1,10 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   MediaItem,
   PlaybackProgress,
 } from "../../types/library";
 import type { SeriesCard } from "../../services/browseSelectors";
 import { ArtworkImage } from "./ArtworkImage";
+import {
+  getSeriesViewingState,
+  setSeriesLastWatchedEpisode,
+  setSeriesNotWatched,
+} from "../../services/seriesViewingState";
 import "../../styles/seriesHub.css";
 
 type Props = {
@@ -12,6 +17,7 @@ type Props = {
   progressByItemId?: Record<string, PlaybackProgress>;
   onClose: () => void;
   onPlay: (item: MediaItem) => void;
+  onProgressChanged?: () => void;
 };
 
 export function SeriesHubOverlay({
@@ -19,9 +25,29 @@ export function SeriesHubOverlay({
   progressByItemId = {},
   onClose,
   onPlay,
+  onProgressChanged,
 }: Props) {
   const firstSeason = card.seasons[0]?.seasonNumber ?? 1;
   const [seasonNumber, setSeasonNumber] = useState(firstSeason);
+  const [lastWatchedEpisodeId, setLastWatchedEpisodeId] = useState("");
+  const [viewingMessage, setViewingMessage] = useState<string | null>(null);
+
+  const allEpisodes = useMemo(
+    () => card.seasons.flatMap((entry) => entry.episodes).map(({ item }) => item),
+    [card.seasons],
+  );
+  const availableEpisodeIds = useMemo(
+    () => new Set(card.seasons.flatMap((entry) => entry.episodes)
+      .filter(({ file }) => file?.available)
+      .map(({ item }) => item.id)),
+    [card.seasons],
+  );
+
+  useEffect(() => {
+    void getSeriesViewingState(card.series.id).then((state) => {
+      setLastWatchedEpisodeId(state?.lastWatchedEpisodeId ?? "");
+    });
+  }, [card.series.id]);
 
   const season = useMemo(
     () =>
@@ -42,6 +68,35 @@ export function SeriesHubOverlay({
     card.series.remoteBackdropUrl ??
     card.series.remotePosterUrl ??
     null;
+
+  const nextEpisode = allEpisodes.find(
+    (episode) =>
+      availableEpisodeIds.has(episode.id) &&
+      progressByItemId[episode.id]?.started &&
+      !progressByItemId[episode.id]?.watched,
+  ) ?? allEpisodes.find(
+    (episode) =>
+      availableEpisodeIds.has(episode.id) &&
+      !progressByItemId[episode.id]?.watched &&
+      episode.id !== lastWatchedEpisodeId,
+  );
+
+  async function markLastWatched() {
+    const episode = allEpisodes.find((item) => item.id === lastWatchedEpisodeId);
+    if (!episode) return;
+    await setSeriesLastWatchedEpisode(card.series.id, episode, allEpisodes);
+    setViewingMessage(
+      `Marked through S${String(episode.seasonNumber ?? 0).padStart(2, "0")}E${String(episode.episodeNumber ?? 0).padStart(2, "0")}.`,
+    );
+    onProgressChanged?.();
+  }
+
+  async function markNotWatched() {
+    await setSeriesNotWatched(card.series.id, allEpisodes);
+    setLastWatchedEpisodeId("");
+    setViewingMessage("This series is marked as not watched.");
+    onProgressChanged?.();
+  }
 
   return (
     <div className="series-hub-backdrop" onMouseDown={onClose}>
@@ -73,7 +128,17 @@ export function SeriesHubOverlay({
 
           <div className="series-hub-copy">
             <p className="eyebrow">SERIES</p>
-            <h2>{card.series.title}</h2>
+            {(card.series.logoArtworkId || season?.episodes[0]?.item.logoArtworkId) ? (
+              <ArtworkImage
+                className="series-hub-logo"
+                artworkId={card.series.logoArtworkId ?? season?.episodes[0]?.item.logoArtworkId ?? null}
+                label={card.series.title}
+                fit="contain"
+                position="left center"
+              />
+            ) : (
+              <h2>{card.series.title}</h2>
+            )}
 
             <p className="series-hub-meta">
               {[
@@ -91,10 +156,50 @@ export function SeriesHubOverlay({
                 {card.series.overview}
               </p>
             )}
+
+            <div className="series-hub-actions">
+              {nextEpisode && (
+                <button className="primary-button" onClick={() => onPlay(nextEpisode)}>
+                  Continue with S{String(nextEpisode.seasonNumber ?? 0).padStart(2, "0")}E{String(nextEpisode.episodeNumber ?? 0).padStart(2, "0")}
+                </button>
+              )}
+              <button className="secondary-button" onClick={() => setSeasonNumber(nextEpisode?.seasonNumber ?? firstSeason)}>
+                Browse episodes
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="series-hub-body">
+          <div className="series-viewing-panel">
+            <div>
+              <p className="eyebrow">YOUR PROGRESS</p>
+              <strong>Where did you stop watching?</strong>
+              <p>Use this if StreamLocal has no playback record for the series.</p>
+            </div>
+            <div className="series-viewing-controls">
+              <select
+                aria-label="Last episode watched"
+                value={lastWatchedEpisodeId}
+                onChange={(event) => setLastWatchedEpisodeId(event.target.value)}
+              >
+                <option value="">Select last episode watched</option>
+                {allEpisodes.map((episode) => (
+                  <option key={episode.id} value={episode.id}>
+                    S{String(episode.seasonNumber ?? 0).padStart(2, "0")}E{String(episode.episodeNumber ?? 0).padStart(2, "0")} · {episode.episodeTitle || episode.title}
+                  </option>
+                ))}
+              </select>
+              <button className="secondary-button" disabled={!lastWatchedEpisodeId} onClick={() => void markLastWatched()}>
+                Save last episode
+              </button>
+              <button className="text-button" onClick={() => void markNotWatched()}>
+                I haven’t watched this series
+              </button>
+            </div>
+            {viewingMessage && <span className="series-viewing-message">{viewingMessage}</span>}
+          </div>
+
           <div className="series-hub-toolbar">
             <div className="series-season-heading">
               <h3>

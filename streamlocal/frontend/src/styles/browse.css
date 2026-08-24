@@ -65,6 +65,15 @@
   line-height: 1.7;
 }
 
+.featured-logo {
+  display: block;
+  width: min(440px, 72%);
+  height: 120px;
+  margin: 4px 0 8px;
+  object-fit: contain;
+  object-position: left center;
+}
+
 .browse-metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -65,12 +65,14 @@ export function HomePage() {
 
           <div className="rail-grid">
             {data.continueWatching.map(
-              ({ item, file, progress }) => (
+              ({ item, file, progress, reason }) => (
                 <MediaCard
                   key={item.id}
                   item={item}
                   file={file}
                   progress={progress}
+                  label={item.type === "episode" ? "EPISODE" : "MOVIE"}
+                  continueLabel={reason === "next_episode" ? "Next episode" : "Resume"}
                   onPlay={setPlaying}
                 />
               ),
@@ -151,6 +153,7 @@ export function HomePage() {
           progressByItemId={data.progressByItemId}
           onClose={() => setSelectedSeriesId(null)}
           onPlay={setPlaying}
+          onProgressChanged={() => void refresh()}
         />
       )}
 

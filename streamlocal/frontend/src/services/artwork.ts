@@ -6,10 +6,10 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export async function storeArtwork(
   file: File,
-  kind: "poster" | "backdrop",
+  kind: "poster" | "backdrop" | "logo",
 ): Promise<string> {
   if (!ALLOWED_TYPES.has(file.type)) {
-    throw new Error("Poster/backdrop must be JPG, PNG or WebP.");
+    throw new Error("Artwork must be JPG, PNG or WebP.");
   }
 
   const artwork: Artwork = {
@@ -27,13 +27,15 @@ export async function storeArtwork(
 export async function attachArtworkToItem(
   itemId: string,
   artworkId: string,
-  kind: "poster" | "backdrop",
+  kind: "poster" | "backdrop" | "logo",
   markManual = true,
 ): Promise<void> {
   await db.mediaItems.update(itemId, {
     ...(kind === "poster"
       ? { posterArtworkId: artworkId }
-      : { backdropArtworkId: artworkId }),
+      : kind === "backdrop"
+        ? { backdropArtworkId: artworkId }
+        : { logoArtworkId: artworkId }),
     ...(markManual ? { manuallyEdited: true } : {}),
     updatedAt: Date.now(),
   });
@@ -48,12 +50,13 @@ export async function artworkObjectUrl(id: string | null): Promise<string | null
 export async function cacheRemoteArtwork(
   itemId: string,
   remoteUrl: string,
-  kind: "poster" | "backdrop",
+  kind: "poster" | "backdrop" | "logo",
 ): Promise<boolean> {
   const item = await db.mediaItems.get(itemId);
   if (!item) return false;
   if (kind === "poster" && item.posterArtworkId) return false;
   if (kind === "backdrop" && item.backdropArtworkId) return false;
+  if (kind === "logo" && item.logoArtworkId) return false;
 
   const response = await fetch(remoteUrl, { mode: "cors" });
   if (!response.ok) return false;

@@ -34,6 +34,7 @@ async function getOrCreateSeries(
     genres: [],
     posterArtworkId: null,
     backdropArtworkId: null,
+    logoArtworkId: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -138,6 +139,7 @@ export async function recognizeFile(file: MediaFile): Promise<MediaItem> {
       manuallyEdited: false,
       posterArtworkId: null,
       backdropArtworkId: null,
+      logoArtworkId: null,
       createdAt: now,
       updatedAt: now,
     };
