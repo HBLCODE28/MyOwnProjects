@@ -6,11 +6,13 @@ import type { MediaItem } from "../types/library";
 import { loadBrowseData, type BrowseData } from "../services/browseData";
 import { filterMovies } from "../services/browseSelectors";
 import "../styles/browse.css";
+import { useToast } from "../components/ui/Toast";
 
 export function MoviesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
   const [query, setQuery] = useState("");
   const [playing, setPlaying] = useState<MediaItem | null>(null);
+  const { showToast } = useToast();
 
   async function refresh() {
     setData(await loadBrowseData());
@@ -54,6 +56,7 @@ export function MoviesPage() {
             label="MOVIE"
             progress={data.progressByItemId[item.id]}
             onPlay={setPlaying}
+            onUnavailable={(entry) => showToast(`${entry.title} is unavailable. Reconnect its media folder in Library.`, "error")}
           />
         ))}
       </section>

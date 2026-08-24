@@ -225,6 +225,50 @@ body.player-open .streamlocal-nav {
   background: #151519;
 }
 
+.player-options-menu {
+  position: absolute;
+  right: 20px;
+  bottom: 72px;
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 40px));
+  padding: 15px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 12px;
+  background: rgba(18,18,23,.97);
+  box-shadow: 0 18px 48px rgba(0,0,0,.5);
+}
+
+.player-options-menu strong {
+  color: #fff;
+  font-size: 13px;
+}
+
+.player-option-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: #aaaab0;
+  font-size: 11px;
+}
+
+.player-option-actions .player-icon-button {
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+.player-subtitle-result {
+  padding: 8px 9px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 7px;
+  color: #eeeef2;
+  background: rgba(255,255,255,.05);
+  text-align: left;
+  font-size: 11px;
+}
+
 @media (max-width: 900px) {
   .player-stage {
     padding: 36px 12px 188px;

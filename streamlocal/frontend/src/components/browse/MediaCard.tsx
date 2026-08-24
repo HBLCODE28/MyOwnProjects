@@ -11,6 +11,7 @@ type Props = {
   label?: string;
   progress?: PlaybackProgress | null;
   continueLabel?: string;
+  onUnavailable?: (item: MediaItem) => void;
   onPlay?: (item: MediaItem) => void;
 };
 
@@ -20,6 +21,7 @@ export function MediaCard({
   label,
   progress,
   continueLabel,
+  onUnavailable,
   onPlay,
 }: Props) {
   const playableContainer =
@@ -35,6 +37,7 @@ export function MediaCard({
       className={`media-card ${canPlay && onPlay ? "playable-card" : ""}`}
       onClick={() => {
         if (canPlay && onPlay) onPlay(item);
+        else if (!canPlay) onUnavailable?.(item);
       }}
       onKeyDown={(event) => {
         if (
@@ -44,10 +47,13 @@ export function MediaCard({
         ) {
           event.preventDefault();
           onPlay(item);
+        } else if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onUnavailable?.(item);
         }
       }}
-      tabIndex={canPlay && onPlay ? 0 : undefined}
-      role={canPlay && onPlay ? "button" : undefined}
+      tabIndex={canPlay && onPlay || onUnavailable ? 0 : undefined}
+      role={canPlay && onPlay || onUnavailable ? "button" : undefined}
     >
       <div className="media-card-art">
         <ArtworkImage
@@ -80,7 +86,9 @@ export function MediaCard({
       </div>
 
       <div className="media-card-copy">
-        <h3>{item.title}</h3>
+        {item.logoArtworkId || item.remoteLogoUrl ? (
+          <ArtworkImage className="card-logo" artworkId={item.logoArtworkId ?? null} remoteUrl={item.remoteLogoUrl ?? null} label={item.title} fit="contain" position="left center" />
+        ) : <h3>{item.title}</h3>}
         <p>
           {[item.year, item.genres.slice(0, 2).join(", "), item.confidence]
             .filter(Boolean)

@@ -9,6 +9,7 @@ import { createId } from "../utils/id";
 import { MetadataEditor } from "../components/library/MetadataEditor";
 import { removeMediaFileFromLibrary, setWatchedState } from "../services/libraryManagement";
 import "../styles/library.css";
+import { useToast } from "../components/ui/Toast";
 
 export function LibraryPage() {
   const [sources, setSources] = useState<LibrarySource[]>([]);
@@ -19,6 +20,7 @@ export function LibraryPage() {
   const [summary, setSummary] = useState<ScanSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   async function refresh() {
     const [sourceRows, fileRows, itemRows, progressRows] = await Promise.all([
@@ -51,6 +53,7 @@ export function LibraryPage() {
         });
         const updated = await db.librarySources.get(existing.id);
         if (updated) await scan(updated);
+        showToast(`Reconnected ${handle.name}.`, "success");
         return;
       }
 
@@ -66,9 +69,11 @@ export function LibraryPage() {
       await db.librarySources.add(source);
       await refresh();
       await scan(source);
+      showToast(`Added and scanned ${handle.name}.`, "success");
     } catch (value) {
       if (value instanceof DOMException && value.name === "AbortError") return;
       setError(value instanceof Error ? value.message : "Could not add folder.");
+      showToast(value instanceof Error ? value.message : "Could not add folder.", "error");
     }
   }
 
@@ -83,9 +88,11 @@ export function LibraryPage() {
       });
       const updated = await db.librarySources.get(source.id);
       if (updated) await scan(updated);
+      showToast(`Reconnected ${handle.name}.`, "success");
     } catch (value) {
       if (value instanceof DOMException && value.name === "AbortError") return;
       setError(value instanceof Error ? value.message : "Could not reconnect folder.");
+      showToast(value instanceof Error ? value.message : "Could not reconnect folder.", "error");
     }
   }
 
@@ -97,8 +104,10 @@ export function LibraryPage() {
       setSummary(result);
       await identifyLibrary(false);
       await refresh();
+      showToast(`Scan complete: ${result.scanned} files checked, ${result.added} added.`, "success");
     } catch (value) {
       setError(value instanceof Error ? value.message : "Scan failed.");
+      showToast(value instanceof Error ? value.message : "Scan failed.", "error");
     } finally {
       setBusy(null);
     }
@@ -139,6 +148,7 @@ export function LibraryPage() {
         unchanged: 0,
         unavailable: result.unavailableFiles,
       });
+      showToast(`Removed ${result.removedItems} unavailable library entr${result.removedItems === 1 ? "y" : "ies"}.`, "success");
     } catch (value) {
       setError(value instanceof Error ? value.message : "Cleanup failed.");
     }

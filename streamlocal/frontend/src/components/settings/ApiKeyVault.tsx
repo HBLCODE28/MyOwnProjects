@@ -29,6 +29,11 @@ const SECRET_FIELDS: SecretField[] = [
     label: "Custom poster API key",
     help: "Optional encrypted slot for a future artwork provider that requires a key.",
   },
+  {
+    id: "openSubtitlesApiKey",
+    label: "OpenSubtitles API key",
+    help: "Used only to search and download subtitles for your local playback.",
+  },
 ];
 
 export function ApiKeyVault() {

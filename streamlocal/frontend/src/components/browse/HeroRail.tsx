@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import type { MovieCard, SeriesCard } from "../../services/browseSelectors";
 import { ArtworkImage } from "./ArtworkImage";
 
@@ -14,20 +15,59 @@ type Featured =
 function chooseFeatured(
   movies: MovieCard[],
   series: SeriesCard[],
+  preferredSeriesIndex = 0,
 ): Featured | null {
-  const availableSeries =
-    series.find((card) => card.availableEpisodeCount > 0) ?? series[0];
+  const availableSeries = series.filter((card) => card.availableEpisodeCount > 0);
+  const artworkSeries = availableSeries.filter((card) =>
+    Boolean(
+      card.series.logoArtworkId ||
+        card.series.backdropArtworkId ||
+        card.series.posterArtworkId ||
+        card.series.remoteLogoUrl ||
+        card.series.remoteBackdropUrl ||
+        card.series.remotePosterUrl ||
+        card.seasons[0]?.episodes[0]?.item.posterArtworkId,
+    ),
+  );
+  const seriesPool = artworkSeries.length > 0 ? artworkSeries : availableSeries;
+  const availableFeaturedSeries = seriesPool.length > 0 ? seriesPool : series;
+  const featuredSeries = availableFeaturedSeries.length > 0
+    ? availableFeaturedSeries[preferredSeriesIndex % availableFeaturedSeries.length]
+    : undefined;
 
   const availableMovie =
     movies.find(({ file }) => file?.available) ?? movies[0];
 
-  if (availableSeries) return { kind: "series", series: availableSeries };
+  if (featuredSeries) return { kind: "series", series: featuredSeries };
   if (availableMovie) return { kind: "movie", movie: availableMovie };
   return null;
 }
 
 export function HeroRail({ movies, series, onOpenSeries }: Props) {
-  const featured = chooseFeatured(movies, series);
+  const [featuredSeriesIndex, setFeaturedSeriesIndex] = useState(0);
+  const seriesPoolLength = useMemo(() => {
+    const available = series.filter((card) => card.availableEpisodeCount > 0);
+    const artwork = available.filter((card) => Boolean(
+      card.series.logoArtworkId || card.series.backdropArtworkId ||
+      card.series.posterArtworkId || card.series.remoteBackdropUrl ||
+      card.series.remoteLogoUrl ||
+      card.series.remotePosterUrl || card.seasons[0]?.episodes[0]?.item.posterArtworkId,
+    ));
+    return (artwork.length > 0 ? artwork : available).length || series.length;
+  }, [series]);
+
+  useEffect(() => {
+    setFeaturedSeriesIndex((current) =>
+      seriesPoolLength > 0 ? current % seriesPoolLength : 0,
+    );
+    if (seriesPoolLength < 2) return undefined;
+    const timer = window.setInterval(() => {
+      setFeaturedSeriesIndex((current) => (current + 1) % seriesPoolLength);
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [seriesPoolLength]);
+
+  const featured = chooseFeatured(movies, series, featuredSeriesIndex);
 
   if (!featured) {
     return (
@@ -65,10 +105,11 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
 
         <div className="browse-hero-content">
           <p className="eyebrow">FEATURED SERIES</p>
-          {(card.series.logoArtworkId || card.seasons[0]?.episodes[0]?.item.logoArtworkId) ? (
+          {(card.series.logoArtworkId || card.series.remoteLogoUrl || card.seasons[0]?.episodes[0]?.item.logoArtworkId || card.seasons[0]?.episodes[0]?.item.remoteLogoUrl) ? (
             <ArtworkImage
               className="featured-logo"
               artworkId={card.series.logoArtworkId ?? card.seasons[0]?.episodes[0]?.item.logoArtworkId ?? null}
+              remoteUrl={card.series.remoteLogoUrl ?? card.seasons[0]?.episodes[0]?.item.remoteLogoUrl ?? null}
               label={card.series.title}
               fit="contain"
               position="left center"
@@ -116,10 +157,11 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
 
       <div className="browse-hero-content">
         <p className="eyebrow">FEATURED MOVIE</p>
-        {item.logoArtworkId ? (
+        {item.logoArtworkId || item.remoteLogoUrl ? (
           <ArtworkImage
             className="featured-logo"
-            artworkId={item.logoArtworkId}
+            artworkId={item.logoArtworkId ?? null}
+            remoteUrl={item.remoteLogoUrl ?? null}
             label={item.title}
             fit="contain"
             position="left center"

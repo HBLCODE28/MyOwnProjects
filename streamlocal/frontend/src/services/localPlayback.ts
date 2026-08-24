@@ -8,6 +8,17 @@ export type PlayableMedia = {
   file: File;
   fileName: string;
   extension: SupportedLocalContainer;
+  subtitles: SubtitleTrack[];
+};
+
+export type SubtitleTrack = {
+  id: string;
+  label: string;
+  language: string;
+  source: "local" | "opensubtitles";
+  fileName: string;
+  text: string;
+  src: string;
 };
 
 export function isSupportedLocalContainer(extension: string): extension is SupportedLocalContainer {
@@ -43,14 +54,73 @@ export async function createPlayableMedia(mediaFileId: string): Promise<Playable
     throw new Error("The local media file could not be opened.");
   }
 
+  const subtitles = await loadLocalSubtitles(source.handle, mediaFile.relativePath);
+
   return {
     url: URL.createObjectURL(file),
     file,
     fileName: mediaFile.fileName,
     extension,
+    subtitles,
   };
 }
 
 export function releasePlayableMedia(media: PlayableMedia | null): void {
   if (media?.url) URL.revokeObjectURL(media.url);
+  for (const subtitle of media?.subtitles ?? []) URL.revokeObjectURL(subtitle.src);
+}
+
+function toWebVtt(text: string, extension: string): string {
+  if (extension === "vtt") return text.startsWith("WEBVTT") ? text : `WEBVTT\n\n${text}`;
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  return `WEBVTT\n\n${normalized.replace(/(\d{2}:\d{2}:\d{2}),([0-9]{3})/g, "$1.$2")}`;
+}
+
+function subtitleLabel(fileName: string): { label: string; language: string } {
+  const language = fileName.match(/(?:^|[._-])(en|eng|he|heb|es|spa|fr|fre|de|deu)(?:[._-]|$)/i)?.[1]?.toLowerCase() ?? "und";
+  const names: Record<string, string> = { en: "English", eng: "English", he: "Hebrew", heb: "Hebrew", es: "Spanish", spa: "Spanish", fr: "French", fre: "French", de: "German", deu: "German", und: "Unknown" };
+  return { language, label: names[language] ?? language.toUpperCase() };
+}
+
+async function loadLocalSubtitles(
+  root: FileSystemDirectoryHandle,
+  relativePath: string,
+): Promise<SubtitleTrack[]> {
+  const parts = relativePath.split("/").filter(Boolean);
+  const fileName = parts.pop();
+  if (!fileName) return [];
+  let directory = root;
+  try {
+    for (const part of parts) directory = await directory.getDirectoryHandle(part);
+  } catch {
+    return [];
+  }
+
+  const stem = fileName.replace(/\.[^.]+$/, "");
+  const names = [`${stem}.vtt`, `${stem}.srt`, `${stem}.en.vtt`, `${stem}.en.srt`, `${stem}.he.vtt`, `${stem}.he.srt`];
+  const tracks: SubtitleTrack[] = [];
+  for (const candidate of names) {
+    try {
+      const subtitleFile = await directory.getFileHandle(candidate).then((handle) => handle.getFile());
+      const extension = candidate.toLowerCase().endsWith(".vtt") ? "vtt" : "srt";
+      const text = toWebVtt(await subtitleFile.text(), extension);
+      const info = subtitleLabel(candidate);
+      tracks.push({
+        id: `local-${candidate}`,
+        label: `${info.label} · Local`,
+        language: info.language,
+        source: "local",
+        fileName: candidate,
+        text,
+        src: URL.createObjectURL(new Blob([text], { type: "text/vtt" })),
+      });
+    } catch {
+      // A sidecar subtitle is optional.
+    }
+  }
+  return tracks;
+}
+
+export function subtitleUrl(text: string): string {
+  return URL.createObjectURL(new Blob([text], { type: "text/vtt" }));
 }

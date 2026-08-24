@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import "../../styles/appShell.css";
 import "../../styles/stage8BrowseAdditions.css";
+import { ToastProvider } from "../ui/Toast";
 
 type Props = {
   children: ReactNode;
@@ -18,8 +19,9 @@ const links = [
 
 export function AppShell({ children }: Props) {
   return (
-    <div className="app-shell">
-      <header className="streamlocal-nav">
+    <ToastProvider>
+      <div className="app-shell">
+        <header className="streamlocal-nav">
         <NavLink className="streamlocal-brand" to="/">
           <span className="streamlocal-brand-mark">SL</span>
           <span className="streamlocal-brand-name">StreamLocal</span>
@@ -44,9 +46,10 @@ export function AppShell({ children }: Props) {
             </NavLink>
           ))}
         </nav>
-      </header>
+        </header>
 
-      <main className="app-main">{children}</main>
-    </div>
+        <main className="app-main">{children}</main>
+      </div>
+    </ToastProvider>
   );
 }

@@ -73,13 +73,13 @@ export async function searchTvmazeSeriesExact(
 
 export async function getTvmazeSeriesArtwork(
   showId: number,
-): Promise<{ poster: string | null; backdrop: string | null }> {
+): Promise<{ poster: string | null; backdrop: string | null; logo: string | null }> {
   const response = await fetch(`https://api.tvmaze.com/shows/${showId}/images`, {
     headers: { Accept: "application/json" },
   });
 
   if (!response.ok) {
-    return { poster: null, backdrop: null };
+    return { poster: null, backdrop: null, logo: null };
   }
 
   const images = (await response.json()) as TvmazeImage[];
@@ -110,6 +110,7 @@ export async function getTvmazeSeriesArtwork(
   return {
     poster: best("poster"),
     backdrop: best("background") ?? best("banner"),
+    logo: best("typography"),
   };
 }
 
@@ -150,6 +151,7 @@ export async function syncSeriesPostersFromTvmaze(): Promise<TvmazePosterSyncRes
           match.image?.medium ??
           null,
         remoteBackdropUrl: artwork.backdrop,
+        remoteLogoUrl: artwork.logo,
         metadataProvider: "tvmaze",
         providerId: String(match.id),
         updatedAt: Date.now(),

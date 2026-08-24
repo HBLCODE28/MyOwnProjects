@@ -12,12 +12,14 @@ import {
   type BrowseData,
 } from "../services/browseData";
 import "../styles/browse.css";
+import { useToast } from "../components/ui/Toast";
 
 export function HomePage() {
   const [data, setData] = useState<BrowseData | null>(null);
   const [selectedSeriesId, setSelectedSeriesId] =
     useState<string | null>(null);
   const [playing, setPlaying] = useState<MediaItem | null>(null);
+  const { showToast } = useToast();
 
   async function refresh() {
     setData(await loadBrowseData());
@@ -73,6 +75,7 @@ export function HomePage() {
                   progress={progress}
                   label={item.type === "episode" ? "EPISODE" : "MOVIE"}
                   continueLabel={reason === "next_episode" ? "Next episode" : "Resume"}
+                  onUnavailable={(entry) => showToast(`${entry.title} is unavailable. Reconnect its media folder in Library.`, "error")}
                   onPlay={setPlaying}
                 />
               ),
@@ -120,6 +123,7 @@ export function HomePage() {
               label="MOVIE"
               progress={data.progressByItemId[item.id]}
               onPlay={setPlaying}
+              onUnavailable={(entry) => showToast(`${entry.title} is unavailable. Reconnect its media folder in Library.`, "error")}
             />
           ))}
         </div>

@@ -3,8 +3,11 @@ import type { MediaItem } from "../../types/library";
 import {
   createPlayableMedia,
   releasePlayableMedia,
+  subtitleUrl,
+  type SubtitleTrack,
   type PlayableMedia,
 } from "../../services/localPlayback";
+import { downloadOpenSubtitle, searchOpenSubtitles, type OpenSubtitleMatch } from "../../services/openSubtitles";
 import {
   getPlaybackProgress,
   markPlaybackStarted,
@@ -124,8 +127,15 @@ export function PlayerOverlay({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [speed, setSpeed] = useState(1);
+  const [brightness, setBrightness] = useState(1);
   const [audioTracks, setAudioTracks] = useState<AudioTrackOption[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState(0);
+  const [selectedSubtitleTrack, setSelectedSubtitleTrack] = useState(0);
+  const [subtitleMenuOpen, setSubtitleMenuOpen] = useState(false);
+  const [subtitleMatches, setSubtitleMatches] = useState<OpenSubtitleMatch[]>([]);
+  const [subtitleBusy, setSubtitleBusy] = useState(false);
+  const [subtitleOffset, setSubtitleOffset] = useState(0);
+  const subtitleSeeTimeRef = useRef<number | null>(null);
   const [timelinePreview, setTimelinePreview] = useState<{
     url: string | null;
     positionSeconds: number;
@@ -189,6 +199,23 @@ export function PlayerOverlay({
       releasePlayableMedia(loaded);
     };
   }, [item.mediaFileId]);
+
+  useEffect(() => {
+    if (!media || media.subtitles.length > 0) return;
+    let active = true;
+    void searchOpenSubtitles(item)
+      .then((matches) => {
+        if (!active || matches.length === 0) return;
+        setSubtitleMatches(matches);
+        setSubtitleMenuOpen(true);
+      })
+      .catch(() => {
+        // Automatic lookup is best-effort. Local playback must remain usable offline.
+      });
+    return () => {
+      active = false;
+    };
+  }, [item, media]);
 
   async function persistProgress(video: HTMLVideoElement) {
     const result = await savePlaybackProgress(
@@ -361,6 +388,100 @@ export function PlayerOverlay({
     setSelectedAudioTrack(index);
   }
 
+  function selectSubtitleTrack(index: number) {
+    const tracks = videoRef.current?.textTracks;
+    if (!tracks) return;
+    for (let trackIndex = 0; trackIndex < tracks.length; trackIndex += 1) {
+      tracks[trackIndex].mode = index >= 0 && trackIndex === index ? "showing" : "disabled";
+    }
+    setSelectedSubtitleTrack(index);
+  }
+
+  function shiftVtt(text: string, offsetSeconds: number): string {
+    const toSeconds = (stamp: string) => {
+      const [hours, minutes, seconds] = stamp.split(":").map(Number);
+      return hours * 3600 + minutes * 60 + seconds;
+    };
+    const toStamp = (seconds: number) => {
+      const safe = Math.max(0, seconds);
+      const hours = Math.floor(safe / 3600);
+      const minutes = Math.floor((safe % 3600) / 60);
+      const rest = (safe % 60).toFixed(3).padStart(6, "0");
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${rest}`;
+    };
+    return text.replace(/(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/g, (_match, start: string, end: string) =>
+      `${toStamp(toSeconds(start) + offsetSeconds)} --> ${toStamp(toSeconds(end) + offsetSeconds)}`,
+    );
+  }
+
+  function applySubtitleOffset(value: number) {
+    const track = media?.subtitles[selectedSubtitleTrack];
+    if (!track) return;
+    const nextOffset = value;
+    const nextTrack: SubtitleTrack = {
+      ...track,
+      src: subtitleUrl(shiftVtt(track.text, nextOffset)),
+    };
+    URL.revokeObjectURL(track.src);
+    setMedia((current) => current ? {
+      ...current,
+      subtitles: current.subtitles.map((entry, index) => index === selectedSubtitleTrack ? nextTrack : entry),
+    } : current);
+    setSubtitleOffset(nextOffset);
+  }
+
+  function markSubtitleSeen() {
+    subtitleSeeTimeRef.current = videoRef.current?.currentTime ?? null;
+    setError("Subtitle calibration: now press ‘I HEAR THE LINE NOW’ when the audio line is heard.");
+  }
+
+  function markSubtitleHeard() {
+    const seenAt = subtitleSeeTimeRef.current;
+    const heardAt = videoRef.current?.currentTime;
+    if (seenAt == null || heardAt == null) {
+      setError("Press ‘I SEE THE LINE NOW’ first.");
+      return;
+    }
+    applySubtitleOffset(subtitleOffset + (heardAt - seenAt));
+    subtitleSeeTimeRef.current = null;
+    setError(null);
+  }
+
+  async function findOpenSubtitles() {
+    setSubtitleBusy(true);
+    try {
+      setSubtitleMatches(await searchOpenSubtitles(item));
+    } catch (value) {
+      setError(value instanceof Error ? value.message : "OpenSubtitles search failed.");
+    } finally {
+      setSubtitleBusy(false);
+    }
+  }
+
+  async function addOpenSubtitle(match: OpenSubtitleMatch) {
+    setSubtitleBusy(true);
+    try {
+      const downloaded = await downloadOpenSubtitle(match);
+      const track: SubtitleTrack = {
+        id: `opensubtitles-${match.fileId}`,
+        label: `${match.label} · Downloaded`,
+        language: match.language,
+        source: "opensubtitles",
+        fileName: downloaded.fileName,
+        text: downloaded.text,
+        src: downloaded.src,
+      };
+      setMedia((current) => current ? { ...current, subtitles: [...current.subtitles, track] } : current);
+      setSelectedSubtitleTrack(media?.subtitles.length ?? 0);
+      setSubtitleMatches([]);
+      setError(null);
+    } catch (value) {
+      setError(value instanceof Error ? value.message : "Subtitle download failed.");
+    } finally {
+      setSubtitleBusy(false);
+    }
+  }
+
   async function initializeMedia(video: HTMLVideoElement) {
     setDuration(video.duration);
     refreshAudioTracks(video);
@@ -455,6 +576,7 @@ export function PlayerOverlay({
           <video
             ref={videoRef}
             src={media.url}
+            style={{ filter: `brightness(${brightness})` }}
             autoPlay
             playsInline
             onPlay={() => setPlaying(true)}
@@ -488,7 +610,18 @@ export function PlayerOverlay({
               setError(mediaErrorMessage(event.currentTarget, media))
             }
             onDoubleClick={() => void toggleFullscreen()}
-          />
+          >
+            {(media.subtitles ?? []).map((track, index) => (
+              <track
+                key={`${track.id}-${track.src}`}
+                kind="subtitles"
+                src={track.src}
+                srcLang={track.language}
+                label={track.label}
+                default={index === selectedSubtitleTrack}
+              />
+            ))}
+          </video>
         )}
       </div>
 
@@ -570,6 +703,52 @@ export function PlayerOverlay({
             </div>
 
             <div className="player-control-group">
+              <button
+                className="player-icon-button"
+                aria-expanded={subtitleMenuOpen}
+                onClick={() => setSubtitleMenuOpen((open) => !open)}
+                title="Playback options"
+              >
+                ⋯
+              </button>
+
+              {subtitleMenuOpen && (
+                <div className="player-options-menu">
+                  <strong>Playback options</strong>
+                  <label className="player-speed">
+                    Brightness
+                    <input type="range" min="0.5" max="1.8" step="0.05" value={brightness} onChange={(event) => setBrightness(Number(event.target.value))} />
+                  </label>
+                  <label className="player-speed">
+                    Subtitles
+                    <select
+                      value={media.subtitles.length ? selectedSubtitleTrack : -1}
+                      onChange={(event) => selectSubtitleTrack(Number(event.target.value))}
+                    >
+                      <option value={-1}>Off</option>
+                      {media.subtitles.map((track, index) => <option key={track.id} value={index}>{track.label}</option>)}
+                    </select>
+                  </label>
+                  <div className="player-option-actions">
+                    <button className="player-icon-button" disabled={!media.subtitles.length} onClick={() => applySubtitleOffset(subtitleOffset - .5)}>−0.5s</button>
+                    <span>{subtitleOffset >= 0 ? "+" : ""}{subtitleOffset.toFixed(1)}s</span>
+                    <button className="player-icon-button" disabled={!media.subtitles.length} onClick={() => applySubtitleOffset(subtitleOffset + .5)}>+0.5s</button>
+                  </div>
+                  <div className="player-option-actions">
+                    <button className="player-icon-button" disabled={!media.subtitles.length} onClick={markSubtitleSeen}>I SEE THE LINE NOW</button>
+                    <button className="player-icon-button" disabled={!media.subtitles.length} onClick={markSubtitleHeard}>I HEAR THE LINE NOW</button>
+                  </div>
+                  <button className="player-icon-button" onClick={() => void findOpenSubtitles()} disabled={subtitleBusy}>
+                    {subtitleBusy ? "Searching..." : "Find OpenSubtitles"}
+                  </button>
+                  {subtitleMatches.map((match) => (
+                    <button className="player-subtitle-result" key={`${match.id}-${match.fileId}`} onClick={() => void addOpenSubtitle(match)}>
+                      {match.label}{match.hearingImpaired ? " · HI" : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {audioTracks.length > 1 && (
                 <label className="player-speed">
                   Audio

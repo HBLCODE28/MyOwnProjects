@@ -11,6 +11,7 @@ import {
   setSeriesNotWatched,
 } from "../../services/seriesViewingState";
 import "../../styles/seriesHub.css";
+import { useToast } from "../ui/Toast";
 
 type Props = {
   card: SeriesCard;
@@ -29,8 +30,11 @@ export function SeriesHubOverlay({
 }: Props) {
   const firstSeason = card.seasons[0]?.seasonNumber ?? 1;
   const [seasonNumber, setSeasonNumber] = useState(firstSeason);
+  const [progressSeasonNumber, setProgressSeasonNumber] = useState(firstSeason);
   const [lastWatchedEpisodeId, setLastWatchedEpisodeId] = useState("");
   const [viewingMessage, setViewingMessage] = useState<string | null>(null);
+  const [progressAnswered, setProgressAnswered] = useState(false);
+  const { showToast } = useToast();
 
   const allEpisodes = useMemo(
     () => card.seasons.flatMap((entry) => entry.episodes).map(({ item }) => item),
@@ -46,8 +50,11 @@ export function SeriesHubOverlay({
   useEffect(() => {
     void getSeriesViewingState(card.series.id).then((state) => {
       setLastWatchedEpisodeId(state?.lastWatchedEpisodeId ?? "");
+      setProgressAnswered(Boolean(state));
+      const remembered = allEpisodes.find((episode) => episode.id === state?.lastWatchedEpisodeId);
+      if (remembered?.seasonNumber != null) setProgressSeasonNumber(remembered.seasonNumber);
     });
-  }, [card.series.id]);
+  }, [allEpisodes, card.series.id]);
 
   const season = useMemo(
     () =>
@@ -88,6 +95,8 @@ export function SeriesHubOverlay({
     setViewingMessage(
       `Marked through S${String(episode.seasonNumber ?? 0).padStart(2, "0")}E${String(episode.episodeNumber ?? 0).padStart(2, "0")}.`,
     );
+    showToast("Series progress saved. Continue Watching will use the next episode.", "success");
+    setProgressAnswered(true);
     onProgressChanged?.();
   }
 
@@ -95,6 +104,8 @@ export function SeriesHubOverlay({
     await setSeriesNotWatched(card.series.id, allEpisodes);
     setLastWatchedEpisodeId("");
     setViewingMessage("This series is marked as not watched.");
+    showToast("Series marked as not watched.", "success");
+    setProgressAnswered(true);
     onProgressChanged?.();
   }
 
@@ -128,10 +139,11 @@ export function SeriesHubOverlay({
 
           <div className="series-hub-copy">
             <p className="eyebrow">SERIES</p>
-            {(card.series.logoArtworkId || season?.episodes[0]?.item.logoArtworkId) ? (
+            {(card.series.logoArtworkId || card.series.remoteLogoUrl || season?.episodes[0]?.item.logoArtworkId || season?.episodes[0]?.item.remoteLogoUrl) ? (
               <ArtworkImage
                 className="series-hub-logo"
                 artworkId={card.series.logoArtworkId ?? season?.episodes[0]?.item.logoArtworkId ?? null}
+                remoteUrl={card.series.remoteLogoUrl ?? season?.episodes[0]?.item.remoteLogoUrl ?? null}
                 label={card.series.title}
                 fit="contain"
                 position="left center"
@@ -171,7 +183,7 @@ export function SeriesHubOverlay({
         </div>
 
         <div className="series-hub-body">
-          <div className="series-viewing-panel">
+          {!progressAnswered && <div className="series-viewing-panel">
             <div>
               <p className="eyebrow">YOUR PROGRESS</p>
               <strong>Where did you stop watching?</strong>
@@ -179,12 +191,26 @@ export function SeriesHubOverlay({
             </div>
             <div className="series-viewing-controls">
               <select
-                aria-label="Last episode watched"
+                aria-label="Last watched season"
+                value={progressSeasonNumber}
+                onChange={(event) => {
+                  const value = Number(event.target.value);
+                  setProgressSeasonNumber(value);
+                  const firstEpisode = allEpisodes.find((episode) => episode.seasonNumber === value);
+                  setLastWatchedEpisodeId(firstEpisode?.id ?? "");
+                }}
+              >
+                {card.seasons.map((seasonEntry) => (
+                  <option key={seasonEntry.seasonNumber} value={seasonEntry.seasonNumber}>Season {seasonEntry.seasonNumber}</option>
+                ))}
+              </select>
+              <select
+                aria-label="Last watched episode"
                 value={lastWatchedEpisodeId}
                 onChange={(event) => setLastWatchedEpisodeId(event.target.value)}
               >
-                <option value="">Select last episode watched</option>
-                {allEpisodes.map((episode) => (
+                <option value="">Select episode</option>
+                {allEpisodes.filter((episode) => episode.seasonNumber === progressSeasonNumber).map((episode) => (
                   <option key={episode.id} value={episode.id}>
                     S{String(episode.seasonNumber ?? 0).padStart(2, "0")}E{String(episode.episodeNumber ?? 0).padStart(2, "0")} · {episode.episodeTitle || episode.title}
                   </option>
@@ -198,7 +224,7 @@ export function SeriesHubOverlay({
               </button>
             </div>
             {viewingMessage && <span className="series-viewing-message">{viewingMessage}</span>}
-          </div>
+          </div>}
 
           <div className="series-hub-toolbar">
             <div className="series-season-heading">

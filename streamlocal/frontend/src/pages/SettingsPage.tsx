@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { ApiKeyVault } from "../components/settings/ApiKeyVault";
 import { TvmazeProviderCard } from "../components/settings/TvmazeProviderCard";
 import { MoviePosterProviderCard } from "../components/settings/MoviePosterProviderCard";
@@ -16,6 +17,7 @@ import {
   type CacheStats,
 } from "../services/maintenance";
 import "../styles/settings.css";
+import { useToast } from "../components/ui/Toast";
 
 function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
@@ -30,6 +32,7 @@ export function SettingsPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [seekInterval, setSeekInterval] = useState(5);
+  const { showToast } = useToast();
 
   useEffect(() => {
     void getCacheStats().then(setCacheStats);
@@ -37,30 +40,38 @@ export function SettingsPage() {
   }, []);
 
   async function exportBackup() {
-    const blob = await exportStreamLocalBackup();
-    downloadBlob(
-      blob,
-      `StreamLocal-Backup-${new Date().toISOString().slice(0, 10)}.zip`,
-    );
-    setStatus("Backup exported.");
+    try {
+      const blob = await exportStreamLocalBackup();
+      downloadBlob(blob, `StreamLocal-Backup-${new Date().toISOString().slice(0, 10)}.zip`);
+      setStatus("Backup exported.");
+      showToast("Backup exported successfully.", "success");
+    } catch (value) {
+      showToast(value instanceof Error ? value.message : "Backup export failed.", "error");
+    }
   }
 
   async function importBackup(file: File | undefined) {
     if (!file) return;
-    await importStreamLocalBackup(file);
-    setStatus(
-      "Backup imported. Reconnect each media folder in Library.",
-    );
+    try {
+      await importStreamLocalBackup(file);
+      setStatus("Backup imported. Select the original media folder in Library to reconnect it.");
+      showToast("Backup imported. Your media is safe; reconnect the original folder in Library.", "success");
+    } catch (value) {
+      const message = value instanceof Error ? value.message : "Backup import failed.";
+      setStatus(message);
+      showToast(message, "error");
+    }
   }
 
   async function persistence() {
     const granted = await requestPersistentStorage();
 
-    setStatus(
+    const message =
       granted
         ? "Browser storage is protected. StreamLocal data is stored locally in IndexedDB and the browser marked it as persistent."
-        : "Browser storage is active. StreamLocal data is stored locally in IndexedDB, but the browser did not mark it as protected from automatic cleanup. Use Export Library for important backups.",
-    );
+        : "Browser storage is active. StreamLocal data is stored locally in IndexedDB, but the browser did not mark it as protected from automatic cleanup. Use Export Library for important backups.";
+    setStatus(message);
+    showToast(message, granted ? "success" : "info");
   }
 
   async function clearLibrary() {
@@ -101,6 +112,7 @@ export function SettingsPage() {
     );
 
     setStatus("Local StreamLocal database cleared.");
+    showToast("Local StreamLocal data cleared. Source video files were not touched.", "success");
   }
 
   async function refreshMaintenance() {
@@ -111,18 +123,21 @@ export function SettingsPage() {
     setSeekInterval(value);
     await setPlaybackSetting("playback.seekInterval", value);
     setStatus("Playback seek interval saved.");
+    showToast("Playback seek interval saved.", "success");
   }
 
   async function clearTimelineCache() {
     const count = await clearTimelinePreviewCache();
     await refreshMaintenance();
     setStatus(`Cleared ${count} timeline preview${count === 1 ? "" : "s"}.`);
+    showToast(`Cleared ${count} timeline preview${count === 1 ? "" : "s"}.`, "success");
   }
 
   async function clearArtworkCache() {
     const count = await clearUnreferencedArtwork();
     await refreshMaintenance();
     setStatus(`Cleared ${count} unreferenced artwork record${count === 1 ? "" : "s"}.`);
+    showToast(`Cleared ${count} unreferenced artwork record${count === 1 ? "" : "s"}.`, "success");
   }
 
   return (
@@ -192,6 +207,11 @@ export function SettingsPage() {
             />
           </label>
         </div>
+        <p className="vault-security-note">
+          A ZIP backup contains StreamLocal metadata and artwork, not the original video files.
+          After import, reconnect the original media folder here:
+          {" "}<Link to="/library">Open Library reconnect</Link>
+        </p>
       </section>
 
       <section className="settings-card danger-zone">

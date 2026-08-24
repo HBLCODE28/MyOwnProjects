@@ -195,6 +195,12 @@
   padding-top: 10px;
 }
 
+.card-logo {
+  width: min(150px, 80%);
+  height: 30px;
+  margin-bottom: 5px;
+}
+
 .media-card-copy h3,
 .series-card-copy h3 {
   overflow: hidden;
