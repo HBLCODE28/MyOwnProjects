@@ -1,6 +1,7 @@
 import { db } from "../db/streamlocalDb";
 import { findWikipediaMovie } from "./wikipediaMovieProvider";
 import { concisePlotSummary } from "./plotSummary";
+import { cacheRemoteArtwork } from "./artwork";
 
 const PRESERVATION_SEARCH =
   "https://api.thepreservationnetwork.org/v1/vhs/search";
@@ -210,6 +211,7 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
           providerId: null,
           updatedAt: Date.now(),
         });
+        await cacheRemoteArtwork(movie.id, posterUrl, "poster").catch(() => false);
 
         result.preservationSaved += 1;
         continue;
@@ -228,6 +230,7 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
           providerId: wikipedia.pageId,
           updatedAt: Date.now(),
         });
+        await cacheRemoteArtwork(movie.id, wikipedia.posterUrl, "poster").catch(() => false);
 
         result.wikipediaSaved += 1;
         continue;

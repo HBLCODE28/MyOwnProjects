@@ -1,5 +1,6 @@
 import { db } from "../db/streamlocalDb";
 import { concisePlotSummary } from "./plotSummary";
+import { cacheRemoteArtwork } from "./artwork";
 
 const WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php";
 
@@ -187,6 +188,7 @@ export async function syncMovieArtworkFromWikipedia(): Promise<WikipediaMovieSyn
         providerId: match.pageId,
         updatedAt: Date.now(),
       });
+      await cacheRemoteArtwork(movie.id, match.posterUrl, "poster").catch(() => false);
 
       result.updated += 1;
     } catch {
