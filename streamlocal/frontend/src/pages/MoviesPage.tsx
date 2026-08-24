@@ -8,6 +8,7 @@ import { filterMovies } from "../services/browseSelectors";
 import "../styles/browse.css";
 import { useToast } from "../components/ui/Toast";
 import { syncWikimediaLogos } from "../services/wikimediaLogoProvider";
+import { syncMoviePosters } from "../services/moviePosterProvider";
 
 export function MoviesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
@@ -15,6 +16,7 @@ export function MoviesPage() {
   const [playing, setPlaying] = useState<MediaItem | null>(null);
   const { showToast } = useToast();
   const logoSyncStarted = useRef(false);
+  const posterSyncStarted = useRef(false);
 
   async function refresh() {
     setData(await loadBrowseData());
@@ -27,6 +29,14 @@ export function MoviesPage() {
     logoSyncStarted.current = true;
     void syncWikimediaLogos().then((result) => {
       if (result.updated > 0) void refresh();
+    }).catch(() => undefined);
+  }, [data]);
+
+  useEffect(() => {
+    if (!data || posterSyncStarted.current) return;
+    posterSyncStarted.current = true;
+    void syncMoviePosters().then((result) => {
+      if (result.preservationSaved + result.wikipediaSaved + result.commonsSaved > 0) void refresh();
     }).catch(() => undefined);
   }, [data]);
 

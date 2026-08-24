@@ -14,6 +14,7 @@ import {
 import "../styles/browse.css";
 import { useToast } from "../components/ui/Toast";
 import { syncWikimediaLogos } from "../services/wikimediaLogoProvider";
+import { syncMoviePosters } from "../services/moviePosterProvider";
 
 export function HomePage() {
   const [data, setData] = useState<BrowseData | null>(null);
@@ -22,6 +23,7 @@ export function HomePage() {
   const [playing, setPlaying] = useState<MediaItem | null>(null);
   const { showToast } = useToast();
   const logoSyncStarted = useRef(false);
+  const posterSyncStarted = useRef(false);
 
   async function refresh() {
     setData(await loadBrowseData());
@@ -36,6 +38,14 @@ export function HomePage() {
     logoSyncStarted.current = true;
     void syncWikimediaLogos().then((result) => {
       if (result.updated > 0) void refresh();
+    }).catch(() => undefined);
+  }, [data]);
+
+  useEffect(() => {
+    if (!data || posterSyncStarted.current) return;
+    posterSyncStarted.current = true;
+    void syncMoviePosters().then((result) => {
+      if (result.preservationSaved + result.wikipediaSaved + result.commonsSaved > 0) void refresh();
     }).catch(() => undefined);
   }, [data]);
 
@@ -93,25 +103,6 @@ export function HomePage() {
           </div>
         </section>
       )}
-
-      <section className="browse-metrics">
-        <div>
-          <strong>{data.counts.movies}</strong>
-          <span>movies</span>
-        </div>
-        <div>
-          <strong>{data.counts.episodes}</strong>
-          <span>episodes</span>
-        </div>
-        <div>
-          <strong>{data.counts.availableItems}</strong>
-          <span>available</span>
-        </div>
-        <div>
-          <strong>{data.counts.needsMatch}</strong>
-          <span>needs match</span>
-        </div>
-      </section>
 
       <section className="browse-section">
         <div className="section-title-row">

@@ -1,5 +1,5 @@
 import { db } from "../db/streamlocalDb";
-import { findWikipediaMovie } from "./wikipediaMovieProvider";
+import { findWikipediaMovie, findWikimediaMoviePoster } from "./wikipediaMovieProvider";
 import { concisePlotSummary } from "./plotSummary";
 import { cacheRemoteArtwork } from "./artwork";
 
@@ -11,6 +11,7 @@ export type MoviePosterSyncResult = {
   preservationMatched: number;
   preservationSaved: number;
   wikipediaSaved: number;
+  commonsSaved: number;
   noPoster: number;
   failed: number;
 };
@@ -185,11 +186,12 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
     preservationMatched: 0,
     preservationSaved: 0,
     wikipediaSaved: 0,
+    commonsSaved: 0,
     noPoster: 0,
     failed: 0,
   };
 
-  for (const movie of movies) {
+  for (const movie of movies.filter((entry) => !entry.posterArtworkId && !entry.remotePosterUrl)) {
     try {
       let posterUrl: string | null = null;
 
@@ -233,6 +235,18 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
         await cacheRemoteArtwork(movie.id, wikipedia.posterUrl, "poster").catch(() => false);
 
         result.wikipediaSaved += 1;
+        continue;
+      }
+
+      const commonsPoster = await findWikimediaMoviePoster(movie.title, movie.year);
+      if (commonsPoster) {
+        await db.mediaItems.update(movie.id, {
+          remotePosterUrl: commonsPoster,
+          metadataProvider: "wikipedia",
+          updatedAt: Date.now(),
+        });
+        await cacheRemoteArtwork(movie.id, commonsPoster, "poster").catch(() => false);
+        result.commonsSaved += 1;
         continue;
       }
 

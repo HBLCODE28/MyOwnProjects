@@ -51,8 +51,7 @@ export function MoviePosterProviderCard() {
         <div className="scan-summary">
           Checked {result.checked} · Poster DB saved{" "}
           {result.preservationSaved} · Wikipedia saved{" "}
-          {result.wikipediaSaved} · No poster {result.noPoster} · Failed{" "}
-          {result.failed}
+          {result.wikipediaSaved} · Commons saved {result.commonsSaved} · No poster {result.noPoster} · Failed {result.failed}
         </div>
       )}
 

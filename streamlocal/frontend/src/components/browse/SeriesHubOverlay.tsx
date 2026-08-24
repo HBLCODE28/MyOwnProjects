@@ -149,6 +149,7 @@ export function SeriesHubOverlay({
                 label={card.series.title}
                 fit="contain"
                 position="left center"
+                lightBackgroundForDark
               />
             ) : (
               <h2>{card.series.title}</h2>

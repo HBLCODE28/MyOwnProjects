@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { artworkObjectUrl } from "../../services/artwork";
+import { findWikimediaLogo } from "../../services/wikimediaLogoProvider";
 
 type Props = {
   artworkId: string | null;
@@ -8,6 +9,7 @@ type Props = {
   label: string;
   fit?: "cover" | "contain";
   position?: string;
+  lightBackgroundForDark?: boolean;
 };
 
 export function ArtworkImage({
@@ -17,15 +19,22 @@ export function ArtworkImage({
   label,
   fit = "cover",
   position = "center",
+  lightBackgroundForDark = false,
 }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const [remoteFailed, setRemoteFailed] = useState(false);
+  const [darkArtwork, setDarkArtwork] = useState(false);
+  const [alternateUrl, setAlternateUrl] = useState<string | null>(null);
+  const attemptedAlternateUrls = useRef(new Set<string>());
 
   useEffect(() => {
     let active = true;
     let objectUrl: string | null = null;
 
     setRemoteFailed(false);
+    setDarkArtwork(false);
+    setAlternateUrl(null);
+    attemptedAlternateUrls.current.clear();
 
     if (!artworkId) {
       setUrl(null);
@@ -48,25 +57,15 @@ export function ArtworkImage({
     };
   }, [artworkId]);
 
-  const displayUrl = url ?? (!remoteFailed ? remoteUrl ?? null : null);
+  const displayUrl = url ?? alternateUrl ?? (!remoteFailed ? remoteUrl ?? null : null);
 
   if (!displayUrl) {
-    return (
-      <div
-        className={
-          className
-            ? `${className} artwork-placeholder`
-            : "artwork-placeholder"
-        }
-      >
-        <span>{label}</span>
-      </div>
-    );
+    return <div className={className ? `${className} artwork-empty` : "artwork-empty"} aria-label={label} />;
   }
 
   return (
     <img
-      className={className}
+      className={className ? `${className}${darkArtwork ? " artwork-dark" : ""}` : darkArtwork ? "artwork-dark" : undefined}
       src={displayUrl}
       alt=""
       loading="lazy"
@@ -77,6 +76,40 @@ export function ArtworkImage({
       }}
       onError={() => {
         if (!url) setRemoteFailed(true);
+      }}
+      onLoad={(event) => {
+        if (!lightBackgroundForDark) return;
+        try {
+          const image = event.currentTarget;
+          const canvas = document.createElement("canvas");
+          canvas.width = 32;
+          canvas.height = 32;
+          const context = canvas.getContext("2d");
+          if (!context) return;
+          context.clearRect(0, 0, 32, 32);
+          context.drawImage(image, 0, 0, 32, 32);
+          const pixels = context.getImageData(0, 0, 32, 32).data;
+          let visible = 0;
+          let luminance = 0;
+          for (let index = 0; index < pixels.length; index += 4) {
+            if (pixels[index + 3] < 40) continue;
+            visible += 1;
+            luminance += (pixels[index] * 0.2126 + pixels[index + 1] * 0.7152 + pixels[index + 2] * 0.0722);
+          }
+          const isFullyDark = visible > 8 && luminance / visible < 35;
+          setDarkArtwork(isFullyDark);
+          if (isFullyDark && !url && !attemptedAlternateUrls.current.has(displayUrl)) {
+            attemptedAlternateUrls.current.add(displayUrl);
+            void findWikimediaLogo(label, displayUrl).then((alternative) => {
+              if (alternative) {
+                setAlternateUrl(alternative);
+                setDarkArtwork(false);
+              }
+            }).catch(() => undefined);
+          }
+        } catch {
+          setDarkArtwork(false);
+        }
       }}
     />
   );

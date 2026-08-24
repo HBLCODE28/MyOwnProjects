@@ -63,7 +63,7 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
     if (seriesPoolLength < 2) return undefined;
     const timer = window.setInterval(() => {
       setFeaturedSeriesIndex((current) => (current + 1) % seriesPoolLength);
-    }, 30_000);
+    }, 20_000);
     return () => window.clearInterval(timer);
   }, [seriesPoolLength]);
 
@@ -113,6 +113,7 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
               label={card.series.title}
               fit="contain"
               position="left center"
+              lightBackgroundForDark
             />
           ) : (
             <h1>{card.series.title}</h1>
@@ -165,6 +166,7 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
             label={item.title}
             fit="contain"
             position="left center"
+            lightBackgroundForDark
           />
         ) : (
           <h1>{item.title}</h1>

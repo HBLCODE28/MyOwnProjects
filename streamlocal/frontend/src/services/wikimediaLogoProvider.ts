@@ -18,7 +18,7 @@ function normalize(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export async function findWikimediaLogo(title: string): Promise<string | null> {
+export async function findWikimediaLogo(title: string, excludedUrl?: string): Promise<string | null> {
   const params = new URLSearchParams({
     action: "query",
     format: "json",
@@ -49,7 +49,11 @@ export async function findWikimediaLogo(title: string): Promise<string | null> {
     })
     .filter(({ score }) => score >= 110)
     .sort((a, b) => b.score - a.score);
-  return ranked[0]?.page.imageinfo?.[0]?.thumburl ?? ranked[0]?.page.imageinfo?.[0]?.url ?? null;
+  for (const candidate of ranked) {
+    const url = candidate.page.imageinfo?.[0]?.thumburl ?? candidate.page.imageinfo?.[0]?.url;
+    if (url && url !== excludedUrl) return url;
+  }
+  return null;
 }
 
 export async function syncWikimediaLogos(): Promise<LogoSyncResult> {

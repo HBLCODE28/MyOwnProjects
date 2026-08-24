@@ -75,7 +75,10 @@ export async function downloadOpenSubtitle(match: OpenSubtitleMatch): Promise<{
     headers: { ...headers(key), "Content-Type": "application/json" },
     body: JSON.stringify({ file_id: match.fileId, sub_format: "srt" }),
   });
-  if (!response.ok) throw new Error(`OpenSubtitles download failed (${response.status}).`);
+  if (!response.ok) {
+    if (response.status === 401) throw new Error("OpenSubtitles rejected the API key (401). Re-enter the key in Settings.");
+    throw new Error(`OpenSubtitles download failed (${response.status}).`);
+  }
   const json = (await response.json()) as { link?: string; file_name?: string };
   if (!json.link) throw new Error("OpenSubtitles did not return a subtitle download link.");
   const fileResponse = await fetch(json.link, { headers: { "User-Agent": USER_AGENT } });

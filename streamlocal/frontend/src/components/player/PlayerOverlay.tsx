@@ -134,6 +134,7 @@ export function PlayerOverlay({
   const [subtitleMenuOpen, setSubtitleMenuOpen] = useState(false);
   const [subtitleMatches, setSubtitleMatches] = useState<OpenSubtitleMatch[]>([]);
   const [subtitleBusy, setSubtitleBusy] = useState(false);
+  const [subtitleNotice, setSubtitleNotice] = useState<string | null>(null);
   const [subtitleOffset, setSubtitleOffset] = useState(0);
   const subtitleSeeTimeRef = useRef<number | null>(null);
   const [timelinePreview, setTimelinePreview] = useState<{
@@ -432,27 +433,28 @@ export function PlayerOverlay({
 
   function markSubtitleSeen() {
     subtitleSeeTimeRef.current = videoRef.current?.currentTime ?? null;
-    setError("Subtitle calibration: now press ‘I HEAR THE LINE NOW’ when the audio line is heard.");
+    setSubtitleNotice("Now press I HEAR THE LINE NOW when the audio line is heard.");
   }
 
   function markSubtitleHeard() {
     const seenAt = subtitleSeeTimeRef.current;
     const heardAt = videoRef.current?.currentTime;
     if (seenAt == null || heardAt == null) {
-      setError("Press ‘I SEE THE LINE NOW’ first.");
+      setSubtitleNotice("Press I SEE THE LINE NOW first.");
       return;
     }
     applySubtitleOffset(subtitleOffset + (heardAt - seenAt));
     subtitleSeeTimeRef.current = null;
-    setError(null);
+    setSubtitleNotice(null);
   }
 
   async function findOpenSubtitles() {
     setSubtitleBusy(true);
     try {
-      setSubtitleMatches(await searchOpenSubtitles(item));
+      setSubtitleMatches((await searchOpenSubtitles(item)).slice(0, 6));
+      setSubtitleNotice(null);
     } catch (value) {
-      setError(value instanceof Error ? value.message : "OpenSubtitles search failed.");
+      setSubtitleNotice(value instanceof Error ? value.message : "OpenSubtitles search failed.");
     } finally {
       setSubtitleBusy(false);
     }
@@ -474,9 +476,9 @@ export function PlayerOverlay({
       setMedia((current) => current ? { ...current, subtitles: [...current.subtitles, track] } : current);
       setSelectedSubtitleTrack(media?.subtitles.length ?? 0);
       setSubtitleMatches([]);
-      setError(null);
+      setSubtitleNotice(null);
     } catch (value) {
-      setError(value instanceof Error ? value.message : "Subtitle download failed.");
+      setSubtitleNotice(value instanceof Error ? value.message : "Subtitle download failed.");
     } finally {
       setSubtitleBusy(false);
     }
@@ -491,8 +493,8 @@ export function PlayerOverlay({
     if (
       previous &&
       !previous.watched &&
-      previous.positionSeconds > 10 &&
-      previous.positionSeconds < video.duration - 10
+      previous.positionSeconds > 1 &&
+      previous.positionSeconds < video.duration - 1
     ) {
       video.currentTime = previous.positionSeconds;
       setCurrent(previous.positionSeconds);
@@ -746,6 +748,7 @@ export function PlayerOverlay({
                       {match.label}{match.hearingImpaired ? " · HI" : ""}
                     </button>
                   ))}
+                  {subtitleNotice && <p className="player-subtitle-notice">{subtitleNotice}</p>}
                 </div>
               )}
 

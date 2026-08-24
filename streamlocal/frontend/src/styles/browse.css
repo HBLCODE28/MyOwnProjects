@@ -33,6 +33,16 @@
   object-fit: cover;
 }
 
+.browse-hero-bg img {
+  animation: browse-hero-zoom 20s ease-in-out infinite alternate;
+  transform: scale(1.04);
+}
+
+@keyframes browse-hero-zoom {
+  from { transform: scale(1.04); }
+  to { transform: scale(1.11); }
+}
+
 .browse-hero::after {
   content: "";
   position: absolute;
@@ -72,6 +82,12 @@
   margin: 4px 0 8px;
   object-fit: contain;
   object-position: left center;
+}
+
+.artwork-empty {
+  width: 100%;
+  height: 100%;
+  background: #08090b;
 }
 
 .browse-metrics {
@@ -199,6 +215,12 @@
   width: min(150px, 80%);
   height: 30px;
   margin-bottom: 5px;
+}
+
+.artwork-dark {
+  padding: 8px;
+  border-radius: 7px;
+  background: #fff;
 }
 
 .media-card-copy h3,

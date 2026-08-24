@@ -3,6 +3,7 @@ import { concisePlotSummary } from "./plotSummary";
 import { cacheRemoteArtwork } from "./artwork";
 
 const WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php";
+const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 
 type WikiPage = {
   pageid?: number;
@@ -156,6 +157,45 @@ export async function findWikipediaMovie(
       chosen.original?.source ??
       null,
   };
+}
+
+export async function findWikimediaMoviePoster(
+  title: string,
+  year: number | null,
+): Promise<string | null> {
+  const params = new URLSearchParams({
+    action: "query",
+    format: "json",
+    origin: "*",
+    generator: "search",
+    gsrnamespace: "6",
+    gsrlimit: "20",
+    gsrsearch: `${title} ${year ?? ""} movie poster`,
+    prop: "imageinfo",
+    iiprop: "url",
+    iiurlwidth: "1000",
+  });
+  const response = await fetch(`${COMMONS_API}?${params.toString()}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) return null;
+  const json = (await response.json()) as {
+    query?: { pages?: Record<string, { title: string; imageinfo?: Array<{ thumburl?: string; url?: string }> }> };
+  };
+  const wanted = normalizeTitle(title);
+  const candidates = Object.values(json.query?.pages ?? [])
+    .map((page) => {
+      const normalized = normalizeTitle(page.title.replace(/^file\s*:/, ""));
+      let score = 0;
+      if (normalized.includes("poster")) score += 35;
+      if (normalized.includes(wanted)) score += 100;
+      if (year && normalized.includes(String(year))) score += 25;
+      if (page.imageinfo?.[0]?.thumburl) score += 10;
+      return { page, score };
+    })
+    .filter(({ score }) => score >= 110)
+    .sort((a, b) => b.score - a.score);
+  return candidates[0]?.page.imageinfo?.[0]?.thumburl ?? candidates[0]?.page.imageinfo?.[0]?.url ?? null;
 }
 
 export async function syncMovieArtworkFromWikipedia(): Promise<WikipediaMovieSyncResult> {
