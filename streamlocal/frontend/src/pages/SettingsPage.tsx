@@ -67,6 +67,7 @@ export function SettingsPage() {
         db.artwork,
         db.settings,
         db.playbackProgress,
+        db.timelinePreviews,
       ],
       async () => {
         await Promise.all([
@@ -77,6 +78,7 @@ export function SettingsPage() {
           db.artwork.clear(),
           db.settings.clear(),
           db.playbackProgress.clear(),
+          db.timelinePreviews.clear(),
         ]);
       },
     );

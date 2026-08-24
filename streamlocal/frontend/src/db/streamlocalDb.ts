@@ -7,6 +7,7 @@ import type {
   MediaItem,
   PlaybackProgress,
   Series,
+  TimelinePreview,
 } from "../types/library";
 
 export class StreamLocalDb extends Dexie {
@@ -17,6 +18,7 @@ export class StreamLocalDb extends Dexie {
   artwork!: Table<Artwork, string>;
   settings!: Table<AppSetting, string>;
   playbackProgress!: Table<PlaybackProgress, string>;
+  timelinePreviews!: Table<TimelinePreview, string>;
 
   constructor() {
     super("StreamLocal");
@@ -42,6 +44,19 @@ export class StreamLocalDb extends Dexie {
       artwork: "id,kind,createdAt",
       settings: "key",
       playbackProgress: "mediaItemId,lastPlayedAt,watched,completedAt",
+    });
+
+    this.version(3).stores({
+      librarySources: "id,name,createdAt,lastScanAt,enabled",
+      mediaFiles:
+        "id,sourceId,relativePath,fileName,fingerprint,available,lastSeenAt",
+      mediaItems:
+        "id,mediaFileId,type,title,year,seriesId,seasonNumber,episodeNumber,confidence,matchStatus,manuallyEdited,updatedAt",
+      series: "id,normalizedTitle,title,year,updatedAt",
+      artwork: "id,kind,createdAt",
+      settings: "key",
+      playbackProgress: "mediaItemId,lastPlayedAt,watched,completedAt",
+      timelinePreviews: "id,mediaFileId,positionSeconds,createdAt",
     });
   }
 }

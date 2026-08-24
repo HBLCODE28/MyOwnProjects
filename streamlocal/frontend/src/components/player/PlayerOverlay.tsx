@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import type { MediaItem } from "../../types/library";
 import {
   createPlayableMedia,
@@ -14,6 +14,10 @@ import {
   playerShortcutFromKeyboardEvent,
   type PlayerShortcutAction,
 } from "../../services/playerShortcuts";
+import {
+  getOrCreateTimelinePreview,
+  timelinePreviewPosition,
+} from "../../services/timelinePreview";
 import "../../styles/player.css";
 
 type Props = {
@@ -104,6 +108,7 @@ export function PlayerOverlay({
   const onCloseRef = useRef(onClose);
   const onProgressChangedRef = useRef(onProgressChanged);
   const lastSavedSecondRef = useRef(-1);
+  const previewRequestRef = useRef(0);
 
   const [media, setMedia] = useState<PlayableMedia | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +119,11 @@ export function PlayerOverlay({
   const [speed, setSpeed] = useState(1);
   const [audioTracks, setAudioTracks] = useState<AudioTrackOption[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState(0);
+  const [timelinePreview, setTimelinePreview] = useState<{
+    url: string | null;
+    positionSeconds: number;
+    leftPercent: number;
+  } | null>(null);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -130,6 +140,10 @@ export function PlayerOverlay({
       document.body.classList.remove("player-open");
     };
   }, [item]);
+
+  useEffect(() => () => {
+    if (timelinePreview?.url) URL.revokeObjectURL(timelinePreview.url);
+  }, [timelinePreview]);
 
   useEffect(() => {
     let active = true;
@@ -349,6 +363,42 @@ export function PlayerOverlay({
     setSpeed(value);
   }
 
+  async function showTimelinePreview(event: PointerEvent<HTMLInputElement>) {
+    if (!media || !duration || !Number.isFinite(duration)) return;
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    const positionSeconds = timelinePreviewPosition(ratio * duration);
+    const halfPreviewPercent = Math.min(45, (80 / bounds.width) * 100);
+    const leftPercent = Math.max(
+      halfPreviewPercent,
+      Math.min(100 - halfPreviewPercent, ratio * 100),
+    );
+    const requestId = ++previewRequestRef.current;
+
+    setTimelinePreview((previous) => {
+      if (previous?.url) URL.revokeObjectURL(previous.url);
+      return { url: null, positionSeconds, leftPercent };
+    });
+
+    try {
+      const url = await getOrCreateTimelinePreview(
+        item.mediaFileId,
+        media.file,
+        positionSeconds,
+      );
+      if (requestId !== previewRequestRef.current) {
+        if (url) URL.revokeObjectURL(url);
+        return;
+      }
+      setTimelinePreview({ url, positionSeconds, leftPercent });
+    } catch {
+      if (requestId === previewRequestRef.current) {
+        setTimelinePreview({ url: null, positionSeconds, leftPercent });
+      }
+    }
+  }
+
   return (
     <div className="player-backdrop" ref={shellRef}>
       <button
@@ -419,20 +469,40 @@ export function PlayerOverlay({
             <strong>{item.episodeTitle || item.title}</strong>
           </div>
 
-          <input
-            className="player-seek"
-            type="range"
-            min="0"
-            max={duration || 0}
-            step="0.1"
-            value={Math.min(current, duration || 0)}
-            onChange={(event) => {
-              const value = Number(event.target.value);
-              if (videoRef.current) videoRef.current.currentTime = value;
-              setCurrent(value);
-            }}
-            aria-label="Seek"
-          />
+          <div className="player-seek-wrap">
+            {timelinePreview?.url && (
+              <div
+                className="player-timeline-preview"
+                style={{ left: `${timelinePreview.leftPercent}%` }}
+                aria-hidden="true"
+              >
+                <img src={timelinePreview.url} alt="" />
+                <span>{formatTime(timelinePreview.positionSeconds)}</span>
+              </div>
+            )}
+            <input
+              className="player-seek"
+              type="range"
+              min="0"
+              max={duration || 0}
+              step="0.1"
+              value={Math.min(current, duration || 0)}
+              onPointerMove={(event) => void showTimelinePreview(event)}
+              onPointerLeave={() => {
+                previewRequestRef.current += 1;
+                setTimelinePreview((previous) => {
+                  if (previous?.url) URL.revokeObjectURL(previous.url);
+                  return null;
+                });
+              }}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (videoRef.current) videoRef.current.currentTime = value;
+                setCurrent(value);
+              }}
+              aria-label="Seek"
+            />
+          </div>
 
           <div className="player-control-row">
             <div className="player-control-group">

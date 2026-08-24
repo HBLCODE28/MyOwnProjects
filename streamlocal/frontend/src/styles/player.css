@@ -118,6 +118,47 @@ body.player-open .streamlocal-nav {
   width: 100%;
 }
 
+.player-seek-wrap {
+  position: relative;
+  padding-top: 78px;
+}
+
+.player-seek-wrap .player-seek {
+  position: relative;
+  z-index: 1;
+}
+
+.player-timeline-preview {
+  position: absolute;
+  top: 0;
+  display: flex;
+  width: 160px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 8px;
+  background: #111116;
+  box-shadow: 0 12px 30px rgba(0,0,0,.5);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.player-timeline-preview img {
+  display: block;
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  background: #050506;
+}
+
+.player-timeline-preview span {
+  padding: 5px 7px;
+  color: #d8d8de;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
 .player-control-row {
   display: flex;
   justify-content: space-between;

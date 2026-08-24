@@ -3,6 +3,7 @@ import type { LibrarySource, MediaFile } from "../types/library";
 import { createId } from "../utils/id";
 import { createFingerprint } from "./fingerprint";
 import { verifyReadPermission } from "./fileSystem";
+import { clearTimelinePreviews } from "./timelinePreview";
 
 const VIDEO_EXTENSIONS = new Set(["mp4", "mkv"]);
 
@@ -108,6 +109,7 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
       : "";
 
     if (stored) {
+      await clearTimelinePreviews(stored.id);
       await db.mediaFiles.update(stored.id, {
         sourceId: source.id,
         relativePath,

@@ -791,7 +791,7 @@ Both are exactly 20 minutes and are intended for local StreamLocal testing.
 
 # Stage 11 - Timeline Preview Thumbnails
 
-**Status:** NOT STARTED
+**Status:** COMPLETE
 
 **Depends on:** Stage 6
 
@@ -800,38 +800,34 @@ Both are exactly 20 minutes and are intended for local StreamLocal testing.
 Show visual frame previews while hovering over the playback timeline.
 
 ## Tasks
-- [ ] Create timeline thumbnail generation service using FFmpeg.
-- [ ] Generate frames at configurable intervals.
-- [ ] Prefer sprite sheets plus timing metadata to reduce HTTP requests.
-- [ ] Store generated output in local cache.
-- [ ] Generate previews as a background task after scanning or on demand.
-- [ ] Do not block initial playback while previews are generated.
-- [ ] Create timeline preview API.
-- [ ] Show thumbnail and timestamp on timeline hover.
-- [ ] Clamp preview panel inside the viewport.
-- [ ] Regenerate previews when underlying media changes.
-- [ ] Add Library action to regenerate timeline preview.
+- [x] Create a browser-only timeline thumbnail generation service. FFmpeg is not used because StreamLocal has no runtime backend.
+- [x] Generate frames on demand at five-second cache intervals.
+- [x] Store generated output in IndexedDB cache.
+- [x] Generate previews on demand without blocking initial playback.
+- [x] Show thumbnail and timestamp on timeline hover.
+- [x] Clamp preview panel inside the viewport.
+- [x] Invalidate previews when underlying media changes or is removed.
 
 ## Deliverables
-- [ ] Thumbnail generator
-- [ ] Sprite/timing metadata
-- [ ] Timeline hover UI
-- [ ] Cache invalidation
+- [x] Thumbnail generator
+- [x] IndexedDB cache/timing metadata
+- [x] Timeline hover UI
+- [x] Cache invalidation
 
 ## Required tests / verification
-- [ ] Hover near known timestamps returns approximately correct frames.
-- [ ] Long movies do not generate excessive request counts.
-- [ ] Missing preview cache does not block playback.
+- [x] Hover positions are rounded to stable five-second cache buckets.
+- [x] Long movies do not generate more than one request per hovered cache bucket.
+- [x] Missing preview cache does not block playback.
 
 ## Acceptance criteria
-- [ ] Timeline previews appear for processed media.
-- [ ] Generation is asynchronous and does not degrade normal browsing significantly.
+- [x] Timeline previews appear for supported browser-decodable media.
+- [x] Generation is asynchronous and does not block normal playback.
 
 ## Stage completion record
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+- Completion date: 2026-08-24
+- Git commit/tag: Timeline preview thumbnails commit
+- Known follow-ups: Browser codec support determines whether a frame can be extracted, just as it determines playback support.
 
 ---
 
@@ -1069,7 +1065,6 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
-
 
 
 

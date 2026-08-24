@@ -76,6 +76,15 @@ export type Artwork = {
   createdAt: number;
 };
 
+export type TimelinePreview = {
+  id: string;
+  mediaFileId: string;
+  positionSeconds: number;
+  mimeType: string;
+  blob: Blob;
+  createdAt: number;
+};
+
 export type PlaybackProgress = {
   mediaItemId: string;
   positionSeconds: number;
