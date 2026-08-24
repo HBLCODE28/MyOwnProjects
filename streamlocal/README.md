@@ -62,11 +62,24 @@ Output:
 frontend\dist
 ```
 
+Linux development uses the same frontend commands:
+
+```bash
+cd frontend
+npm ci
+npm run dev -- --host 127.0.0.1
+```
+
+Open `http://127.0.0.1:5173/` in Chrome or Edge.
+
 ## Library storage
 
 Library metadata is stored in IndexedDB inside the browser profile.
 
 Original video files are never moved, renamed, edited or deleted.
+
+The Library page can edit metadata, mark items watched/unwatched, remove only
+StreamLocal database records, and configure manual Intro/Recap/Credits segments.
 
 ## Moving to another computer
 
