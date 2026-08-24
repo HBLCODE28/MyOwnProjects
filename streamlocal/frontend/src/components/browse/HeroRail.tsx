@@ -89,7 +89,10 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
       null;
 
     return (
-      <section className="browse-hero">
+      <section
+        key={`featured-${card.series.id}`}
+        className="browse-hero browse-hero-transition"
+      >
         <div className="browse-hero-bg">
           <ArtworkImage
             artworkId={localBackdrop}
@@ -146,7 +149,7 @@ export function HeroRail({ movies, series, onOpenSeries }: Props) {
     item.backdropArtworkId ?? item.posterArtworkId ?? null;
 
   return (
-    <section className="browse-hero movie-featured-hero">
+    <section key={`featured-movie-${item.id}`} className="browse-hero movie-featured-hero browse-hero-transition">
       <div className="browse-hero-bg movie-featured-art">
         <ArtworkImage
           artworkId={localArtwork}
