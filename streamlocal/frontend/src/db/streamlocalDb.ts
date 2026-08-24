@@ -58,7 +58,23 @@ export class StreamLocalDb extends Dexie {
       playbackProgress: "mediaItemId,lastPlayedAt,watched,completedAt",
       timelinePreviews: "id,mediaFileId,positionSeconds,createdAt",
     });
+
+    this.version(4).stores({
+      librarySources: "id,name,createdAt,lastScanAt,enabled",
+      mediaFiles:
+        "id,sourceId,relativePath,fileName,fingerprint,available,lastSeenAt",
+      mediaItems:
+        "id,mediaFileId,type,title,year,seriesId,seasonNumber,episodeNumber,confidence,matchStatus,manuallyEdited,updatedAt",
+      series: "id,normalizedTitle,title,year,updatedAt",
+      artwork: "id,kind,createdAt",
+      settings: "key",
+      playbackProgress: "mediaItemId,lastPlayedAt,watched,completedAt",
+      timelinePreviews: "id,mediaFileId,positionSeconds,createdAt",
+      mediaSegments: "id,mediaItemId,type,startSeconds,endSeconds,source,updatedAt",
+    });
   }
+
+  mediaSegments!: Table<import("../types/library").MediaSegment, string>;
 }
 
 export const db = new StreamLocalDb();

@@ -85,6 +85,20 @@ export type TimelinePreview = {
   createdAt: number;
 };
 
+export type MediaSegmentType = "intro" | "recap" | "credits";
+export type MediaSegmentSource = "manual" | "detected";
+
+export type MediaSegment = {
+  id: string;
+  mediaItemId: string;
+  type: MediaSegmentType;
+  startSeconds: number;
+  endSeconds: number;
+  source: MediaSegmentSource;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type PlaybackProgress = {
   mediaItemId: string;
   positionSeconds: number;

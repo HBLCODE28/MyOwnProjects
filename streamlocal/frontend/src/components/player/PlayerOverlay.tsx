@@ -18,6 +18,11 @@ import {
   getOrCreateTimelinePreview,
   timelinePreviewPosition,
 } from "../../services/timelinePreview";
+import {
+  activeMediaSegment,
+  getMediaSegments,
+} from "../../services/mediaSegments";
+import type { MediaSegment } from "../../types/library";
 import "../../styles/player.css";
 
 type Props = {
@@ -124,6 +129,8 @@ export function PlayerOverlay({
     positionSeconds: number;
     leftPercent: number;
   } | null>(null);
+  const [activeSegment, setActiveSegment] = useState<MediaSegment | null>(null);
+  const segmentsRef = useRef<MediaSegment[]>([]);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -140,6 +147,14 @@ export function PlayerOverlay({
       document.body.classList.remove("player-open");
     };
   }, [item]);
+
+  useEffect(() => {
+    segmentsRef.current = [];
+    setActiveSegment(null);
+    void getMediaSegments(item.id).then((segments) => {
+      segmentsRef.current = segments;
+    });
+  }, [item.id]);
 
   useEffect(() => () => {
     if (timelinePreview?.url) URL.revokeObjectURL(timelinePreview.url);
@@ -220,6 +235,14 @@ export function PlayerOverlay({
       0,
       Math.min(maximum, video.currentTime + seconds),
     );
+  }
+
+  function skipActiveSegment() {
+    const video = videoRef.current;
+    if (!video || !activeSegment) return;
+    video.currentTime = activeSegment.endSeconds;
+    setCurrent(activeSegment.endSeconds);
+    setActiveSegment(null);
   }
 
   async function toggleFullscreen() {
@@ -436,6 +459,7 @@ export function PlayerOverlay({
             onTimeUpdate={(event) => {
               const video = event.currentTarget;
               setCurrent(video.currentTime);
+              setActiveSegment(activeMediaSegment(segmentsRef.current, video.currentTime));
 
               const second = Math.floor(video.currentTime);
               if (
@@ -467,6 +491,19 @@ export function PlayerOverlay({
           <div className="player-now-playing">
             <span className="eyebrow">LOCAL PLAYBACK</span>
             <strong>{item.episodeTitle || item.title}</strong>
+            {activeSegment && (
+              <button
+                type="button"
+                className="player-skip-button"
+                onClick={skipActiveSegment}
+              >
+                {activeSegment.type === "intro"
+                  ? "Skip Intro"
+                  : activeSegment.type === "recap"
+                    ? "Skip Recap"
+                    : "Skip Credits"}
+              </button>
+            )}
           </div>
 
           <div className="player-seek-wrap">

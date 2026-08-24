@@ -22,6 +22,7 @@ export async function removeUnavailableEntries(): Promise<UnavailableCleanupResu
       db.series,
       db.artwork,
       db.timelinePreviews,
+      db.mediaSegments,
     ],
     async () => {
       const unavailableFiles = await db.mediaFiles
@@ -34,6 +35,12 @@ export async function removeUnavailableEntries(): Promise<UnavailableCleanupResu
 
       if (itemIds.length > 0) {
         await db.playbackProgress.bulkDelete(itemIds);
+        const segmentRows = await db.mediaSegments.toArray();
+        await db.mediaSegments.bulkDelete(
+          segmentRows
+            .filter((segment) => itemIds.includes(segment.mediaItemId))
+            .map((segment) => segment.id),
+        );
         await db.mediaItems.bulkDelete(itemIds);
       }
 

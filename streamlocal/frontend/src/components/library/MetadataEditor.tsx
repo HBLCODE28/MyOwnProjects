@@ -3,6 +3,10 @@ import { db } from "../../db/streamlocalDb";
 import type { MediaItem } from "../../types/library";
 import { attachArtworkToItem, storeArtwork } from "../../services/artwork";
 import { resetToAutomatic, saveManualMediaItem } from "../../services/recognition";
+import {
+  getMediaSegments,
+  replaceManualMediaSegments,
+} from "../../services/mediaSegments";
 
 type Props = {
   item: MediaItem;
@@ -22,6 +26,12 @@ export function MetadataEditor({ item, onClose, onSaved }: Props) {
   const [season, setSeason] = useState(item.seasonNumber?.toString() ?? "");
   const [episode, setEpisode] = useState(item.episodeNumber?.toString() ?? "");
   const [episodeTitle, setEpisodeTitle] = useState(item.episodeTitle ?? "");
+  const [introStart, setIntroStart] = useState("");
+  const [introEnd, setIntroEnd] = useState("");
+  const [recapStart, setRecapStart] = useState("");
+  const [recapEnd, setRecapEnd] = useState("");
+  const [creditsStart, setCreditsStart] = useState("");
+  const [creditsEnd, setCreditsEnd] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,6 +43,30 @@ export function MetadataEditor({ item, onClose, onSaved }: Props) {
       }
     });
   }, [item.seriesId]);
+
+  useEffect(() => {
+    getMediaSegments(item.id).then((segments) => {
+      for (const segment of segments) {
+        const start = String(segment.startSeconds);
+        const end = String(segment.endSeconds);
+        if (segment.type === "intro") {
+          setIntroStart(start);
+          setIntroEnd(end);
+        } else if (segment.type === "recap") {
+          setRecapStart(start);
+          setRecapEnd(end);
+        } else {
+          setCreditsStart(start);
+          setCreditsEnd(end);
+        }
+      }
+    });
+  }, [item.id]);
+
+  function segmentValue(start: string, end: string) {
+    if (!start.trim() && !end.trim()) return undefined;
+    return { startSeconds: Number(start), endSeconds: Number(end) };
+  }
 
   async function save() {
     setError(null);
@@ -51,6 +85,12 @@ export function MetadataEditor({ item, onClose, onSaved }: Props) {
         seasonNumber: season ? Number(season) : null,
         episodeNumber: episode ? Number(episode) : null,
         episodeTitle: episodeTitle || null,
+      });
+
+      await replaceManualMediaSegments(item.id, {
+        intro: segmentValue(introStart, introEnd),
+        recap: segmentValue(recapStart, recapEnd),
+        credits: segmentValue(creditsStart, creditsEnd),
       });
 
       onSaved();
@@ -191,6 +231,24 @@ export function MetadataEditor({ item, onClose, onSaved }: Props) {
               rows={5}
             />
           </label>
+
+          <div className="metadata-wide segment-editor">
+            <div>
+              <p className="eyebrow">OPTIONAL PLAYBACK SEGMENTS</p>
+              <p className="segment-help">
+                Enter seconds for manual Skip Intro, Skip Recap and Credits controls.
+                Leave both fields empty to remove a segment.
+              </p>
+            </div>
+            <div className="segment-grid">
+              <label>Intro start<input type="number" min="0" step="0.1" value={introStart} onChange={(event) => setIntroStart(event.target.value)} /></label>
+              <label>Intro end<input type="number" min="0" step="0.1" value={introEnd} onChange={(event) => setIntroEnd(event.target.value)} /></label>
+              <label>Recap start<input type="number" min="0" step="0.1" value={recapStart} onChange={(event) => setRecapStart(event.target.value)} /></label>
+              <label>Recap end<input type="number" min="0" step="0.1" value={recapEnd} onChange={(event) => setRecapEnd(event.target.value)} /></label>
+              <label>Credits start<input type="number" min="0" step="0.1" value={creditsStart} onChange={(event) => setCreditsStart(event.target.value)} /></label>
+              <label>Credits end<input type="number" min="0" step="0.1" value={creditsEnd} onChange={(event) => setCreditsEnd(event.target.value)} /></label>
+            </div>
+          </div>
 
           <label>
             Poster

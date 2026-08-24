@@ -26,6 +26,12 @@ type WikiQueryResponse = {
   };
 };
 
+type WikiSearchResponse = {
+  query?: {
+    search?: Array<{ title: string }>;
+  };
+};
+
 export type WikipediaMovieSyncResult = {
   checked: number;
   matched: number;
@@ -47,15 +53,16 @@ function candidateTitles(title: string, year: number | null): string[] {
   );
 }
 
-export async function findWikipediaMovie(
-  title: string,
-  year: number | null,
-): Promise<{
-  pageId: string;
-  title: string;
-  overview: string;
-  posterUrl: string | null;
-} | null> {
+function normalizeTitle(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function queryPages(titles: string[]): Promise<WikiPage[]> {
   const params = new URLSearchParams({
     action: "query",
     format: "json",
@@ -66,42 +73,66 @@ export async function findWikipediaMovie(
     pithumbsize: "1000",
     exintro: "1",
     explaintext: "1",
-    titles: candidateTitles(title, year).join("|"),
+    titles: titles.join("|"),
   });
-
   const response = await fetch(`${WIKIPEDIA_API}?${params.toString()}`, {
     headers: { Accept: "application/json" },
   });
-
   if (!response.ok) {
     throw new Error(`Wikipedia request failed with HTTP ${response.status}.`);
   }
-
   const json = (await response.json()) as WikiQueryResponse;
-  const pages = Object.values(json.query?.pages ?? {}).filter(
-    (page) => !page.missing,
-  );
+  return Object.values(json.query?.pages ?? {}).filter((page) => !page.missing);
+}
+
+async function searchPageTitles(title: string, year: number | null): Promise<string[]> {
+  const params = new URLSearchParams({
+    action: "query",
+    format: "json",
+    origin: "*",
+    list: "search",
+    srnamespace: "0",
+    srlimit: "10",
+    srsearch: `${title} film${year ? ` ${year}` : ""}`,
+  });
+  const response = await fetch(`${WIKIPEDIA_API}?${params.toString()}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) return [];
+  const json = (await response.json()) as WikiSearchResponse;
+  return (json.query?.search ?? []).map((entry) => entry.title);
+}
+
+export async function findWikipediaMovie(
+  title: string,
+  year: number | null,
+): Promise<{
+  pageId: string;
+  title: string;
+  overview: string;
+  posterUrl: string | null;
+} | null> {
+  let pages = await queryPages(candidateTitles(title, year));
 
   if (pages.length === 0) return null;
 
-  const exactYearTitle = year
-    ? `${title} (${year} film)`.toLowerCase()
-    : null;
+  if (!pages.some((page) => page.thumbnail?.source || page.original?.source)) {
+    const searchTitles = await searchPageTitles(title, year);
+    if (searchTitles.length > 0) pages = await queryPages(searchTitles);
+  }
 
-  const chosen =
-    pages.find(
-      (page) =>
-        exactYearTitle &&
-        page.title.toLowerCase() === exactYearTitle,
-    ) ??
-    pages.find(
-      (page) =>
-        page.title.toLowerCase() === `${title} (film)`.toLowerCase(),
-    ) ??
-    pages.find(
-      (page) => page.title.toLowerCase() === title.toLowerCase(),
-    ) ??
-    pages[0];
+  const wanted = normalizeTitle(title);
+  const chosen = pages
+    .map((page) => {
+      const normalized = normalizeTitle(page.title);
+      let score = 0;
+      if (normalized === wanted) score += 100;
+      else if (normalized.includes(wanted) || wanted.includes(normalized)) score += 45;
+      if (year && page.title.includes(String(year))) score += 30;
+      if (page.thumbnail?.source || page.original?.source) score += 20;
+      return { page, score };
+    })
+    .sort((a, b) => b.score - a.score)[0]?.page;
 
   if (!chosen?.pageid) return null;
 

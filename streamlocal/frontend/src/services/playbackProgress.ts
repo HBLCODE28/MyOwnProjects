@@ -17,7 +17,10 @@ export function watchedFromPosition(
   if (percent >= 0.9) return true;
 
   if (item.type === "movie") {
-    return remaining <= 5 * 60;
+    // A short test clip can have five minutes remaining at the very start.
+    // Only use the remaining-time shortcut for feature-length media; shorter
+    // movies still become watched at the authoritative 90% threshold.
+    return durationSeconds > 10 * 60 && remaining <= 5 * 60;
   }
 
   if (item.type === "episode") {

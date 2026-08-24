@@ -25,4 +25,9 @@
 .metadata-grid label { display:flex; flex-direction:column; gap:7px; color:#aaa; font-size:12px; }
 .metadata-grid input,.metadata-grid select,.metadata-grid textarea { width:100%; padding:11px 12px; border:1px solid rgba(255,255,255,.1); border-radius:8px; background:#15161a; color:#f3f3f4; }
 .metadata-wide { grid-column:1 / -1; }
+.segment-editor { padding:14px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(255,255,255,.025); }
+.segment-help { margin:0; color:#85868d; font-size:12px; line-height:1.5; }
+.segment-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+.segment-grid label { font-size:11px; }
+@media (max-width: 700px) { .segment-grid { grid-template-columns:repeat(2,1fr); } }
 .metadata-footer { display:flex; justify-content:space-between; gap:12px; margin-top:20px; }

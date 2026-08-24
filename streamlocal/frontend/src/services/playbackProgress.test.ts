@@ -65,6 +65,10 @@ describe("playback state", () => {
     expect(watchedFromPosition({ type: "movie" }, 6900, 7200)).toBe(true);
   });
 
+  it("does not mark a short movie watched only because five minutes remain", () => {
+    expect(watchedFromPosition({ type: "movie" }, 60, 240)).toBe(false);
+  });
+
   it("marks an episode watched with two minutes remaining", () => {
     expect(watchedFromPosition({ type: "episode" }, 2280, 2400)).toBe(true);
   });

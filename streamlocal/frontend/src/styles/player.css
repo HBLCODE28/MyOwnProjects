@@ -114,6 +114,18 @@ body.player-open .streamlocal-nav {
   white-space: nowrap;
 }
 
+.player-skip-button {
+  min-height: 30px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 7px;
+  color: #fff;
+  background: rgba(255,255,255,.1);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .player-seek {
   width: 100%;
 }
