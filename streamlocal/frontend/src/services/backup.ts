@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import { db } from "../db/streamlocalDb";
 import type { Artwork } from "../types/library";
 
-const FORMAT_VERSION = 2;
+const FORMAT_VERSION = 3;
 const PRIVATE_SETTING_KEYS = new Set(["encryptedSecretVault"]);
 
 type ExportSource = {
@@ -26,6 +26,7 @@ export async function exportStreamLocalBackup(): Promise<Blob> {
     artwork,
     settings,
     playbackProgress,
+    mediaSegments,
   ] = await Promise.all([
     db.librarySources.toArray(),
     db.mediaFiles.toArray(),
@@ -34,6 +35,7 @@ export async function exportStreamLocalBackup(): Promise<Blob> {
     db.artwork.toArray(),
     db.settings.toArray(),
     db.playbackProgress.toArray(),
+    db.mediaSegments.toArray(),
   ]);
 
   const exportedSources: ExportSource[] = sources.map(
@@ -60,6 +62,7 @@ export async function exportStreamLocalBackup(): Promise<Blob> {
         series,
         settings: exportableSettings,
         playbackProgress,
+        mediaSegments,
         artwork: artwork.map(({ blob: _blob, ...record }) => record),
       },
       null,
@@ -97,7 +100,7 @@ export async function importStreamLocalBackup(file: File): Promise<void> {
 
   if (
     manifest.format !== "StreamLocal Backup" ||
-    ![1, 2].includes(manifest.version)
+    ![1, 2, 3].includes(manifest.version)
   ) {
     throw new Error("Unsupported StreamLocal backup version.");
   }
@@ -116,6 +119,7 @@ export async function importStreamLocalBackup(file: File): Promise<void> {
       db.artwork,
       db.settings,
       db.playbackProgress,
+      db.mediaSegments,
     ],
     async () => {
       await Promise.all([
@@ -126,6 +130,7 @@ export async function importStreamLocalBackup(file: File): Promise<void> {
         db.artwork.clear(),
         db.settings.clear(),
         db.playbackProgress.clear(),
+        db.mediaSegments.clear(),
       ]);
 
       if (manifest.librarySources?.length) {
@@ -157,6 +162,10 @@ export async function importStreamLocalBackup(file: File): Promise<void> {
 
       if (manifest.playbackProgress?.length) {
         await db.playbackProgress.bulkAdd(manifest.playbackProgress);
+      }
+
+      if (manifest.mediaSegments?.length) {
+        await db.mediaSegments.bulkAdd(manifest.mediaSegments);
       }
 
       const importedSettings = (manifest.settings ?? []).filter(

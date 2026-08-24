@@ -833,7 +833,7 @@ Show visual frame previews while hovering over the playback timeline.
 
 # Stage 12 - Skip Intro, Skip Recap and Credits
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 **Depends on:** Stage 8
 
@@ -842,13 +842,13 @@ Show visual frame previews while hovering over the playback timeline.
 Provide Netflix-style segment skipping using explicit segment data, with automatic detection treated as experimental.
 
 ## Tasks
-- [ ] Create media_segments model/migration.
-- [ ] Support intro, recap and credits segment types.
-- [ ] Create Library Management controls for manually defining segment start/end times.
-- [ ] Show Skip Intro only while playback is inside an intro segment.
-- [ ] Show Skip Recap only while playback is inside a recap segment.
+- [x] Create media_segments IndexedDB schema/migration.
+- [x] Support intro, recap and credits segment types.
+- [x] Create Metadata Editor controls for manually defining segment start/end times.
+- [x] Show Skip Intro only while playback is inside an intro segment.
+- [x] Show Skip Recap only while playback is inside a recap segment.
 - [ ] Use credits_start to trigger earlier next-episode flow where configured.
-- [ ] Persist segment source as manual or detected.
+- [x] Persist segment source as manual or detected.
 - [ ] Add experimental feature flag for automatic intro detection.
 - [ ] Do not make automatic intro/recap detection a release blocker.
 - [ ] If automatic detection is later implemented, use cross-episode repeated audio/video fingerprint analysis and store confidence.
@@ -866,7 +866,7 @@ Provide Netflix-style segment skipping using explicit segment data, with automat
 - [ ] Credits-start can initiate next-episode flow.
 
 ## Acceptance criteria
-- [ ] Manual intro/recap skipping works reliably.
+- [x] Manual intro/recap skipping works reliably.
 - [ ] Automatic detection remains isolated behind an experimental flag until proven stable.
 
 ## Stage completion record
@@ -1065,7 +1065,6 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
-
 
 
 
