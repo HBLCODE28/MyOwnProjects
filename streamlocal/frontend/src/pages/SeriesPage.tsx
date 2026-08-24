@@ -43,6 +43,17 @@ export function SeriesPage() {
     setSelectedSeriesId(card.series.id);
   }
 
+  function nextEpisodeAfter(item: MediaItem): MediaItem | null {
+    const card = data?.series.find((candidate) => candidate.series.id === item.seriesId);
+    if (!card) return null;
+    const episodes = card.seasons
+      .flatMap((season) => season.episodes)
+      .filter(({ file }) => file?.available)
+      .map(({ item: episode }) => episode);
+    const index = episodes.findIndex((episode) => episode.id === item.id);
+    return index >= 0 ? episodes[index + 1] ?? null : null;
+  }
+
   if (!data) {
     return (
       <div className="page browse-page">
@@ -103,6 +114,10 @@ export function SeriesPage() {
           item={playing}
           onClose={() => setPlaying(null)}
           onProgressChanged={() => void refresh()}
+          onNextEpisode={() => {
+            const next = nextEpisodeAfter(playing);
+            if (next) setPlaying(next);
+          }}
         />
       )}
     </div>

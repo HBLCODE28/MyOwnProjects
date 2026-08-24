@@ -29,6 +29,7 @@ type Props = {
   item: MediaItem;
   onClose: () => void;
   onProgressChanged?: () => void;
+  onNextEpisode?: () => void;
 };
 
 type BrowserAudioTrack = {
@@ -107,6 +108,7 @@ export function PlayerOverlay({
   item,
   onClose,
   onProgressChanged,
+  onNextEpisode,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -240,6 +242,10 @@ export function PlayerOverlay({
   function skipActiveSegment() {
     const video = videoRef.current;
     if (!video || !activeSegment) return;
+    if (activeSegment.type === "credits" && onNextEpisode) {
+      onNextEpisode();
+      return;
+    }
     video.currentTime = activeSegment.endSeconds;
     setCurrent(activeSegment.endSeconds);
     setActiveSegment(null);
@@ -501,7 +507,7 @@ export function PlayerOverlay({
                   ? "Skip Intro"
                   : activeSegment.type === "recap"
                     ? "Skip Recap"
-                    : "Skip Credits"}
+                    : onNextEpisode ? "Next Episode" : "Skip Credits"}
               </button>
             )}
           </div>
