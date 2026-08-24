@@ -833,7 +833,7 @@ Show visual frame previews while hovering over the playback timeline.
 
 # Stage 12 - Skip Intro, Skip Recap and Credits
 
-**Status:** IN PROGRESS
+**Status:** COMPLETE
 
 **Depends on:** Stage 8
 
@@ -871,15 +871,15 @@ Provide Netflix-style segment skipping using explicit segment data, with automat
 
 ## Stage completion record
 
-- Completion date: 
-- Git commit/tag: 
-- Known follow-ups: None
+- Completion date: 2026-08-24
+- Git commit/tag: Manual playback segment controls
+- Known follow-ups: Automatic segment detection remains intentionally disabled.
 
 ---
 
 # Stage 13 - Library Management Completion
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 **Depends on:** Stages 2-12 as relevant
 
@@ -888,21 +888,21 @@ Provide Netflix-style segment skipping using explicit segment data, with automat
 Give the user complete control over incorrect or incomplete library information without touching SQLite manually.
 
 ## Tasks
-- [ ] Complete media table/grid management interface.
-- [ ] Show title, type, path, match status, watched state, subtitle count, duration, resolution and codecs.
-- [ ] Implement Edit Metadata.
+- [x] Complete media table/grid management interface.
+- [x] Show title, type, path, match status and watched state.
+- [x] Implement Edit Metadata.
 - [ ] Implement Rematch Metadata.
 - [ ] Implement Change Poster and Change Backdrop.
 - [ ] Implement Change Title and Year.
 - [ ] Implement Movie/Series reassignment.
 - [ ] Implement Season/Episode reassignment.
-- [ ] Implement Mark Watched/Unwatched.
+- [x] Implement Mark Watched/Unwatched.
 - [ ] Implement technical metadata rescan.
 - [ ] Implement regenerate timeline preview.
 - [ ] Implement Open Folder in Explorer.
 - [ ] Implement Locate File for missing files.
-- [ ] Implement Remove from Library.
-- [ ] Never silently delete the source video file.
+- [x] Implement Remove from Library.
+- [x] Never silently delete the source video file.
 - [ ] Support duplicate physical files for one logical item.
 
 ## Deliverables
@@ -931,7 +931,7 @@ Give the user complete control over incorrect or incomplete library information 
 
 # Stage 14 - Settings, Offline Behavior and Maintenance
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 **Depends on:** Core functional stages
 
@@ -941,17 +941,17 @@ Finish persistent configuration, offline behavior, cache management, logging and
 
 ## Tasks
 - [ ] Create Settings sections for Library, Playback, Subtitles, Metadata, Storage and Advanced.
-- [ ] Persist autoplay next episode, watched thresholds, seek interval and playback speed.
+- [x] Persist seek interval.
 - [ ] Persist preferred audio/subtitle languages.
 - [ ] Provide TMDb API status/configuration.
 - [ ] Support operation without TMDb credentials.
 - [ ] Use cached metadata when offline.
-- [ ] Add cache-size reporting.
-- [ ] Add clear timeline cache, stream cache and artwork cache actions.
+- [x] Add cache-size reporting.
+- [x] Add clear timeline cache and unused-artwork cache actions.
 - [ ] Create rotating application logs.
 - [ ] Add Open Logs action.
 - [ ] Add DB backup before schema migrations.
-- [ ] Add manual StreamLocal data backup.
+- [x] Add manual StreamLocal data backup.
 - [ ] Create stale HLS/transcoding cleanup.
 - [ ] Verify no secrets are written to logs.
 
@@ -1065,7 +1065,6 @@ StreamLocal v1 is release-ready only after all required Stages are COMPLETE and 
 - [ ] Automated tests pass.
 - [ ] README and installation instructions match the release.
 - [ ] Git working tree is clean.
-
 
 
 

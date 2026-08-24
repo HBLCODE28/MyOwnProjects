@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiKeyVault } from "../components/settings/ApiKeyVault";
 import { TvmazeProviderCard } from "../components/settings/TvmazeProviderCard";
 import { MoviePosterProviderCard } from "../components/settings/MoviePosterProviderCard";
@@ -7,6 +7,14 @@ import {
   exportStreamLocalBackup,
   importStreamLocalBackup,
 } from "../services/backup";
+import {
+  clearTimelinePreviewCache,
+  clearUnreferencedArtwork,
+  getCacheStats,
+  getPlaybackSetting,
+  setPlaybackSetting,
+  type CacheStats,
+} from "../services/maintenance";
 import "../styles/settings.css";
 
 function downloadBlob(blob: Blob, fileName: string) {
@@ -20,6 +28,13 @@ function downloadBlob(blob: Blob, fileName: string) {
 
 export function SettingsPage() {
   const [status, setStatus] = useState<string | null>(null);
+  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
+  const [seekInterval, setSeekInterval] = useState(5);
+
+  useEffect(() => {
+    void getCacheStats().then(setCacheStats);
+    void getPlaybackSetting("playback.seekInterval", 5).then(setSeekInterval);
+  }, []);
 
   async function exportBackup() {
     const blob = await exportStreamLocalBackup();
@@ -88,6 +103,28 @@ export function SettingsPage() {
     setStatus("Local StreamLocal database cleared.");
   }
 
+  async function refreshMaintenance() {
+    setCacheStats(await getCacheStats());
+  }
+
+  async function saveSeekInterval(value: number) {
+    setSeekInterval(value);
+    await setPlaybackSetting("playback.seekInterval", value);
+    setStatus("Playback seek interval saved.");
+  }
+
+  async function clearTimelineCache() {
+    const count = await clearTimelinePreviewCache();
+    await refreshMaintenance();
+    setStatus(`Cleared ${count} timeline preview${count === 1 ? "" : "s"}.`);
+  }
+
+  async function clearArtworkCache() {
+    const count = await clearUnreferencedArtwork();
+    await refreshMaintenance();
+    setStatus(`Cleared ${count} unreferenced artwork record${count === 1 ? "" : "s"}.`);
+  }
+
   return (
     <div className="page settings-page">
       <p className="eyebrow">LOCAL DATA</p>
@@ -113,6 +150,28 @@ export function SettingsPage() {
         <button className="secondary-button" onClick={persistence}>
           Check persistent storage
         </button>
+      </section>
+
+      <section className="settings-card">
+        <h2>Playback and cache</h2>
+        <label className="settings-field">
+          Seek interval
+          <select value={seekInterval} onChange={(event) => void saveSeekInterval(Number(event.target.value))}>
+            <option value={5}>5 seconds</option>
+            <option value={10}>10 seconds</option>
+            <option value={15}>15 seconds</option>
+            <option value={30}>30 seconds</option>
+          </select>
+        </label>
+        {cacheStats && (
+          <p className="vault-security-note">
+            Timeline previews: {cacheStats.timelinePreviews} · Artwork: {cacheStats.artwork} ({(cacheStats.artworkBytes / 1024).toFixed(0)} KB)
+          </p>
+        )}
+        <div className="settings-actions">
+          <button className="secondary-button" onClick={() => void clearTimelineCache()}>Clear timeline cache</button>
+          <button className="secondary-button" onClick={() => void clearArtworkCache()}>Clear unused artwork</button>
+        </div>
       </section>
 
       <section className="settings-card">

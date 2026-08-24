@@ -31,3 +31,5 @@
 .file-status { display:inline-flex; width:fit-content; padding:5px 8px; border-radius:999px; }
 .file-status.online { color:#bcebd2; background:rgba(70,200,130,.08); }
 .file-status.offline { color:#ffb8b8; background:rgba(220,70,70,.08); }
+.media-row-actions { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+.compact-button { min-height:30px; padding:0 8px; font-size:10px; }

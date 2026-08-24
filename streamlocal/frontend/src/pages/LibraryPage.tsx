@@ -1,27 +1,36 @@
 import { useEffect, useMemo, useState } from "react";
 import { db, requestPersistentStorage } from "../db/streamlocalDb";
-import type { LibrarySource, MediaFile } from "../types/library";
+import type { LibrarySource, MediaFile, MediaItem, PlaybackProgress } from "../types/library";
 import { chooseDirectory } from "../services/fileSystem";
 import { scanLibrarySource, type ScanSummary } from "../services/libraryScanner";
 import { identifyLibrary } from "../services/recognition";
 import { removeUnavailableEntries } from "../services/libraryCleanup";
 import { createId } from "../utils/id";
+import { MetadataEditor } from "../components/library/MetadataEditor";
+import { removeMediaFileFromLibrary, setWatchedState } from "../services/libraryManagement";
 import "../styles/library.css";
 
 export function LibraryPage() {
   const [sources, setSources] = useState<LibrarySource[]>([]);
   const [files, setFiles] = useState<MediaFile[]>([]);
+  const [items, setItems] = useState<MediaItem[]>([]);
+  const [progressByItemId, setProgressByItemId] = useState<Record<string, PlaybackProgress>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [summary, setSummary] = useState<ScanSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   async function refresh() {
-    const [sourceRows, fileRows] = await Promise.all([
+    const [sourceRows, fileRows, itemRows, progressRows] = await Promise.all([
       db.librarySources.toArray(),
       db.mediaFiles.toArray(),
+      db.mediaItems.toArray(),
+      db.playbackProgress.toArray(),
     ]);
     setSources(sourceRows);
     setFiles(fileRows);
+    setItems(itemRows);
+    setProgressByItemId(Object.fromEntries(progressRows.map((row) => [row.mediaItemId, row])));
   }
 
   useEffect(() => {
@@ -135,12 +144,25 @@ export function LibraryPage() {
     }
   }
 
+  async function removeEntry(file: MediaFile) {
+    if (!window.confirm(`Remove "${file.fileName}" from StreamLocal? The original file will not be deleted.`)) return;
+    await removeMediaFileFromLibrary(file.id);
+    await refresh();
+  }
+
+  async function toggleWatched(item: MediaItem, watched: boolean) {
+    await setWatchedState(item, watched);
+    await refresh();
+  }
+
   const stats = useMemo(() => ({
     files: files.length,
     online: files.filter((file) => file.available).length,
     unavailable: files.filter((file) => !file.available).length,
     folders: sources.filter((source) => source.enabled).length,
   }), [files, sources]);
+
+  const itemByFileId = new Map(items.map((item) => [item.mediaFileId, item]));
 
   return (
     <div className="page library-page">
@@ -233,19 +255,33 @@ export function LibraryPage() {
         ) : (
           <div className="media-table">
             <div className="media-table-header">
-              <span>File</span><span>Folder</span><span>Size</span><span>Status</span>
+              <span>File / metadata</span><span>Folder</span><span>Size</span><span>Status / actions</span>
             </div>
             {files.map((file) => {
               const source = sources.find((candidate) => candidate.id === file.sourceId);
+              const item = itemByFileId.get(file.id);
+              const progress = item ? progressByItemId[item.id] : undefined;
               return (
                 <div className="media-table-row" key={file.id}>
-                  <div><strong>{file.fileName}</strong><span>{file.relativePath}</span></div>
+                  <div><strong>{item?.title ?? "Needs identification"}</strong><span>{file.fileName} · {file.relativePath}</span></div>
                   <div><strong>{source?.name ?? "Unknown"}</strong><span>{file.extension.toUpperCase()}</span></div>
                   <div><strong>{(file.size / (1024 ** 3)).toFixed(2)} GB</strong></div>
                   <div>
                     <span className={file.available ? "file-status online" : "file-status offline"}>
                       {file.available ? "Available" : "Unavailable"}
                     </span>
+                    {item && <span>{item.type} · {progress?.watched ? "Watched" : "Unwatched"}</span>}
+                    <div className="media-row-actions">
+                      {item && (
+                        <>
+                          <button type="button" className="secondary-button compact-button" onClick={() => setEditingItemId(item.id)}>Edit</button>
+                          <button type="button" className="secondary-button compact-button" onClick={() => void toggleWatched(item, !progress?.watched)}>
+                            {progress?.watched ? "Mark unwatched" : "Mark watched"}
+                          </button>
+                        </>
+                      )}
+                      <button type="button" className="danger-button compact-button" onClick={() => void removeEntry(file)}>Remove record</button>
+                    </div>
                   </div>
                 </div>
               );
@@ -253,6 +289,20 @@ export function LibraryPage() {
           </div>
         )}
       </section>
+      {editingItemId && (() => {
+        const item = items.find((candidate) => candidate.id === editingItemId);
+        if (!item) return null;
+        return (
+          <MetadataEditor
+            item={item}
+            onClose={() => setEditingItemId(null)}
+            onSaved={() => {
+              setEditingItemId(null);
+              void refresh();
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

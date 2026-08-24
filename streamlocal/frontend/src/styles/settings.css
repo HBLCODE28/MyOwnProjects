@@ -83,3 +83,5 @@
   color: #6f7177 !important;
   font-size: 11px;
 }
+.settings-field { display:flex; align-items:center; justify-content:space-between; gap:14px; color:#aaa; font-size:12px; }
+.settings-field select { min-height:36px; padding:0 10px; border:1px solid rgba(255,255,255,.12); border-radius:7px; color:#fff; background:#151519; }
