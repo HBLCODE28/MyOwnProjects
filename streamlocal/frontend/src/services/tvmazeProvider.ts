@@ -1,4 +1,5 @@
 import { db } from "../db/streamlocalDb";
+import { concisePlotSummary } from "./plotSummary";
 
 const TVMAZE_SEARCH_URL = "https://api.tvmaze.com/search/shows";
 
@@ -42,19 +43,6 @@ function normalize(value: string): string {
     .toLowerCase()
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function stripHtml(value: string | null): string {
-  if (!value) return "";
-  return value
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&#39;/gi, "'")
-    .replace(/&quot;/gi, '"')
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -154,7 +142,7 @@ export async function syncSeriesPostersFromTvmaze(): Promise<TvmazePosterSyncRes
 
       await db.series.update(series.id, {
         year: series.year ?? (Number.isFinite(year) ? year : null),
-        overview: series.overview || stripHtml(match.summary),
+        overview: series.overview || concisePlotSummary(match.summary),
         genres: series.genres.length > 0 ? series.genres : match.genres,
         remotePosterUrl:
           artwork.poster ??

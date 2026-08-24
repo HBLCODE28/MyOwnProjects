@@ -2,7 +2,7 @@
 .library-heading { display:flex; justify-content:space-between; align-items:end; gap:30px; margin-bottom:24px; }
 .library-heading h1 { margin:0; font-size:72px; line-height:.95; letter-spacing:-.06em; }
 .library-heading > div > p:last-child { max-width:720px; color:#8e9096; line-height:1.65; }
-.library-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+.library-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
 .library-stats div { display:flex; flex-direction:column; padding:17px; border:1px solid rgba(255,255,255,.07); border-radius:12px; background:rgba(255,255,255,.025); }
 .library-stats strong { font-size:24px; }
 .library-stats span { color:#74757b; font-size:10px; letter-spacing:.12em; text-transform:uppercase; }

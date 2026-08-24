@@ -28,12 +28,13 @@ export async function attachArtworkToItem(
   itemId: string,
   artworkId: string,
   kind: "poster" | "backdrop",
+  markManual = true,
 ): Promise<void> {
   await db.mediaItems.update(itemId, {
     ...(kind === "poster"
       ? { posterArtworkId: artworkId }
       : { backdropArtworkId: artworkId }),
-    manuallyEdited: true,
+    ...(markManual ? { manuallyEdited: true } : {}),
     updatedAt: Date.now(),
   });
 }

@@ -51,7 +51,7 @@ export async function detectAndAttachLocalArtwork(
     const poster = await firstExistingImage(directory, POSTERS);
     if (poster) {
       const artworkId = await storeArtwork(poster, "poster");
-      await attachArtworkToItem(itemId, artworkId, "poster");
+      await attachArtworkToItem(itemId, artworkId, "poster", false);
     }
   }
 
@@ -60,7 +60,7 @@ export async function detectAndAttachLocalArtwork(
     const backdrop = await firstExistingImage(directory, BACKDROPS);
     if (backdrop) {
       const artworkId = await storeArtwork(backdrop, "backdrop");
-      await attachArtworkToItem(itemId, artworkId, "backdrop");
+      await attachArtworkToItem(itemId, artworkId, "backdrop", false);
     }
   }
 }

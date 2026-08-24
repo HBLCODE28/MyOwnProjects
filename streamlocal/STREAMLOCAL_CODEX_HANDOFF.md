@@ -759,7 +759,7 @@ Created by...
 Developed by...
 ```
 
-Stage 11 work started but was NOT completed/applied.
+Stage 11 plot-summary work is complete.
 
 A helper was being created:
 
@@ -781,11 +781,13 @@ It should:
 - keep first 2-3 useful plot sentences
 - cap total length
 
-This needs to be completed in Stage 11.
+Implemented in `frontend/src/services/plotSummary.ts` and applied only when
+an automatic provider is filling an empty overview. Manual metadata remains
+authoritative.
 
 ---
 
-# 13. Library Cleanup Requirement - Pending Stage 11
+# 13. Library Cleanup Requirement - Completed
 
 User requested a button in Library that removes all entries marked:
 
@@ -823,11 +825,14 @@ Suggested cleanup:
 
 Original files must not be touched.
 
-This is a required Stage 11 task.
+Implemented in `frontend/src/services/libraryCleanup.ts` and exposed in the
+Library page as `Remove unavailable entries`. The operation deletes only
+IndexedDB records and removes orphaned metadata/artwork; it never accesses or
+deletes original media files.
 
 ---
 
-# 14. Movie Resume Bug - Pending Stage 11
+# 14. Movie Resume Bug - Verified
 
 User reported:
 
@@ -858,7 +863,11 @@ This is NOT a useful test fixture for movie resume.
 
 Stage 10 added a 20-minute test-media helper for this reason.
 
-However, Codex should verify movie resume using a real >10 minute test file and confirm there is no separate bug.
+The resume path was verified with an unfinished 20-minute-equivalent movie
+fixture in the playback-progress tests. The reported short test-video issue
+is explained by the existing `<= 5 minutes remaining` watched rule; the
+authoritative threshold was not changed. Browser playback with a real local
+file should still be manually smoke-tested on Windows.
 
 Do not change the authoritative watched threshold unless the user asks.
 
@@ -1501,7 +1510,7 @@ If Stage 10 provider returns zero posters:
 - keep Wikipedia as fallback
 - consider adding another account-free source only if licensing/CORS are acceptable
 
-## 3. Add Remove Unavailable button
+## 3. Add Remove Unavailable button - COMPLETE
 
 In Library UI:
 
@@ -1513,7 +1522,7 @@ Database-only cleanup.
 
 Add tests.
 
-## 4. Verify movie resume using 20-minute fixture
+## 4. Verify movie resume using 20-minute fixture - COMPLETE IN UNIT TESTS
 
 Use:
 
@@ -1535,7 +1544,7 @@ If movie resume works with 20-minute fixture, document that the old 4-minute tes
 
 If it still fails, fix player/progress logic.
 
-## 5. Finish concise plot summaries
+## 5. Finish concise plot summaries - COMPLETE
 
 Use:
 
@@ -1553,7 +1562,7 @@ Do not overwrite user manual overview.
 
 Do not overwrite local sidecar overview unless intended by priority rules.
 
-## 6. Keep Started/Watched local
+## 6. Keep Started/Watched local - COMPLETE
 
 Playback state remains IndexedDB only.
 

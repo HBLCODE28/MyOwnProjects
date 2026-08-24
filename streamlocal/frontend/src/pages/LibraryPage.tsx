@@ -4,6 +4,7 @@ import type { LibrarySource, MediaFile } from "../types/library";
 import { chooseDirectory } from "../services/fileSystem";
 import { scanLibrarySource, type ScanSummary } from "../services/libraryScanner";
 import { identifyLibrary } from "../services/recognition";
+import { removeUnavailableEntries } from "../services/libraryCleanup";
 import { createId } from "../utils/id";
 import "../styles/library.css";
 
@@ -108,9 +109,36 @@ export function LibraryPage() {
     await refresh();
   }
 
+  async function cleanupUnavailable() {
+    const unavailableCount = files.filter((file) => !file.available).length;
+    if (unavailableCount === 0) return;
+
+    if (!window.confirm(
+      `Remove ${unavailableCount} unavailable entr${unavailableCount === 1 ? "y" : "ies"} from StreamLocal? Original video files will not be touched.`,
+    )) {
+      return;
+    }
+
+    setError(null);
+    try {
+      const result = await removeUnavailableEntries();
+      await refresh();
+      setSummary({
+        scanned: 0,
+        added: 0,
+        updated: 0,
+        unchanged: 0,
+        unavailable: result.unavailableFiles,
+      });
+    } catch (value) {
+      setError(value instanceof Error ? value.message : "Cleanup failed.");
+    }
+  }
+
   const stats = useMemo(() => ({
     files: files.length,
     online: files.filter((file) => file.available).length,
+    unavailable: files.filter((file) => !file.available).length,
     folders: sources.filter((source) => source.enabled).length,
   }), [files, sources]);
 
@@ -134,6 +162,7 @@ export function LibraryPage() {
         <div><strong>{stats.folders}</strong><span>folders</span></div>
         <div><strong>{stats.files}</strong><span>files</span></div>
         <div><strong>{stats.online}</strong><span>available</span></div>
+        <div><strong>{stats.unavailable}</strong><span>unavailable</span></div>
       </section>
 
       {error && <div className="library-error">{error}</div>}
@@ -190,6 +219,14 @@ export function LibraryPage() {
       <section className="library-panel">
         <div className="panel-heading">
           <div><p className="eyebrow">DISCOVERED MEDIA</p><h2>Files</h2></div>
+          <button
+            type="button"
+            className="danger-button"
+            disabled={stats.unavailable === 0}
+            onClick={() => void cleanupUnavailable()}
+          >
+            Remove unavailable entries
+          </button>
         </div>
         {files.length === 0 ? (
           <div className="library-empty">No MP4 or MKV files found yet.</div>

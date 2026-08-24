@@ -60,4 +60,17 @@ describe("movie poster provider", () => {
       findPreservationNetworkPoster("The Matrix", 1999),
     ).resolves.toBeNull();
   });
+
+  it("treats an unavailable HTML endpoint as a provider miss", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("<html><title>404</title></html>", {
+        status: 404,
+        headers: { "Content-Type": "text/html" },
+      }),
+    );
+
+    await expect(
+      findPreservationNetworkPoster("The Matrix", 1999),
+    ).resolves.toBeNull();
+  });
 });

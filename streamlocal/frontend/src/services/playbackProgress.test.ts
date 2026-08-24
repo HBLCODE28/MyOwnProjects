@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../db/streamlocalDb";
 import type { MediaItem } from "../types/library";
 import {
+  getPlaybackProgress,
   markPlaybackStarted,
+  savePlaybackProgress,
   watchedFromPosition,
 } from "./playbackProgress";
 
@@ -26,6 +28,19 @@ function episode(): MediaItem {
     backdropArtworkId: null,
     createdAt: 1,
     updatedAt: 1,
+  };
+}
+
+function movie(): MediaItem {
+  return {
+    ...episode(),
+    id: "movie-1",
+    mediaFileId: "movie-file-1",
+    type: "movie",
+    seriesId: null,
+    seasonNumber: null,
+    episodeNumber: null,
+    episodeTitle: null,
   };
 }
 
@@ -56,5 +71,15 @@ describe("playback state", () => {
 
   it("does not mark an early episode watched", () => {
     expect(watchedFromPosition({ type: "episode" }, 600, 2400)).toBe(false);
+  });
+
+  it("persists an unfinished movie position for resume", async () => {
+    await savePlaybackProgress(movie(), 60, 1200);
+
+    const progress = await getPlaybackProgress("movie-1");
+    expect(progress?.positionSeconds).toBe(60);
+    expect(progress?.percent).toBe(0.05);
+    expect(progress?.started).toBe(true);
+    expect(progress?.watched).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import { db } from "../db/streamlocalDb";
+import { concisePlotSummary } from "./plotSummary";
 
 const WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php";
 
@@ -149,7 +150,7 @@ export async function syncMovieArtworkFromWikipedia(): Promise<WikipediaMovieSyn
       }
 
       await db.mediaItems.update(movie.id, {
-        overview: movie.overview || match.overview,
+        overview: movie.overview || concisePlotSummary(match.overview),
         remotePosterUrl: match.posterUrl,
         metadataProvider: "wikipedia",
         providerId: match.pageId,

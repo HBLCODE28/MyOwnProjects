@@ -1,5 +1,6 @@
 import { db } from "../db/streamlocalDb";
 import { findWikipediaMovie } from "./wikipediaMovieProvider";
+import { concisePlotSummary } from "./plotSummary";
 
 const PRESERVATION_SEARCH =
   "https://api.thepreservationnetwork.org/v1/vhs/search";
@@ -139,10 +140,13 @@ export async function findPreservationNetworkPoster(
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Movie poster search failed with HTTP ${response.status}.`,
-    );
+    // The public endpoint can be unavailable or return an HTML error page.
+    // Treat that as a provider miss so Wikipedia/local artwork can continue.
+    return null;
   }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) return null;
 
   const json = (await response.json()) as UnknownRecord;
   const rawResults = Array.isArray(json.results)
@@ -218,7 +222,7 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
 
       if (wikipedia?.posterUrl) {
         await db.mediaItems.update(movie.id, {
-          overview: movie.overview || wikipedia.overview,
+          overview: movie.overview || concisePlotSummary(wikipedia.overview),
           remotePosterUrl: wikipedia.posterUrl,
           metadataProvider: "wikipedia",
           providerId: wikipedia.pageId,
