@@ -10,6 +10,7 @@ import { MetadataEditor } from "../components/library/MetadataEditor";
 import { removeMediaFileFromLibrary, setWatchedState } from "../services/libraryManagement";
 import "../styles/library.css";
 import { useToast } from "../components/ui/Toast";
+import { importStreamLocalBackup } from "../services/backup";
 
 export function LibraryPage() {
   const [sources, setSources] = useState<LibrarySource[]>([]);
@@ -21,6 +22,20 @@ export function LibraryPage() {
   const [error, setError] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const { showToast } = useToast();
+
+  async function importBackup(file: File | undefined) {
+    if (!file) return;
+    try {
+      setError(null);
+      await importStreamLocalBackup(file);
+      await refresh();
+      showToast("Backup imported. Now choose the original video folder with Reconnect folder.", "success");
+    } catch (value) {
+      const message = value instanceof Error ? value.message : "Backup import failed.";
+      setError(message);
+      showToast(message, "error");
+    }
+  }
 
   async function refresh() {
     const [sourceRows, fileRows, itemRows, progressRows] = await Promise.all([
@@ -208,6 +223,14 @@ export function LibraryPage() {
       <section className="library-panel">
         <div className="panel-heading">
           <div><p className="eyebrow">LOCAL FOLDERS</p><h2>Sources</h2></div>
+          <label className="secondary-button file-button">
+            Import backup ZIP
+            <input
+              type="file"
+              accept=".zip,application/zip"
+              onChange={(event) => void importBackup(event.target.files?.[0])}
+            />
+          </label>
         </div>
 
         {sources.length === 0 ? (
@@ -226,7 +249,7 @@ export function LibraryPage() {
                 <div className="source-actions">
                   {!source.handle && (
                     <button className="secondary-button" onClick={() => reconnect(source)}>
-                      Reconnect
+                      Reconnect folder
                     </button>
                   )}
                   {source.handle && (

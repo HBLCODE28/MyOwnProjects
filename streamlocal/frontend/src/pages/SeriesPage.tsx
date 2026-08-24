@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { HeroRail } from "../components/browse/HeroRail";
 import { SeriesCard } from "../components/browse/SeriesCard";
 import { SeriesHubOverlay } from "../components/browse/SeriesHubOverlay";
@@ -13,6 +13,8 @@ import {
   type SeriesCard as SeriesCardModel,
 } from "../services/browseSelectors";
 import "../styles/browse.css";
+import { useToast } from "../components/ui/Toast";
+import { syncWikimediaLogos } from "../services/wikimediaLogoProvider";
 
 export function SeriesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
@@ -20,6 +22,8 @@ export function SeriesPage() {
   const [selectedSeriesId, setSelectedSeriesId] =
     useState<string | null>(null);
   const [playing, setPlaying] = useState<MediaItem | null>(null);
+  const { showToast } = useToast();
+  const logoSyncStarted = useRef(false);
 
   async function refresh() {
     setData(await loadBrowseData());
@@ -28,6 +32,14 @@ export function SeriesPage() {
   useEffect(() => {
     void refresh();
   }, []);
+
+  useEffect(() => {
+    if (!data || logoSyncStarted.current) return;
+    logoSyncStarted.current = true;
+    void syncWikimediaLogos().then((result) => {
+      if (result.updated > 0) void refresh();
+    }).catch(() => undefined);
+  }, [data]);
 
   const series = useMemo(
     () => filterSeries(data?.series ?? [], query),
@@ -107,6 +119,7 @@ export function SeriesPage() {
           onClose={() => setSelectedSeriesId(null)}
           onPlay={setPlaying}
           onProgressChanged={() => void refresh()}
+          onUnavailable={(entry) => showToast(`${entry.title} is unavailable. Reconnect its media folder in Library.`, "error")}
         />
       )}
 

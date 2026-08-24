@@ -19,6 +19,7 @@ type Props = {
   onClose: () => void;
   onPlay: (item: MediaItem) => void;
   onProgressChanged?: () => void;
+  onUnavailable?: (item: MediaItem) => void;
 };
 
 export function SeriesHubOverlay({
@@ -27,6 +28,7 @@ export function SeriesHubOverlay({
   onClose,
   onPlay,
   onProgressChanged,
+  onUnavailable,
 }: Props) {
   const firstSeason = card.seasons[0]?.seasonNumber ?? 1;
   const [seasonNumber, setSeasonNumber] = useState(firstSeason);
@@ -364,9 +366,13 @@ export function SeriesHubOverlay({
                             : "Play"}
                       </button>
                     ) : (
-                      <span className="episode-unavailable">
-                        Unavailable
-                      </span>
+                      <button
+                        type="button"
+                        className="episode-unavailable episode-unavailable-button"
+                        onClick={() => onUnavailable?.(item)}
+                      >
+                        Unavailable · Reconnect folder
+                      </button>
                     )}
                   </div>
                 </article>

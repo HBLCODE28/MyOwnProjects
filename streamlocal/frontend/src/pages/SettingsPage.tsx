@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ApiKeyVault } from "../components/settings/ApiKeyVault";
 import { TvmazeProviderCard } from "../components/settings/TvmazeProviderCard";
 import { MoviePosterProviderCard } from "../components/settings/MoviePosterProviderCard";
+import { LogoProviderCard } from "../components/settings/LogoProviderCard";
 import { db, requestPersistentStorage } from "../db/streamlocalDb";
 import {
   exportStreamLocalBackup,
@@ -154,6 +155,7 @@ export function SettingsPage() {
 
       <TvmazeProviderCard />
       <MoviePosterProviderCard />
+      <LogoProviderCard />
       <ApiKeyVault />
 
       <section className="settings-card">

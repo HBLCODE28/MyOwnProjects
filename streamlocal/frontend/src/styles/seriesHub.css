@@ -353,6 +353,21 @@
   font-size: 11px;
 }
 
+.episode-unavailable-button {
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid rgba(255,96,96,.36);
+  border-radius: 7px;
+  color: #ffc0c0;
+  background: rgba(120,35,40,.26);
+  cursor: pointer;
+}
+
+.episode-unavailable-button:hover {
+  border-color: rgba(255,112,112,.75);
+  background: rgba(150,40,45,.42);
+}
+
 @media (max-width: 900px) {
   .series-hub-backdrop {
     padding: 12px;

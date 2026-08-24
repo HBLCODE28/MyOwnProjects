@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { HeroRail } from "../components/browse/HeroRail";
 import { MediaCard } from "../components/browse/MediaCard";
 import { PlayerOverlay } from "../components/player/PlayerOverlay";
@@ -7,18 +7,28 @@ import { loadBrowseData, type BrowseData } from "../services/browseData";
 import { filterMovies } from "../services/browseSelectors";
 import "../styles/browse.css";
 import { useToast } from "../components/ui/Toast";
+import { syncWikimediaLogos } from "../services/wikimediaLogoProvider";
 
 export function MoviesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
   const [query, setQuery] = useState("");
   const [playing, setPlaying] = useState<MediaItem | null>(null);
   const { showToast } = useToast();
+  const logoSyncStarted = useRef(false);
 
   async function refresh() {
     setData(await loadBrowseData());
   }
 
   useEffect(() => { void refresh(); }, []);
+
+  useEffect(() => {
+    if (!data || logoSyncStarted.current) return;
+    logoSyncStarted.current = true;
+    void syncWikimediaLogos().then((result) => {
+      if (result.updated > 0) void refresh();
+    }).catch(() => undefined);
+  }, [data]);
 
   const movies = useMemo(
     () => filterMovies(data?.movies ?? [], query),
