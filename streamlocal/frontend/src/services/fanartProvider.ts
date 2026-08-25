@@ -1,19 +1,20 @@
 import { db } from "../db/streamlocalDb";
 import type { MediaItem, Series } from "../types/library";
-import { cacheRemoteArtwork } from "./artwork";
+import { cacheRemoteArtwork, validateRemoteArtworkUrl } from "./artwork";
 import { syncMoviePosters, type MoviePosterSyncResult } from "./moviePosterProvider";
 import { syncWikimediaLogos, type LogoSyncResult } from "./wikimediaLogoProvider";
 import { listSecretIds, readSecret, vaultExists, vaultIsUnlocked } from "./secretVault";
 import { isRejectedLogoCandidateName, validateRemoteLogoUrl } from "./logoValidation";
 
-const FANART_API = "https://webservice.fanart.tv/v3.1";
+const FANART_API = "https://webservice.fanart.tv/v3.2";
 const WIKIDATA_API = "https://www.wikidata.org/w/api.php";
 
 type UnknownRecord = Record<string, unknown>;
 
-type FanartImage = { url?: string };
+type FanartImage = { url?: string; lang?: string; likes?: string | number };
 
 type FanartResponse = {
+  name?: string;
   movieposter?: FanartImage[];
   moviebackground?: FanartImage[];
   hdmovielogo?: FanartImage[];
@@ -46,9 +47,19 @@ export type AllArtworkSyncResult = {
   logos: LogoSyncResult;
 };
 
+function rankedImages(group: FanartImage[] | undefined): FanartImage[] {
+  return (group ?? []).slice().sort((left, right) => {
+    const languageScore = (value: FanartImage) =>
+      value.lang === "en" ? 3 : value.lang === "00" ? 2 : value.lang ? 0 : 1;
+    const leftLikes = Number(left.likes ?? 0) || 0;
+    const rightLikes = Number(right.likes ?? 0) || 0;
+    return languageScore(right) - languageScore(left) || rightLikes - leftLikes;
+  });
+}
+
 function firstUrl(...groups: Array<FanartImage[] | undefined>): string | null {
   for (const group of groups) {
-    const url = group?.find((image) => typeof image.url === "string")?.url;
+    const url = rankedImages(group).find((image) => typeof image.url === "string")?.url;
     if (url) return url;
   }
   return null;
@@ -59,7 +70,7 @@ async function firstValidatedLogoUrl(
 ): Promise<{ url: string | null; rejected: number }> {
   let rejected = 0;
   for (const group of groups) {
-    for (const image of group ?? []) {
+    for (const image of rankedImages(group)) {
       const url = typeof image.url === "string" ? image.url : null;
       if (!url) continue;
       let fileName = url;
@@ -194,9 +205,24 @@ function claimValue(entity: UnknownRecord | null, property: string): string | nu
 }
 
 async function fetchFanart(kind: "movie" | "tv", id: string, apiKey: string): Promise<FanartResponse | null> {
-  const response = await fetch(`${FANART_API}/${kind}/${encodeURIComponent(id)}?api_key=${encodeURIComponent(apiKey)}`, {
-    headers: { Accept: "application/json" },
-  });
+  const resource = kind === "movie" ? "movies" : "tv";
+  const base = `${FANART_API}/${resource}/${encodeURIComponent(id)}`;
+
+  async function request(parameter: "api_key" | "client_key"): Promise<Response> {
+    const params = new URLSearchParams({ [parameter]: apiKey });
+    return fetch(`${base}?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+    });
+  }
+
+  let response = await request("api_key");
+  // Fanart's current API supports a personal key as client_key. Some users save
+  // that key rather than a project key, so retry that authentication form before
+  // reporting a missing/invalid provider response.
+  if (response.status === 401 || response.status === 403) {
+    response = await request("client_key");
+  }
+
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Fanart.tv returned HTTP ${response.status}.`);
   return (await response.json()) as FanartResponse;
@@ -318,6 +344,14 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
 
   for (const originalMovie of movies) {
     let movie = originalMovie;
+    if (movie.remotePosterUrl && !(await validateRemoteArtworkUrl(movie.remotePosterUrl, "poster"))) {
+      await db.mediaItems.update(movie.id, { remotePosterUrl: null, updatedAt: Date.now() });
+      movie = { ...movie, remotePosterUrl: null };
+    }
+    if (movie.remoteBackdropUrl && !(await validateRemoteArtworkUrl(movie.remoteBackdropUrl, "backdrop"))) {
+      await db.mediaItems.update(movie.id, { remoteBackdropUrl: null, updatedAt: Date.now() });
+      movie = { ...movie, remoteBackdropUrl: null };
+    }
     if (movie.remoteLogoUrl) {
       try {
         if (!(await validateRemoteLogoUrl(movie.remoteLogoUrl))) {
@@ -341,6 +375,10 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
       if (!imdbId) { result.skipped += 1; continue; }
       const response = await fetchFanart("movie", imdbId, apiKey);
       if (!response) { result.skipped += 1; continue; }
+      if (response.name && normalize(response.name) !== normalize(movie.title)) {
+        result.skipped += 1;
+        continue;
+      }
       result.matched += 1;
       const validated = await chooseValidatedFanartArtwork("movie", response);
       result.rejectedLogos += validated.rejectedLogos;
@@ -355,6 +393,14 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
 
   for (const originalEntry of series) {
     let entry = originalEntry;
+    if (entry.remotePosterUrl && !(await validateRemoteArtworkUrl(entry.remotePosterUrl, "poster"))) {
+      await db.series.update(entry.id, { remotePosterUrl: null, updatedAt: Date.now() });
+      entry = { ...entry, remotePosterUrl: null };
+    }
+    if (entry.remoteBackdropUrl && !(await validateRemoteArtworkUrl(entry.remoteBackdropUrl, "backdrop"))) {
+      await db.series.update(entry.id, { remoteBackdropUrl: null, updatedAt: Date.now() });
+      entry = { ...entry, remoteBackdropUrl: null };
+    }
     if (entry.remoteLogoUrl) {
       try {
         if (!(await validateRemoteLogoUrl(entry.remoteLogoUrl))) {
@@ -378,6 +424,10 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
       if (!tvdbId) { result.skipped += 1; continue; }
       const response = await fetchFanart("tv", tvdbId, apiKey);
       if (!response) { result.skipped += 1; continue; }
+      if (response.name && normalize(response.name) !== normalize(entry.title)) {
+        result.skipped += 1;
+        continue;
+      }
       result.matched += 1;
       const validated = await chooseValidatedFanartArtwork("tv", response);
       result.rejectedLogos += validated.rejectedLogos;

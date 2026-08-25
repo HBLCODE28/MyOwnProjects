@@ -113,6 +113,8 @@ export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
               fit="contain"
               position="left center"
               lightBackgroundForDark
+              logoKind="series"
+              logoYear={card.series.year}
             />
           ) : (
             <h1>{card.series.title}</h1>
@@ -162,6 +164,8 @@ export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
             fit="contain"
             position="left center"
             lightBackgroundForDark
+            logoKind="movie"
+            logoYear={item.year}
           />
         ) : (
           <h1>{item.title}</h1>

@@ -1,5 +1,6 @@
 import { db } from "../db/streamlocalDb";
 import { concisePlotSummary } from "./plotSummary";
+import { validateRemoteLogoUrl } from "./logoValidation";
 
 const TVMAZE_SEARCH_URL = "https://api.tvmaze.com/search/shows";
 
@@ -107,10 +108,15 @@ export async function getTvmazeSeriesArtwork(
     );
   }
 
+  const logoCandidate = best("typography");
+  const logo = logoCandidate && await validateRemoteLogoUrl(logoCandidate)
+    ? logoCandidate
+    : null;
+
   return {
     poster: best("poster"),
     backdrop: best("background") ?? best("banner"),
-    logo: best("typography"),
+    logo,
   };
 }
 
@@ -149,9 +155,10 @@ export async function syncSeriesPostersFromTvmaze(): Promise<TvmazePosterSyncRes
           artwork.poster ??
           match.image?.original ??
           match.image?.medium ??
+          series.remotePosterUrl ??
           null,
-        remoteBackdropUrl: artwork.backdrop,
-        remoteLogoUrl: artwork.logo,
+        remoteBackdropUrl: artwork.backdrop ?? series.remoteBackdropUrl ?? null,
+        remoteLogoUrl: artwork.logo ?? series.remoteLogoUrl ?? null,
         metadataProvider: "tvmaze",
         providerId: String(match.id),
         updatedAt: Date.now(),

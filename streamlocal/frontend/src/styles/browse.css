@@ -448,6 +448,19 @@
   transform: translateY(0);
 }
 
+.series-card .card-play-series {
+  right: auto;
+  left: 50%;
+  max-width: calc(100% - 24px);
+  white-space: nowrap;
+  transform: translate(-50%, 4px);
+}
+
+.series-card:hover .card-play-series,
+.series-card:focus-visible .card-play-series {
+  transform: translate(-50%, 0);
+}
+
 .card-unavailable,
 .card-watched {
   position: absolute;

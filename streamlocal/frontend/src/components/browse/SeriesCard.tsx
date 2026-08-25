@@ -43,13 +43,13 @@ export function SeriesCard({ card, onOpen }: Props) {
         />
 
         {onOpen && (
-          <span className="card-play">View episodes</span>
+          <span className="card-play card-play-series">View episodes</span>
         )}
       </div>
 
       <div className="series-card-copy">
         {card.series.logoArtworkId || card.series.remoteLogoUrl ? (
-          <ArtworkImage className="card-logo" artworkId={card.series.logoArtworkId ?? null} remoteUrl={card.series.remoteLogoUrl ?? null} label={card.series.title} fallbackText={card.series.title} fit="contain" position="left center" lightBackgroundForDark />
+          <ArtworkImage className="card-logo" artworkId={card.series.logoArtworkId ?? null} remoteUrl={card.series.remoteLogoUrl ?? null} label={card.series.title} fallbackText={card.series.title} fit="contain" position="left center" lightBackgroundForDark logoKind="series" logoYear={card.series.year} />
         ) : <h3>{card.series.title}</h3>}
         <p>
           {card.seasons.length} season

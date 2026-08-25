@@ -167,7 +167,7 @@ export function SeriesHubOverlay({
             aria-label="Close series"
             title="Close"
           >
-            ×
+            <span className="series-hub-close-icon" aria-hidden="true" />
           </button>
 
           <div className="series-hub-copy">
@@ -182,6 +182,8 @@ export function SeriesHubOverlay({
                 fit="contain"
                 position="left center"
                 lightBackgroundForDark
+                logoKind="series"
+                logoYear={card.series.year}
               />
             ) : (
               <h2>{card.series.title}</h2>

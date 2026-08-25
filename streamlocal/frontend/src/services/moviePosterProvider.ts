@@ -1,7 +1,7 @@
 import { db } from "../db/streamlocalDb";
 import { findWikipediaMovie, findWikimediaMoviePoster } from "./wikipediaMovieProvider";
 import { concisePlotSummary } from "./plotSummary";
-import { cacheRemoteArtwork } from "./artwork";
+import { cacheRemoteArtwork, validateRemoteArtworkUrl } from "./artwork";
 
 const PRESERVATION_SEARCH =
   "https://api.thepreservationnetwork.org/v1/vhs/search";
@@ -191,8 +191,13 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
     failed: 0,
   };
 
-  for (const movie of movies.filter((entry) => !entry.posterArtworkId && !entry.remotePosterUrl)) {
+  for (const movie of movies.filter((entry) => !entry.posterArtworkId)) {
     try {
+      if (movie.remotePosterUrl) {
+        if (await validateRemoteArtworkUrl(movie.remotePosterUrl, "poster")) continue;
+        await db.mediaItems.update(movie.id, { remotePosterUrl: null, updatedAt: Date.now() });
+      }
+
       let posterUrl: string | null = null;
 
       try {
@@ -204,7 +209,7 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
         // Provider failure is non-fatal because Wikipedia is the fallback.
       }
 
-      if (posterUrl) {
+      if (posterUrl && await validateRemoteArtworkUrl(posterUrl, "poster")) {
         result.preservationMatched += 1;
 
         await db.mediaItems.update(movie.id, {
@@ -224,7 +229,7 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
         movie.year,
       );
 
-      if (wikipedia?.posterUrl) {
+      if (wikipedia?.posterUrl && await validateRemoteArtworkUrl(wikipedia.posterUrl, "poster")) {
         await db.mediaItems.update(movie.id, {
           overview: movie.overview || concisePlotSummary(wikipedia.overview),
           remotePosterUrl: wikipedia.posterUrl,
@@ -239,7 +244,7 @@ export async function syncMoviePosters(): Promise<MoviePosterSyncResult> {
       }
 
       const commonsPoster = await findWikimediaMoviePoster(movie.title, movie.year);
-      if (commonsPoster) {
+      if (commonsPoster && await validateRemoteArtworkUrl(commonsPoster, "poster")) {
         await db.mediaItems.update(movie.id, {
           remotePosterUrl: commonsPoster,
           metadataProvider: "wikipedia",

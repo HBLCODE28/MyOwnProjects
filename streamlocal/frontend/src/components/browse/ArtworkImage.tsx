@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { artworkObjectUrl } from "../../services/artwork";
 import { analyzeLogoImageElement } from "../../services/logoValidation";
-import { findAlternateWikimediaLogo } from "../../services/wikimediaLogoProvider";
+import {
+  findAlternateWikimediaLogo,
+  isNamedLogoUrlContextCompatible,
+  type LogoSearchContext,
+} from "../../services/wikimediaLogoProvider";
 
 type Props = {
   artworkId: string | null;
@@ -12,6 +16,8 @@ type Props = {
   fit?: "cover" | "contain";
   position?: string;
   lightBackgroundForDark?: boolean;
+  logoKind?: LogoSearchContext["kind"];
+  logoYear?: number | null;
 };
 
 export function ArtworkImage({
@@ -23,6 +29,8 @@ export function ArtworkImage({
   fit = "cover",
   position = "center",
   lightBackgroundForDark = false,
+  logoKind,
+  logoYear = null,
 }: Props) {
   const [localUrl, setLocalUrl] = useState<string | null>(null);
   const [alternateUrl, setAlternateUrl] = useState<string | null>(null);
@@ -76,7 +84,7 @@ export function ArtworkImage({
     if (remoteStillAvailable) return;
 
     alternateLookupInFlight.current = true;
-    void findAlternateWikimediaLogo(label, url)
+    void findAlternateWikimediaLogo(label, url, { kind: logoKind, year: logoYear })
       .then((alternative) => {
         if (alternative && !rejectedUrls.has(alternative)) setAlternateUrl(alternative);
       })
@@ -117,6 +125,10 @@ export function ArtworkImage({
       onError={() => reject(displayUrl)}
       onLoad={(event) => {
         if (!lightBackgroundForDark) return;
+        if (!isNamedLogoUrlContextCompatible(label, displayUrl, { kind: logoKind, year: logoYear })) {
+          reject(displayUrl);
+          return;
+        }
         const analysis = analyzeLogoImageElement(event.currentTarget);
         if (analysis && !analysis.usable) reject(displayUrl);
       }}

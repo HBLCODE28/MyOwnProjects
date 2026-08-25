@@ -18,6 +18,7 @@ export type LogoPixelAnalysis = {
   visibleRatio: number;
   averageLuminance: number;
   darkPixelRatio: number;
+  highContrastPixelRatio: number;
 };
 
 export function isRejectedLogoCandidateName(value: string): boolean {
@@ -36,40 +37,67 @@ export function analyzeLogoPixels(
   let visiblePixels = 0;
   let luminanceSum = 0;
   let darkPixels = 0;
+  let highContrastPixels = 0;
 
   for (let index = 0; index < pixels.length; index += 4) {
     const alpha = pixels[index + 3];
     if (alpha < 32) continue;
 
+    const red = pixels[index];
+    const green = pixels[index + 1];
+    const blue = pixels[index + 2];
+    const maxChannel = Math.max(red, green, blue);
+    const minChannel = Math.min(red, green, blue);
+    const chroma = maxChannel - minChannel;
+
     visiblePixels += 1;
     const luminance =
-      pixels[index] * 0.2126 +
-      pixels[index + 1] * 0.7152 +
-      pixels[index + 2] * 0.0722;
+      red * 0.2126 +
+      green * 0.7152 +
+      blue * 0.0722;
     luminanceSum += luminance;
-    if (luminance < 42) darkPixels += 1;
+
+    // Count pixels that would visually disappear on StreamLocal's near-black UI.
+    // Saturated colors are intentionally not treated as black merely because their
+    // mathematical luminance is low (for example, the normal red Stranger Things logo).
+    const nearBlack =
+      maxChannel < 54 ||
+      (maxChannel < 82 && chroma < 24);
+    if (nearBlack) darkPixels += 1;
+
+    // White/light pixels and strongly saturated colors remain readable on the dark UI.
+    if (maxChannel >= 116 || chroma >= 72) highContrastPixels += 1;
   }
 
   const visibleRatio = visiblePixels / totalPixels;
   const averageLuminance = visiblePixels > 0 ? luminanceSum / visiblePixels : 0;
   const darkPixelRatio = visiblePixels > 0 ? darkPixels / visiblePixels : 1;
+  const highContrastPixelRatio = visiblePixels > 0
+    ? highContrastPixels / visiblePixels
+    : 0;
 
-  const overwhelminglyBlack =
+  // Reject logos whose actual visible artwork is dominated by near-black pixels.
+  // This catches variants such as a mostly-black wordmark with only a small bright
+  // subtitle, while retaining normal white, colored and transparent logos.
+  const unreadableOnDark =
     visiblePixels > 8 &&
-    averageLuminance < 38 &&
-    darkPixelRatio > 0.9;
+    (
+      darkPixelRatio >= 0.78 ||
+      (darkPixelRatio >= 0.66 && highContrastPixelRatio < 0.2)
+    );
   const portraitLike = height > width * 1.08;
 
   return {
     usable:
       visiblePixels > 8 &&
       visibleRatio > 0.002 &&
-      !overwhelminglyBlack &&
+      !unreadableOnDark &&
       !portraitLike,
     visiblePixels,
     visibleRatio,
     averageLuminance,
     darkPixelRatio,
+    highContrastPixelRatio,
   };
 }
 

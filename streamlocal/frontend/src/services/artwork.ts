@@ -70,3 +70,40 @@ export async function cacheRemoteArtwork(
   await attachArtworkToItem(itemId, artworkId, kind, false);
   return true;
 }
+
+
+export async function validateRemoteArtworkUrl(
+  url: string,
+  kind: "poster" | "backdrop",
+): Promise<boolean> {
+  if (typeof Image === "undefined") return true;
+
+  return new Promise((resolve) => {
+    const image = new Image();
+    let settled = false;
+    const finish = (value: boolean) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      resolve(value);
+    };
+    // A slow provider should not make an existing working URL disappear. Only an
+    // explicit image load failure or an obviously wrong aspect ratio is rejected.
+    const timeoutId = window.setTimeout(() => finish(true), 8000);
+    image.referrerPolicy = "no-referrer";
+    image.onload = () => {
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+      if (!width || !height) {
+        finish(false);
+        return;
+      }
+      const validShape = kind === "poster"
+        ? height >= width * 1.12
+        : width >= height * 1.18;
+      finish(validShape);
+    };
+    image.onerror = () => finish(false);
+    image.src = url;
+  });
+}
