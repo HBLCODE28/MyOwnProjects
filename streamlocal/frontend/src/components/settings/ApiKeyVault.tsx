@@ -47,7 +47,10 @@ export function ApiKeyVault() {
   const [password, setPassword] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [storedIds, setStoredIds] = useState<string[]>([]);
+  const [selectedFieldId, setSelectedFieldId] = useState(SECRET_FIELDS[0].id);
   const [message, setMessage] = useState<string | null>(null);
+  const savedFields = SECRET_FIELDS.filter((field) => storedIds.includes(field.id));
+  const unsavedFields = SECRET_FIELDS.filter((field) => !storedIds.includes(field.id));
 
   async function refreshState() {
     setExists(await vaultExists());
@@ -207,8 +210,8 @@ export function ApiKeyVault() {
       {exists && unlocked && (
         <>
           <div className="vault-fields">
-            {SECRET_FIELDS.map((field) => {
-              const saved = storedIds.includes(field.id);
+            {savedFields.map((field) => {
+              const saved = true;
 
               return (
                 <div className="vault-field" key={field.id}>
@@ -260,6 +263,17 @@ export function ApiKeyVault() {
               );
             })}
           </div>
+
+          {unsavedFields.length > 0 && (
+            <div className="vault-add-field">
+              <select value={selectedFieldId} onChange={(event) => setSelectedFieldId(event.target.value)} aria-label="API key to add">
+                {unsavedFields.map((field) => <option key={field.id} value={field.id}>{field.label}</option>)}
+              </select>
+              <button className="secondary-button" onClick={() => setStoredIds((current) => [...current, selectedFieldId])}>
+                Add API key
+              </button>
+            </div>
+          )}
 
           <div className="vault-footer">
             <button className="secondary-button" onClick={lock}>

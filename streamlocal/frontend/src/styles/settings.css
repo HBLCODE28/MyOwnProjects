@@ -46,6 +46,9 @@
   margin-top: 18px;
 }
 
+.vault-add-field { display:flex; gap:8px; align-items:center; margin-top:12px; }
+.vault-add-field select { min-height:38px; padding:0 10px; border:1px solid rgba(255,255,255,.12); border-radius:8px; color:#eee; background:#15161a; }
+
 .vault-field {
   display: grid;
   grid-template-columns: minmax(220px, .8fr) minmax(270px, 1fr) auto;

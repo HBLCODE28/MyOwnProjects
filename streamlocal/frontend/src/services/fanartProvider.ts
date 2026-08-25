@@ -1,6 +1,8 @@
 import { db } from "../db/streamlocalDb";
 import type { MediaItem, Series } from "../types/library";
 import { cacheRemoteArtwork } from "./artwork";
+import { syncMoviePosters, type MoviePosterSyncResult } from "./moviePosterProvider";
+import { syncWikimediaLogos, type LogoSyncResult } from "./wikimediaLogoProvider";
 import { readSecret } from "./secretVault";
 
 const FANART_API = "https://webservice.fanart.tv/v3.1";
@@ -29,6 +31,13 @@ export type FanartSyncResult = {
   skipped: number;
   failed: number;
   missingKey: boolean;
+  keyProblem?: string;
+};
+
+export type AllArtworkSyncResult = {
+  fanart: FanartSyncResult;
+  movies: MoviePosterSyncResult;
+  logos: LogoSyncResult;
 };
 
 function firstUrl(...groups: Array<FanartImage[] | undefined>): string | null {
@@ -144,6 +153,28 @@ async function fetchFanart(kind: "movie" | "tv", id: string, apiKey: string): Pr
   return (await response.json()) as FanartResponse;
 }
 
+async function findTvmazeTvdbId(series: Series): Promise<string | null> {
+  const candidateIds = series.metadataProvider === "tvmaze" && series.providerId
+    ? [series.providerId]
+    : [];
+  if (candidateIds.length === 0) {
+    const searchResponse = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(series.title)}`, { headers: { Accept: "application/json" } });
+    if (searchResponse.ok) {
+      const results = (await searchResponse.json()) as Array<{ show?: { id?: number; name?: string } }>;
+      const wanted = normalize(series.title);
+      const exact = results.find((entry) => normalize(entry.show?.name ?? "") === wanted)?.show?.id;
+      if (exact) candidateIds.push(String(exact));
+    }
+  }
+  for (const id of candidateIds) {
+    const response = await fetch(`https://api.tvmaze.com/shows/${encodeURIComponent(id)}`, { headers: { Accept: "application/json" } });
+    if (!response.ok) continue;
+    const show = (await response.json()) as { externals?: { thetvdb?: number | null } };
+    if (show.externals?.thetvdb) return String(show.externals.thetvdb);
+  }
+  return null;
+}
+
 async function saveMovieArtwork(movie: MediaItem | undefined, artwork: ReturnType<typeof chooseFanartArtwork>): Promise<boolean> {
   if (!movie || (!artwork.poster && !artwork.backdrop && !artwork.logo)) return false;
   await db.mediaItems.update(movie.id, {
@@ -180,8 +211,9 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
   let apiKey: string | null;
   try {
     apiKey = (await readSecret("fanartApiKey"))?.trim() || null;
-  } catch {
+  } catch (error) {
     result.missingKey = true;
+    result.keyProblem = error instanceof Error ? error.message : "Unlock the encrypted API key vault first.";
     return result;
   }
   if (!apiKey) {
@@ -212,7 +244,7 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
     }
     try {
       const entity = await findWikidataEntity(entry.title, entry.year);
-      const tvdbId = claimValue(entity, "P4835");
+      const tvdbId = await findTvmazeTvdbId(entry) ?? claimValue(entity, "P4835");
       if (!tvdbId) { result.skipped += 1; continue; }
       const response = await fetchFanart("tv", tvdbId, apiKey);
       if (!response) { result.skipped += 1; continue; }
@@ -222,4 +254,11 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
   }
 
   return result;
+}
+
+export async function syncAllArtwork(): Promise<AllArtworkSyncResult> {
+  const movies = await syncMoviePosters();
+  const logos = await syncWikimediaLogos();
+  const fanart = await syncFanartArtwork();
+  return { movies, logos, fanart };
 }

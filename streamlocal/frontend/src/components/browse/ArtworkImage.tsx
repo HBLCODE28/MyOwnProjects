@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { artworkObjectUrl } from "../../services/artwork";
-import { findWikimediaLogo } from "../../services/wikimediaLogoProvider";
+import { findAlternateWikimediaLogo } from "../../services/wikimediaLogoProvider";
 
 type Props = {
   artworkId: string | null;
@@ -23,7 +23,6 @@ export function ArtworkImage({
 }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const [remoteFailed, setRemoteFailed] = useState(false);
-  const [darkArtwork, setDarkArtwork] = useState(false);
   const [alternateUrl, setAlternateUrl] = useState<string | null>(null);
   const attemptedAlternateUrls = useRef(new Set<string>());
 
@@ -32,7 +31,6 @@ export function ArtworkImage({
     let objectUrl: string | null = null;
 
     setRemoteFailed(false);
-    setDarkArtwork(false);
     setAlternateUrl(null);
     attemptedAlternateUrls.current.clear();
 
@@ -65,7 +63,7 @@ export function ArtworkImage({
 
   return (
     <img
-      className={className ? `${className}${darkArtwork ? " artwork-dark" : ""}` : darkArtwork ? "artwork-dark" : undefined}
+      className={className}
       src={displayUrl}
       alt=""
       loading="lazy"
@@ -97,18 +95,15 @@ export function ArtworkImage({
             luminance += (pixels[index] * 0.2126 + pixels[index + 1] * 0.7152 + pixels[index + 2] * 0.0722);
           }
           const isFullyDark = visible > 8 && luminance / visible < 35;
-          setDarkArtwork(isFullyDark);
-          if (isFullyDark && !url && !attemptedAlternateUrls.current.has(displayUrl)) {
+          if (isFullyDark && !attemptedAlternateUrls.current.has(displayUrl)) {
             attemptedAlternateUrls.current.add(displayUrl);
-            void findWikimediaLogo(label, displayUrl).then((alternative) => {
+            void findAlternateWikimediaLogo(label, displayUrl).then((alternative) => {
               if (alternative) {
                 setAlternateUrl(alternative);
-                setDarkArtwork(false);
               }
             }).catch(() => undefined);
           }
         } catch {
-          setDarkArtwork(false);
         }
       }}
     />

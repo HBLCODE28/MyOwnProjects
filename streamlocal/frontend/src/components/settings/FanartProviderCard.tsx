@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { syncFanartArtwork, type FanartSyncResult } from "../../services/fanartProvider";
+import { syncAllArtwork, type AllArtworkSyncResult } from "../../services/fanartProvider";
 
 export function FanartProviderCard() {
   const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<FanartSyncResult | null>(null);
+  const [result, setResult] = useState<AllArtworkSyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function sync() {
     setRunning(true); setResult(null); setError(null);
-    try { setResult(await syncFanartArtwork()); }
+    try { setResult(await syncAllArtwork()); }
     catch (value) { setError(value instanceof Error ? value.message : "Fanart artwork lookup failed."); }
     finally { setRunning(false); }
   }
@@ -27,8 +27,8 @@ export function FanartProviderCard() {
       </button>
       {result && (
         <div className="scan-summary">
-          {result.missingKey ? "Add and save the Fanart.tv API key in the encrypted vault first." :
-            `Checked ${result.checked} · Matched ${result.matched} · Updated ${result.updated} · Skipped ${result.skipped} · Failed ${result.failed}`}
+        {result.fanart.missingKey ? `${result.fanart.keyProblem ?? "Fanart.tv API key is unavailable."} Save the Fanart.tv key in this same StreamLocal browser address, then unlock the vault.` :
+            `Movies: ${result.movies.preservationSaved + result.movies.wikipediaSaved + result.movies.commonsSaved} saved · Logos: ${result.logos.updated} saved · Fanart: ${result.fanart.updated} saved · Failed: ${result.movies.failed + result.logos.failed + result.fanart.failed}`}
         </div>
       )}
       {error && <div className="library-error">{error}</div>}

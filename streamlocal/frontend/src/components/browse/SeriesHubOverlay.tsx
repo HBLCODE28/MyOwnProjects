@@ -48,15 +48,23 @@ export function SeriesHubOverlay({
       .map(({ item }) => item.id)),
     [card.seasons],
   );
+  const hasPlaybackRecord = useMemo(
+    () => Object.values(progressByItemId).some((progress) => progress.started || progress.watched),
+    [progressByItemId],
+  );
 
   useEffect(() => {
     void getSeriesViewingState(card.series.id).then((state) => {
       setLastWatchedEpisodeId(state?.lastWatchedEpisodeId ?? "");
-      setProgressAnswered(Boolean(state));
+      setProgressAnswered(Boolean(state) || hasPlaybackRecord);
       const remembered = allEpisodes.find((episode) => episode.id === state?.lastWatchedEpisodeId);
       if (remembered?.seasonNumber != null) setProgressSeasonNumber(remembered.seasonNumber);
     });
-  }, [allEpisodes, card.series.id]);
+  }, [allEpisodes, card.series.id, hasPlaybackRecord]);
+
+  useEffect(() => {
+    if (hasPlaybackRecord) setProgressAnswered(true);
+  }, [hasPlaybackRecord]);
 
   const season = useMemo(
     () =>
@@ -178,9 +186,6 @@ export function SeriesHubOverlay({
                   Continue with S{String(nextEpisode.seasonNumber ?? 0).padStart(2, "0")}E{String(nextEpisode.episodeNumber ?? 0).padStart(2, "0")}
                 </button>
               )}
-              <button className="secondary-button" onClick={() => setSeasonNumber(nextEpisode?.seasonNumber ?? firstSeason)}>
-                Browse episodes
-              </button>
             </div>
           </div>
         </div>

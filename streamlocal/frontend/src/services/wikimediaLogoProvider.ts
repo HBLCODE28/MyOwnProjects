@@ -47,11 +47,29 @@ export async function findWikimediaLogo(title: string, excludedUrl?: string): Pr
       if (page.imageinfo?.[0]?.thumburl) score += 10;
       return { page, score };
     })
+    .filter(({ page }) => !/(poster|cover|backdrop|screenshot|season|dvd)/i.test(page.title))
     .filter(({ score }) => score >= 110)
     .sort((a, b) => b.score - a.score);
   for (const candidate of ranked) {
     const url = candidate.page.imageinfo?.[0]?.thumburl ?? candidate.page.imageinfo?.[0]?.url;
     if (url && url !== excludedUrl) return url;
+  }
+  return null;
+}
+
+export async function findAlternateWikimediaLogo(title: string, excludedUrl: string): Promise<string | null> {
+  for (const query of [`${title} logo white`, `${title} logo alternate`, `${title} logo transparent`]) {
+    const params = new URLSearchParams({ action: "query", format: "json", origin: "*", generator: "search", gsrnamespace: "6", gsrlimit: "20", gsrsearch: query, prop: "imageinfo", iiprop: "url", iiurlwidth: "1200" });
+    const response = await fetch(`${COMMONS_API}?${params.toString()}`, { headers: { Accept: "application/json" } });
+    if (!response.ok) continue;
+    const json = (await response.json()) as { query?: { pages?: Record<string, CommonsPage> } };
+    const wanted = normalize(title);
+    const page = Object.values(json.query?.pages ?? []).find((candidate) => {
+      const url = candidate.imageinfo?.[0]?.thumburl ?? candidate.imageinfo?.[0]?.url;
+      return normalize(candidate.title).includes(wanted) && !/(poster|cover|backdrop|screenshot|season|dvd)/i.test(candidate.title) && url && url !== excludedUrl;
+    });
+    const url = page?.imageinfo?.[0]?.thumburl ?? page?.imageinfo?.[0]?.url;
+    if (url) return url;
   }
   return null;
 }
