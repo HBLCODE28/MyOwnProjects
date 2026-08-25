@@ -1,5 +1,5 @@
 import { db } from "../db/streamlocalDb";
-import type { Artwork } from "../types/library";
+import type { Artwork, MediaItem } from "../types/library";
 import { createId } from "../utils/id";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -63,11 +63,45 @@ export async function cacheRemoteArtwork(
   const blob = await response.blob();
   if (!ALLOWED_TYPES.has(blob.type)) return false;
 
-  const file = new File([blob], `${item.title}.${kind}.jpg`, {
+  const file = new File([blob], `streamlocal-remote-${item.id}-${kind}.jpg`, {
     type: blob.type,
   });
   const artworkId = await storeArtwork(file, kind);
   await attachArtworkToItem(itemId, artworkId, kind, false);
+  return true;
+}
+
+export async function clearAutoCachedArtwork(
+  item: MediaItem,
+  kind: "poster" | "backdrop" | "logo",
+): Promise<boolean> {
+  const artworkId = kind === "poster"
+    ? item.posterArtworkId
+    : kind === "backdrop"
+      ? item.backdropArtworkId
+      : item.logoArtworkId;
+  if (!artworkId) return false;
+
+  const artwork = await db.artwork.get(artworkId);
+  if (!artwork || artwork.kind !== kind) return false;
+
+  const legacyCacheName = `${item.title}.${kind}.jpg`;
+  const currentCacheName = `streamlocal-remote-${item.id}-${kind}.jpg`;
+  if (artwork.fileName !== legacyCacheName && artwork.fileName !== currentCacheName) {
+    return false;
+  }
+
+  await db.transaction("rw", db.mediaItems, db.artwork, async () => {
+    await db.mediaItems.update(item.id, {
+      ...(kind === "poster"
+        ? { posterArtworkId: null }
+        : kind === "backdrop"
+          ? { backdropArtworkId: null }
+          : { logoArtworkId: null }),
+      updatedAt: Date.now(),
+    });
+    await db.artwork.delete(artworkId);
+  });
   return true;
 }
 

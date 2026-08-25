@@ -44,4 +44,36 @@ describe("Wikimedia logo title validation", () => {
       { kind: "movie", year: 2021 },
     )).toBe(false);
   });
+
+  it("rejects a company logo whose name only starts with the movie title", () => {
+    expect(isContextCompatibleLogoCandidate(
+      "Interstellar",
+      "File:Interstellar Technologies logo.png",
+      { kind: "movie", year: 2014 },
+    )).toBe(false);
+  });
+
+  it("rejects the already-stored Interstellar Technologies URL for the movie", () => {
+    expect(isNamedLogoUrlContextCompatible(
+      "Interstellar",
+      "https://upload.wikimedia.org/Interstellar_Technologies_logo.png",
+      { kind: "movie", year: 2014 },
+    )).toBe(false);
+  });
+
+  it("accepts an explicitly identified logo for the correct movie", () => {
+    expect(isContextCompatibleLogoCandidate(
+      "Interstellar",
+      "File:Interstellar (2014 film) logo.svg",
+      { kind: "movie", year: 2014 },
+    )).toBe(true);
+  });
+
+  it("rejects an ambiguous generic movie wordmark without film or year identity", () => {
+    expect(isContextCompatibleLogoCandidate(
+      "Interstellar",
+      "File:Interstellar logo.svg",
+      { kind: "movie", year: 2014 },
+    )).toBe(false);
+  });
 });

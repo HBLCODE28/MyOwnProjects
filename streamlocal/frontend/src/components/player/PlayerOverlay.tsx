@@ -559,7 +559,7 @@ export function PlayerOverlay({
         aria-label="Close player"
         title="Close"
       >
-        ×
+        <span className="streamlocal-close-icon" aria-hidden="true" />
       </button>
 
       <div className="player-stage">

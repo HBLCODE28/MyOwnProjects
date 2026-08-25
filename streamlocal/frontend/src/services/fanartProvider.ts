@@ -1,10 +1,11 @@
 import { db } from "../db/streamlocalDb";
 import type { MediaItem, Series } from "../types/library";
-import { cacheRemoteArtwork, validateRemoteArtworkUrl } from "./artwork";
+import { cacheRemoteArtwork, clearAutoCachedArtwork, validateRemoteArtworkUrl } from "./artwork";
 import { syncMoviePosters, type MoviePosterSyncResult } from "./moviePosterProvider";
 import { syncWikimediaLogos, type LogoSyncResult } from "./wikimediaLogoProvider";
 import { listSecretIds, readSecret, vaultExists, vaultIsUnlocked } from "./secretVault";
 import { isRejectedLogoCandidateName, validateRemoteLogoUrl } from "./logoValidation";
+import { isNamedLogoUrlContextCompatible } from "./wikimediaLogoProvider";
 
 const FANART_API = "https://webservice.fanart.tv/v3.2";
 const WIKIDATA_API = "https://www.wikidata.org/w/api.php";
@@ -262,6 +263,11 @@ async function saveMovieArtwork(
     return { updated: false, poster: 0, backdrop: 0, logo: 0 };
   }
 
+  // A previous provider version cached remote logos as local artwork. If a new,
+  // identity-validated logo is about to replace it, remove only that generated
+  // cache record. Manually selected local logos keep priority and are untouched.
+  if (logo) await clearAutoCachedArtwork(movie, "logo");
+
   await db.mediaItems.update(movie.id, {
     remotePosterUrl: poster ?? movie.remotePosterUrl ?? null,
     remoteBackdropUrl: backdrop ?? movie.remoteBackdropUrl ?? null,
@@ -354,15 +360,22 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
     }
     if (movie.remoteLogoUrl) {
       try {
-        if (!(await validateRemoteLogoUrl(movie.remoteLogoUrl))) {
+        const correctTitle = isNamedLogoUrlContextCompatible(
+          movie.title,
+          movie.remoteLogoUrl,
+          { kind: "movie", year: movie.year },
+        );
+        if (!correctTitle || !(await validateRemoteLogoUrl(movie.remoteLogoUrl))) {
           result.rejectedLogos += 1;
+          await clearAutoCachedArtwork(movie, "logo");
           await db.mediaItems.update(movie.id, { remoteLogoUrl: null, updatedAt: Date.now() });
-          movie = { ...movie, remoteLogoUrl: null };
+          movie = { ...movie, remoteLogoUrl: null, logoArtworkId: null };
         }
       } catch {
         result.rejectedLogos += 1;
+        await clearAutoCachedArtwork(movie, "logo");
         await db.mediaItems.update(movie.id, { remoteLogoUrl: null, updatedAt: Date.now() });
-        movie = { ...movie, remoteLogoUrl: null };
+        movie = { ...movie, remoteLogoUrl: null, logoArtworkId: null };
       }
     }
     if (movie.remotePosterUrl && movie.remoteBackdropUrl && movie.remoteLogoUrl) {

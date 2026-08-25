@@ -1,4 +1,5 @@
 import { db } from "../db/streamlocalDb";
+import { clearAutoCachedArtwork } from "./artwork";
 import {
   isRejectedLogoCandidateName,
   validateRemoteLogoUrl,
@@ -69,6 +70,14 @@ export function isContextCompatibleLogoCandidate(
     return false;
   }
 
+  // Commons search can return an unrelated company/product whose name merely
+  // starts with the movie title. For example, "Interstellar Technologies logo"
+  // is not artwork for the 2014 film. Reject explicit organization/product
+  // qualifiers instead of trusting substring title similarity.
+  if (/\b(company|companies|corporation|corp|inc|llc|ltd|technologies|technology|brand|product|software|application|website|agency|organisation|organization|publisher|record label)\b/i.test(qualifiers)) {
+    return false;
+  }
+
   if (context.kind === "series" && /\b(film|movie)\b/i.test(qualifiers)) {
     return false;
   }
@@ -80,6 +89,16 @@ export function isContextCompatibleLogoCandidate(
     .map((match) => Number(match[1]));
   if (context.year && years.length > 0 && !years.includes(context.year)) {
     return false;
+  }
+
+  // Movie titles frequently overlap with companies, products and other works.
+  // A Wikimedia filename must therefore carry explicit film identity (movie/film
+  // or the requested release year). If it does not, use Fanart's ID-matched logo
+  // or text fallback instead of risking a plausible-looking wrong wordmark.
+  if (context.kind === "movie") {
+    const hasMovieQualifier = /\b(film|movie)\b/i.test(qualifiers);
+    const hasRequestedYear = Boolean(context.year && years.includes(context.year));
+    if (!hasMovieQualifier && !hasRequestedYear) return false;
   }
 
   return true;
@@ -252,6 +271,11 @@ export async function syncWikimediaLogos(): Promise<LogoSyncResult> {
   for (const originalMovie of movies) {
     const existingLogo = originalMovie.remoteLogoUrl ?? null;
     try {
+      // Old StreamLocal versions cached provider logos into logoArtworkId. When
+      // the corresponding remote URL is already gone, that cache has no identity
+      // information left to validate. Remove only the generated cache so a stale
+      // wrong logo cannot continue to outrank the corrected remote/text fallback.
+      if (!existingLogo) await clearAutoCachedArtwork(originalMovie, "logo");
       if (
         existingLogo &&
         isNamedLogoUrlContextCompatible(
@@ -263,6 +287,7 @@ export async function syncWikimediaLogos(): Promise<LogoSyncResult> {
       ) continue;
       if (existingLogo) {
         result.rejected += 1;
+        await clearAutoCachedArtwork(originalMovie, "logo");
         await db.mediaItems.update(originalMovie.id, { remoteLogoUrl: null, updatedAt: Date.now() });
       }
       const found = await findValidatedWikimediaLogo(
@@ -275,6 +300,7 @@ export async function syncWikimediaLogos(): Promise<LogoSyncResult> {
         result.noLogo += 1;
         continue;
       }
+      await clearAutoCachedArtwork(originalMovie, "logo");
       await db.mediaItems.update(originalMovie.id, {
         remoteLogoUrl: found.url,
         updatedAt: Date.now(),

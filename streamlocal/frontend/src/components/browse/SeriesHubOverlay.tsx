@@ -167,7 +167,7 @@ export function SeriesHubOverlay({
             aria-label="Close series"
             title="Close"
           >
-            <span className="series-hub-close-icon" aria-hidden="true" />
+            <span className="streamlocal-close-icon" aria-hidden="true" />
           </button>
 
           <div className="series-hub-copy">

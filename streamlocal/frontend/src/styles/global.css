@@ -21,6 +21,36 @@ button { cursor: pointer; }
 button:disabled { cursor: default; opacity: .55; }
 a { color: inherit; text-decoration: none; }
 
+.streamlocal-close-icon {
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  pointer-events: none;
+}
+
+.streamlocal-close-icon::before,
+.streamlocal-close-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 21px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: 50% 50%;
+}
+
+.streamlocal-close-icon::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.streamlocal-close-icon::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
 .app-shell { min-height: 100vh; }
 .page { padding: 0 4vw 64px; }
 .eyebrow {

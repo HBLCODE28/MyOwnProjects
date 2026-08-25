@@ -12,12 +12,37 @@
 }
 
 .browse-hero-transition {
-  animation: browse-hero-enter 650ms ease both;
+  isolation: isolate;
 }
 
-@keyframes browse-hero-enter {
-  from { opacity: .35; transform: scale(1.008); }
-  to { opacity: 1; transform: scale(1); }
+.browse-hero-transition .browse-hero-bg {
+  animation: browse-hero-slide-background 820ms cubic-bezier(.2,.72,.2,1) both;
+}
+
+.browse-hero-transition .browse-hero-content {
+  animation: browse-hero-slide-content 690ms 70ms cubic-bezier(.2,.72,.2,1) both;
+}
+
+@keyframes browse-hero-slide-background {
+  from {
+    opacity: .58;
+    transform: translateX(4.5vw) scale(1.025);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes browse-hero-slide-content {
+  from {
+    opacity: 0;
+    transform: translateX(52px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .browse-hero-bg {
