@@ -389,14 +389,26 @@ export function PlayerOverlay({
     setSelectedAudioTrack(index);
   }
 
-  function selectSubtitleTrack(index: number) {
+  function applySubtitleTrackMode(index: number) {
     const tracks = videoRef.current?.textTracks;
     if (!tracks) return;
     for (let trackIndex = 0; trackIndex < tracks.length; trackIndex += 1) {
       tracks[trackIndex].mode = index >= 0 && trackIndex === index ? "showing" : "disabled";
     }
+  }
+
+  function selectSubtitleTrack(index: number) {
+    applySubtitleTrackMode(index);
     setSelectedSubtitleTrack(index);
   }
+
+  useEffect(() => {
+    if (!media) return;
+    const frame = window.requestAnimationFrame(() => {
+      applySubtitleTrackMode(selectedSubtitleTrack);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [media?.subtitles, selectedSubtitleTrack]);
 
   function shiftVtt(text: string, offsetSeconds: number): string {
     const toSeconds = (stamp: string) => {
@@ -451,8 +463,9 @@ export function PlayerOverlay({
   async function findOpenSubtitles() {
     setSubtitleBusy(true);
     try {
-      setSubtitleMatches((await searchOpenSubtitles(item)).slice(0, 6));
-      setSubtitleNotice(null);
+      const matches = (await searchOpenSubtitles(item)).slice(0, 6);
+      setSubtitleMatches(matches);
+      setSubtitleNotice(matches.length ? null : `No exact subtitle matches were found for "${item.title}".`);
     } catch (value) {
       setSubtitleNotice(value instanceof Error ? value.message : "OpenSubtitles search failed.");
     } finally {
@@ -621,6 +634,7 @@ export function PlayerOverlay({
                 srcLang={track.language}
                 label={track.label}
                 default={index === selectedSubtitleTrack}
+                onLoad={() => applySubtitleTrackMode(selectedSubtitleTrack)}
               />
             ))}
           </video>
@@ -743,9 +757,9 @@ export function PlayerOverlay({
                   <button className="player-icon-button" onClick={() => void findOpenSubtitles()} disabled={subtitleBusy}>
                     {subtitleBusy ? "Searching..." : "Find OpenSubtitles"}
                   </button>
-                  {subtitleMatches.map((match) => (
+                  {subtitleMatches.map((match, index) => (
                     <button className="player-subtitle-result" key={`${match.id}-${match.fileId}`} onClick={() => void addOpenSubtitle(match)}>
-                      {match.label}{match.hearingImpaired ? " · HI" : ""}
+                      {index === 0 ? "Best match · " : ""}{match.label}{match.hearingImpaired ? " · HI" : ""}
                     </button>
                   ))}
                   {subtitleNotice && <p className="player-subtitle-notice">{subtitleNotice}</p>}
