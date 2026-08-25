@@ -1,11 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="StreamLocal">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#eee8ff"/>
-      <stop offset="1" stop-color="#9f86ff"/>
+    <linearGradient id="red-main" x1="0.12" y1="0.08" x2="0.88" y2="0.92">
+      <stop offset="0" stop-color="#ff4a56"/>
+      <stop offset="0.48" stop-color="#f20d22"/>
+      <stop offset="1" stop-color="#9f0018"/>
     </linearGradient>
+    <linearGradient id="red-light" x1="0.1" y1="0" x2="0.92" y2="1">
+      <stop offset="0" stop-color="#ff6b72"/>
+      <stop offset="0.56" stop-color="#ff2438"/>
+      <stop offset="1" stop-color="#cc001c"/>
+    </linearGradient>
+    <linearGradient id="red-dark" x1="0.18" y1="0.1" x2="0.8" y2="0.9">
+      <stop offset="0" stop-color="#d6001f"/>
+      <stop offset="1" stop-color="#74000f"/>
+    </linearGradient>
+    <linearGradient id="play-face" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f0f0f2"/>
+    </linearGradient>
+    <filter id="mark-shadow" x="-35%" y="-35%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#7a0010" flood-opacity="0.45"/>
+    </filter>
+    <filter id="play-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#50000b" flood-opacity="0.45"/>
+    </filter>
   </defs>
-  <rect width="512" height="512" rx="110" fill="#090a0c"/>
-  <rect x="96" y="96" width="320" height="320" rx="92" fill="url(#g)"/>
-  <text x="256" y="305" text-anchor="middle" font-family="Arial, sans-serif" font-size="148" font-weight="900" fill="#17131f">SL</text>
+
+  <g filter="url(#mark-shadow)">
+    <path fill="url(#red-main)" d="M95 226c-26-58 11-126 72-147 57-20 105 9 144 45 35 32 65 61 119 54 42-5 72 31 60 71-13 43-55 65-94 75-47 12-64 37-79 80-18 53-69 79-120 60-42-15-58-56-76-91-17-34-51-54-65-88-9-23-2-45 9-59 10-13 20-14 30 0Z"/>
+    <path fill="url(#red-light)" d="M143 137c34-57 113-71 171-34 43 27 68 74 111 84 27 6 57-2 76 22 21 28 4 69-27 83-41 19-86 4-122 20-37 16-46 62-82 80-44 22-101 1-119-45-14-35-2-68-15-99-13-31-38-53-37-83 0-18 15-34 44-28Z" opacity="0.88"/>
+    <path fill="url(#red-dark)" d="M101 294c-18-39 5-84 43-104 34-18 73-10 104 13 30 23 49 58 88 66 25 5 49-5 68 12 21 19 15 55-8 72-28 20-64 15-92 31-31 17-43 55-74 68-40 17-84-8-94-50-7-30 8-57-2-84-7-18-22-27-33-24Z" opacity="0.8"/>
+  </g>
+
+  <g filter="url(#play-shadow)">
+    <path fill="url(#play-face)" d="M214 172c-18-11-41 2-41 23v122c0 21 23 34 41 23l105-61c18-10 18-36 0-46l-105-61Z"/>
+    <path fill="none" stroke="#ffffff" stroke-opacity="0.52" stroke-width="8" d="M211 182c-10-6-23 1-23 13v122c0 12 13 19 23 13l105-61c10-6 10-20 0-26l-105-61Z"/>
+  </g>
 </svg>

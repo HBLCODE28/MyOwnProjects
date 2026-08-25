@@ -22,9 +22,13 @@ export function AppShell({ children }: Props) {
     <ToastProvider>
       <div className="app-shell">
         <header className="streamlocal-nav">
-        <NavLink className="streamlocal-brand" to="/">
-          <span className="streamlocal-brand-mark">SL</span>
-          <span className="streamlocal-brand-name">StreamLocal</span>
+        <NavLink className="streamlocal-brand" to="/" aria-label="StreamLocal home">
+          <img
+            className="streamlocal-brand-logo"
+            src="./icons/icon.svg?v=3"
+            alt=""
+            aria-hidden="true"
+          />
         </NavLink>
 
         <nav
