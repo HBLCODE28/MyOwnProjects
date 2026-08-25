@@ -82,4 +82,25 @@ describe("browse data", () => {
     expect(data.continueWatching[0]?.item.id).toBe("episode-2");
     expect(data.continueWatching[0]?.reason).toBe("next_episode");
   });
+
+  it("prefers an episode-specific still in Continue Watching and falls back to series artwork", async () => {
+    await db.mediaItems.update("episode-2", {
+      remoteEpisodeStillUrl: "https://static.tvmaze.com/episode-2.jpg",
+    });
+    await db.series.update(series.id, {
+      remoteBackdropUrl: "https://static.tvmaze.com/series.jpg",
+    });
+
+    let data = await loadBrowseData();
+    expect(data.continueWatching[0]?.remoteArtworkUrl).toBe(
+      "https://static.tvmaze.com/episode-2.jpg",
+    );
+
+    await db.mediaItems.update("episode-2", { remoteEpisodeStillUrl: null });
+    data = await loadBrowseData();
+    expect(data.continueWatching[0]?.remoteArtworkUrl).toBe(
+      "https://static.tvmaze.com/series.jpg",
+    );
+  });
+
 });

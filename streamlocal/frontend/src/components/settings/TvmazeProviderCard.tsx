@@ -36,11 +36,11 @@ export function TvmazeProviderCard({ onUpdated }: Props) {
   return (
     <section className="settings-card">
       <p className="eyebrow">OPTIONAL ONLINE METADATA</p>
-      <h2>TVmaze series posters</h2>
+      <h2>TVmaze series artwork</h2>
       <p>
         TVmaze's public API does not require an account or API key. StreamLocal
         sends a series title only when you press the button below. Exact title
-        matches can add a remote series poster and fill missing year, genres and
+        matches can add series artwork, episode-specific still images, and fill missing year, genres and
         overview fields.
       </p>
 
@@ -49,13 +49,13 @@ export function TvmazeProviderCard({ onUpdated }: Props) {
         onClick={sync}
         disabled={running}
       >
-        {running ? "Checking TVmaze..." : "Find series posters with TVmaze"}
+        {running ? "Checking TVmaze..." : "Find series artwork with TVmaze"}
       </button>
 
       {result && (
         <div className="scan-summary">
           Checked {result.checked} · Matched {result.matched} · Updated{" "}
-          {result.updated} · No exact match {result.skipped} · Failed{" "}
+          {result.updated} · Episode stills {result.episodeStillsSaved} · No exact match {result.skipped} · Failed{" "}
           {result.failed}
         </div>
       )}

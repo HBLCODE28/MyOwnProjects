@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  getTvmazeEpisodeStills,
   getTvmazeSeriesArtwork,
   searchTvmazeSeriesExact,
 } from "./tvmazeProvider";
@@ -114,4 +115,35 @@ describe("TVmaze provider", () => {
     expect(result.poster).toContain("poster.jpg");
     expect(result.backdrop).toContain("background.jpg");
   });
+
+  it("maps TVmaze episode images by season and episode number", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            id: 501,
+            season: 1,
+            number: 2,
+            image: {
+              medium: "https://static.tvmaze.com/e1-medium.jpg",
+              original: "https://static.tvmaze.com/e1-original.jpg",
+            },
+          },
+          {
+            id: 502,
+            season: 1,
+            number: 3,
+            image: null,
+          },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const stills = await getTvmazeEpisodeStills(123);
+
+    expect(stills.get("1:2")).toBe("https://static.tvmaze.com/e1-original.jpg");
+    expect(stills.has("1:3")).toBe(false);
+  });
+
 });

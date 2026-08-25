@@ -37,6 +37,10 @@ export type TvmazePosterSyncResult = {
   updated: number;
   skipped: number;
   failed: number;
+  postersSaved: number;
+  backdropsSaved: number;
+  logosSaved: number;
+  episodeStillsSaved: number;
 };
 
 function normalize(value: string): string {
@@ -120,6 +124,40 @@ export async function getTvmazeSeriesArtwork(
   };
 }
 
+
+
+type TvmazeEpisode = {
+  id: number;
+  season: number;
+  number: number | null;
+  image: {
+    medium: string | null;
+    original: string | null;
+  } | null;
+};
+
+export async function getTvmazeEpisodeStills(
+  showId: number,
+): Promise<Map<string, string>> {
+  const response = await fetch(`https://api.tvmaze.com/shows/${showId}/episodes`, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) return new Map();
+
+  const episodes = (await response.json()) as TvmazeEpisode[];
+  const stills = new Map<string, string>();
+
+  for (const episode of episodes) {
+    if (!Number.isFinite(episode.season) || episode.number == null) continue;
+    const url = episode.image?.original ?? episode.image?.medium ?? null;
+    if (!url) continue;
+    stills.set(`${episode.season}:${episode.number}`, url);
+  }
+
+  return stills;
+}
+
 export async function syncSeriesPostersFromTvmaze(): Promise<TvmazePosterSyncResult> {
   const rows = await db.series.toArray();
 
@@ -129,6 +167,10 @@ export async function syncSeriesPostersFromTvmaze(): Promise<TvmazePosterSyncRes
     updated: 0,
     skipped: 0,
     failed: 0,
+    postersSaved: 0,
+    backdropsSaved: 0,
+    logosSaved: 0,
+    episodeStillsSaved: 0,
   };
 
   for (const series of rows) {
@@ -147,22 +189,48 @@ export async function syncSeriesPostersFromTvmaze(): Promise<TvmazePosterSyncRes
         ? Number(match.premiered.slice(0, 4))
         : null;
 
+      const nextPoster =
+        artwork.poster ??
+        match.image?.original ??
+        match.image?.medium ??
+        series.remotePosterUrl ??
+        null;
+      const nextBackdrop = artwork.backdrop ?? series.remoteBackdropUrl ?? null;
+      const nextLogo = artwork.logo ?? series.remoteLogoUrl ?? null;
+
       await db.series.update(series.id, {
         year: series.year ?? (Number.isFinite(year) ? year : null),
         overview: series.overview || concisePlotSummary(match.summary),
         genres: series.genres.length > 0 ? series.genres : match.genres,
-        remotePosterUrl:
-          artwork.poster ??
-          match.image?.original ??
-          match.image?.medium ??
-          series.remotePosterUrl ??
-          null,
-        remoteBackdropUrl: artwork.backdrop ?? series.remoteBackdropUrl ?? null,
-        remoteLogoUrl: artwork.logo ?? series.remoteLogoUrl ?? null,
+        remotePosterUrl: nextPoster,
+        remoteBackdropUrl: nextBackdrop,
+        remoteLogoUrl: nextLogo,
         metadataProvider: "tvmaze",
         providerId: String(match.id),
         updatedAt: Date.now(),
       });
+
+      if (!series.remotePosterUrl && nextPoster) result.postersSaved += 1;
+      if (!series.remoteBackdropUrl && nextBackdrop) result.backdropsSaved += 1;
+      if (!series.remoteLogoUrl && nextLogo) result.logosSaved += 1;
+
+      const [stills, episodeItems] = await Promise.all([
+        getTvmazeEpisodeStills(match.id),
+        db.mediaItems.where("seriesId").equals(series.id).toArray(),
+      ]);
+
+      for (const episode of episodeItems) {
+        if (episode.type !== "episode" || episode.seasonNumber == null || episode.episodeNumber == null) {
+          continue;
+        }
+        const stillUrl = stills.get(`${episode.seasonNumber}:${episode.episodeNumber}`);
+        if (!stillUrl || episode.remoteEpisodeStillUrl === stillUrl) continue;
+        await db.mediaItems.update(episode.id, {
+          remoteEpisodeStillUrl: stillUrl,
+          updatedAt: Date.now(),
+        });
+        result.episodeStillsSaved += 1;
+      }
 
       result.updated += 1;
     } catch {

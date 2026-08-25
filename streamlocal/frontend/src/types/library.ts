@@ -45,6 +45,7 @@ export type MediaItem = {
   logoArtworkId?: string | null;
   remotePosterUrl?: string | null;
   remoteBackdropUrl?: string | null;
+  remoteEpisodeStillUrl?: string | null;
   remoteLogoUrl?: string | null;
   metadataProvider?: "wikipedia" | "fanart" | null;
   providerId?: string | null;

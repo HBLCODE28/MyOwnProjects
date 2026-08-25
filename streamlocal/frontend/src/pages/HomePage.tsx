@@ -68,7 +68,7 @@ export function HomePage() {
 
           <div className="rail-grid">
             {data.continueWatching.map(
-              ({ item, file, progress, reason }) => (
+              ({ item, file, progress, reason, artworkId, remoteArtworkUrl }) => (
                 <MediaCard
                   key={item.id}
                   item={item}
@@ -76,6 +76,8 @@ export function HomePage() {
                   progress={progress}
                   label={item.type === "episode" ? "EPISODE" : "MOVIE"}
                   continueLabel={reason === "next_episode" ? "Next episode" : "Resume"}
+                  artworkId={artworkId}
+                  remoteArtworkUrl={remoteArtworkUrl}
                   onUnavailable={(entry) => showToast(`${entry.title} is unavailable. Reconnect its media folder in Library.`, "error")}
                   onPlay={setPlaying}
                 />

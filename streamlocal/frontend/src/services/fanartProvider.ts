@@ -6,6 +6,7 @@ import { syncWikimediaLogos, type LogoSyncResult } from "./wikimediaLogoProvider
 import { listSecretIds, readSecret, vaultExists, vaultIsUnlocked } from "./secretVault";
 import { isRejectedLogoCandidateName, validateRemoteLogoUrl } from "./logoValidation";
 import { isNamedLogoUrlContextCompatible } from "./wikimediaLogoProvider";
+import { syncSeriesPostersFromTvmaze, type TvmazePosterSyncResult } from "./tvmazeProvider";
 
 const FANART_API = "https://webservice.fanart.tv/v3.2";
 const WIKIDATA_API = "https://www.wikidata.org/w/api.php";
@@ -43,6 +44,7 @@ export type FanartSyncResult = {
 };
 
 export type AllArtworkSyncResult = {
+  tvmaze: TvmazePosterSyncResult;
   fanart: FanartSyncResult;
   movies: MoviePosterSyncResult;
   logos: LogoSyncResult;
@@ -457,8 +459,11 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
 }
 
 export async function syncAllArtwork(): Promise<AllArtworkSyncResult> {
+  // TVmaze runs first so series provider IDs and episode-specific stills are
+  // available even when Fanart.tv is not configured.
+  const tvmaze = await syncSeriesPostersFromTvmaze();
   const fanart = await syncFanartArtwork();
   const movies = await syncMoviePosters();
   const logos = await syncWikimediaLogos();
-  return { movies, logos, fanart };
+  return { tvmaze, movies, logos, fanart };
 }

@@ -22,6 +22,8 @@ export type BrowseData = {
     file: MediaFile | undefined;
     progress?: PlaybackProgress;
     reason: "resume" | "next_episode";
+    artworkId: string | null;
+    remoteArtworkUrl: string | null;
   }>;
   counts: {
     movies: number;
@@ -41,6 +43,7 @@ export async function loadBrowseData(): Promise<BrowseData> {
 
   const fileById = new Map(files.map((file) => [file.id, file]));
   const itemById = new Map(items.map((item) => [item.id, item]));
+  const seriesById = new Map(seriesRows.map((series) => [series.id, series]));
 
   const movies = items
     .filter((item) => item.type === "movie")
@@ -55,6 +58,32 @@ export async function loadBrowseData(): Promise<BrowseData> {
   const progressByItemId = Object.fromEntries(
     progressRows.map((row) => [row.mediaItemId, row]),
   );
+
+  function continueArtwork(item: MediaItem): { artworkId: string | null; remoteArtworkUrl: string | null } {
+    if (item.type !== "episode") {
+      return {
+        artworkId: item.backdropArtworkId ?? item.posterArtworkId,
+        remoteArtworkUrl: item.remoteBackdropUrl ?? item.remotePosterUrl ?? null,
+      };
+    }
+
+    const series = item.seriesId ? seriesById.get(item.seriesId) : undefined;
+    return {
+      artworkId:
+        item.backdropArtworkId ??
+        item.posterArtworkId ??
+        series?.backdropArtworkId ??
+        series?.posterArtworkId ??
+        null,
+      remoteArtworkUrl:
+        item.remoteEpisodeStillUrl ??
+        item.remoteBackdropUrl ??
+        item.remotePosterUrl ??
+        series?.remoteBackdropUrl ??
+        series?.remotePosterUrl ??
+        null,
+    };
+  }
 
   const continueRows = progressRows
     .filter(
@@ -74,6 +103,7 @@ export async function loadBrowseData(): Promise<BrowseData> {
           file: fileById.get(item.mediaFileId),
           progress,
           reason: "resume" as const,
+          ...continueArtwork(item),
         },
       ];
     });
@@ -102,7 +132,13 @@ export async function loadBrowseData(): Promise<BrowseData> {
       const nextFile = next ? fileById.get(next.mediaFileId) : undefined;
       const nextProgress = next ? progressByItem.get(next.id) : undefined;
       if (!next || !nextFile?.available || nextProgress?.watched) return [];
-      return [{ item: next, file: nextFile, progress: nextProgress, reason: "next_episode" as const }];
+      return [{
+        item: next,
+        file: nextFile,
+        progress: nextProgress,
+        reason: "next_episode" as const,
+        ...continueArtwork(next),
+      }];
     });
 
   const seenContinueIds = new Set<string>();

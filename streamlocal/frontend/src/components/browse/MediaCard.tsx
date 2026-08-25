@@ -11,6 +11,8 @@ type Props = {
   label?: string;
   progress?: PlaybackProgress | null;
   continueLabel?: string;
+  artworkId?: string | null;
+  remoteArtworkUrl?: string | null;
   onUnavailable?: (item: MediaItem) => void;
   onPlay?: (item: MediaItem) => void;
 };
@@ -21,6 +23,8 @@ export function MediaCard({
   label,
   progress,
   continueLabel,
+  artworkId,
+  remoteArtworkUrl,
   onUnavailable,
   onPlay,
 }: Props) {
@@ -57,8 +61,8 @@ export function MediaCard({
     >
       <div className="media-card-art">
         <ArtworkImage
-          artworkId={item.backdropArtworkId ?? item.posterArtworkId}
-          remoteUrl={item.remoteBackdropUrl ?? item.remotePosterUrl ?? null}
+          artworkId={artworkId !== undefined ? artworkId : item.backdropArtworkId ?? item.posterArtworkId}
+          remoteUrl={remoteArtworkUrl !== undefined ? remoteArtworkUrl : item.remoteBackdropUrl ?? item.remotePosterUrl ?? null}
           label={label ?? item.type.toUpperCase()}
           fit="cover"
         />
