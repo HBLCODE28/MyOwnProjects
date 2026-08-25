@@ -1,8 +1,11 @@
 # StreamLocal - Codex Handoff Document
 
-Last updated: 2026-08-23  
-Project owner environment: Windows, PowerShell 5.1  
-Primary browser target: current Chromium-based Edge/Chrome on Windows
+Last updated: 2026-08-25
+Project owner environment: Linux development checkout; the original media may still be on Windows
+Primary browser target: current Chromium-based Chrome/Chromium
+
+> This document is the current handoff. The sections near the end override older
+> stage notes when they describe newer behavior or requirements.
 
 ---
 
@@ -36,16 +39,16 @@ The original media files must NEVER be modified or deleted by StreamLocal.
 
 # 2. Repository Layout
 
-Git repository root:
+Git repository root on the current Linux machine:
 
 ```text
-C:\Users\Cyber_User\Documents\Projects
+/home/magshimim/Documents/Projects
 ```
 
 StreamLocal project:
 
 ```text
-C:\Users\Cyber_User\Documents\Projects\streamlocal
+/home/magshimim/Documents/Projects/streamlocal
 ```
 
 Important detail:
@@ -60,7 +63,10 @@ Git fallback path used by scripts:
 C:\Program Files\Git\cmd\git.exe
 ```
 
-PowerShell version:
+The project is currently being developed with Bash/Linux. The old PowerShell notes
+below are historical and apply only when working from the Windows checkout.
+
+PowerShell version (historical Windows checkout):
 
 ```text
 Windows PowerShell 5.1
@@ -1649,3 +1655,202 @@ Stage 10 is the last stage intended as completed.
 Stage 11 is the next implementation stage.
 
 Before making major architectural changes, preserve the browser-only requirement unless the project owner explicitly changes that decision.
+
+---
+
+# 32. Latest User Requirements and Unresolved Logo Bug
+
+This section is the most important current handoff for the next AI assistant.
+The user explicitly asked that it be written down so it can be sent to ChatGPT.
+
+## The exact unresolved problem
+
+Some title logos are still wrong in two ways:
+
+1. A logo that is effectively 100% black is displayed on the dark StreamLocal
+   interface and therefore cannot be seen.
+2. When a real logo is missing, a poster/cover/frame from the video is sometimes
+   being used where the title logo should be. The user does NOT want a cover,
+   poster, thumbnail, first video frame, or generic artwork to be treated as a
+   logo.
+
+The expected behavior is:
+
+- If a valid logo exists, show the logo.
+- If the selected logo is truly black or nearly all black, search for another
+  logo for the same exact movie/series.
+- Prefer a different color variant of the same logo, such as white, light,
+  transparent, or an alternate Fanart/Wikimedia logo.
+- Validate the replacement by inspecting its rendered pixels, not only its
+  filename. Do not accept a replacement if it is also effectively black.
+- Never use a poster, cover, backdrop, screenshot, season image, DVD cover,
+  video frame, or generic banner as a logo.
+- If no valid logo is found, display the normal text title. Do not display a
+  cover in the title-logo slot.
+- A white background must be used only when it is genuinely needed to make a
+  black logo visible. Do not put a white background behind a normal white or
+  colored logo. In particular, Stranger Things and similar normal logos must
+  not receive an unnecessary white rectangle.
+- Local logo artwork has priority, but it must pass the same validation. A
+  locally stored black logo must not silently become an invisible title.
+
+## Required logo validation strategy
+
+The next implementation should make logo selection explicit rather than
+depending only on one `onLoad` fallback:
+
+1. Collect candidates from Fanart.tv and Wikimedia Commons for the exact title.
+2. Reject candidates whose names or metadata suggest:
+
+```text
+poster, cover, backdrop, background, screenshot, season, episode, dvd,
+thumbnail, frame, fanart
+```
+
+3. Render/test the candidate image using a canvas with transparency handled
+   correctly. Measure the visible pixels, luminance, contrast, and image shape.
+4. Treat a candidate as unusably black only when the visible artwork itself is
+   overwhelmingly black; do not classify a transparent logo as black because
+   transparent pixels were counted as black.
+5. If unusably black, try another same-title candidate. Prefer an alternate
+   color variant and verify that the replacement is not black.
+6. If all candidates fail, render the text title rather than a poster/cover.
+
+The user specifically wants the system to find another logo of the same series
+or movie, or the same logo in another color, not merely add a white background
+to every dark image.
+
+## One-button artwork behavior
+
+Settings should have one clearly visible action, for example:
+
+```text
+Find all artwork
+```
+
+That one action must run the complete artwork pipeline:
+
+- movie poster lookup
+- series poster lookup
+- movie and series backdrop lookup
+- movie and series logo lookup
+- Fanart.tv lookup when its key is available
+- Wikimedia fallback when appropriate
+- validation/rejection of black logos and cover-as-logo results
+
+The result must report separate counts for posters, backdrops, valid logos,
+rejected logos, missing artwork, and provider failures. It must not claim that
+a logo was found when it only found a poster.
+
+## API key UI behavior
+
+The encrypted vault currently supports:
+
+```text
+openSubtitlesApiKey
+fanartApiKey
+customMetadataApiKey
+customPosterApiKey
+```
+
+The UI requirement is:
+
+- API fields that have not been saved should not be shown as full credential
+  forms.
+- Provide a compact `Add API key` control for adding a new provider field.
+- Once saved, show that provider's field and allow reveal, replacement, or
+  deletion.
+- Never print or commit API keys.
+
+If the app reports that Fanart is missing after the user saved the key, first
+verify that:
+
+- the encrypted vault is unlocked in the current browser session;
+- the key was saved under `fanartApiKey`;
+- the user is using the same origin/port where the key was saved, because
+  IndexedDB is origin-specific (`127.0.0.1:5173` and `127.0.0.1:5174` are
+  different browser databases);
+- the current page is not an old server instance.
+
+The app should distinguish these states in its message instead of showing the
+same generic “add the key” message for all of them.
+
+## Series progress behavior
+
+The series hub previously showed:
+
+```text
+YOUR PROGRESS
+Where did you stop watching?
+Use this if StreamLocal has no playback record for the series.
+```
+
+This prompt is only for a series with no playback record and no saved manual
+series state. If the user has watched or started any episode in StreamLocal,
+the prompt must disappear immediately after the playback state refreshes. It
+must not reappear just because the series overlay was reopened.
+
+The user does not want a `Browse episodes` action button in the series hub.
+The season selector and episode list are sufficient.
+
+## Current implementation context
+
+Recent commits already added a Fanart provider and a combined artwork action,
+but the logo behavior still needs a real end-to-end fix:
+
+```text
+5a3bf46  Integrate Fanart artwork provider
+e35d237  Refine artwork scanning and series progress
+```
+
+Relevant files:
+
+```text
+frontend/src/components/browse/ArtworkImage.tsx
+frontend/src/components/browse/MediaCard.tsx
+frontend/src/components/browse/SeriesCard.tsx
+frontend/src/components/browse/HeroRail.tsx
+frontend/src/components/browse/SeriesHubOverlay.tsx
+frontend/src/services/fanartProvider.ts
+frontend/src/services/wikimediaLogoProvider.ts
+frontend/src/components/settings/ApiKeyVault.tsx
+frontend/src/components/settings/FanartProviderCard.tsx
+frontend/src/services/seriesViewingState.ts
+```
+
+Do not solve the logo problem by making every logo background white. The
+correct solution is candidate filtering plus rendered-image validation and a
+same-title alternate logo search.
+
+## Required QA before declaring this complete
+
+Use real or generated media longer than 10 seconds and test at least:
+
+- A movie with a known poster and no usable logo.
+- A known series with a valid colored logo.
+- A series whose first logo candidate is 100% black.
+- A series with no logo at all.
+- A title for which a poster exists but no logo exists.
+- The Last of Us, Breaking Bad, Stranger Things, and Dune where available.
+- Confirm no poster, cover, screenshot, or video frame appears in a logo slot.
+- Confirm a black logo is replaced by a visible same-title alternate or falls
+  back to text.
+- Confirm Stranger Things does not receive an unnecessary white background.
+- Save the Fanart key, lock/unlock the vault, and run the combined scan.
+- Confirm the same-origin/port behavior for the encrypted key.
+- Start an episode, reopen the series hub, and confirm the progress prompt is
+  gone.
+- Confirm unavailable episodes still show a clear warning at the top/center.
+
+Run:
+
+```bash
+npm run typecheck
+npm test -- --run
+npm run build
+npm run dev -- --host 127.0.0.1
+curl -I http://127.0.0.1:5174/
+```
+
+The development port may be `5173` or `5174` depending on whether another Vite
+process is already running. Report the actual working URL to the user.
