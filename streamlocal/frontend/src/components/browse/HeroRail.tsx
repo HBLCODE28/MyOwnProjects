@@ -1,3 +1,4 @@
+import { TablerPlayerPlayIcon } from "../icons/TablerIcons";
 import { useEffect, useMemo, useState } from "react";
 import type { MediaItem } from "../../types/library";
 import type { MovieCard, SeriesCard } from "../../services/browseSelectors";
@@ -128,7 +129,7 @@ export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
           {onOpenSeries && (
             <div className="hero-actions-row">
               <button className="hero-play-button" onClick={() => onOpenSeries(card)}>
-                <span className="play-glyph" aria-hidden="true">▶</span>
+                <TablerPlayerPlayIcon className="play-glyph" size={22} />
                 View series
               </button>
             </div>
@@ -179,7 +180,7 @@ export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
         {canPlay && onPlayMovie && (
           <div className="hero-actions-row">
             <button className="hero-play-button" onClick={() => onPlayMovie(item)}>
-              <span className="play-glyph" aria-hidden="true">▶</span>
+              <TablerPlayerPlayIcon className="play-glyph" size={22} />
               Play
             </button>
           </div>

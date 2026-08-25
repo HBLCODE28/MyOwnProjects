@@ -1,3 +1,4 @@
+import { TablerXIcon } from "../icons/TablerIcons";
 import { useEffect, useMemo, useState } from "react";
 import type {
   MediaItem,
@@ -167,7 +168,7 @@ export function SeriesHubOverlay({
             aria-label="Close series"
             title="Close"
           >
-            <span className="streamlocal-close-icon" aria-hidden="true" />
+            <TablerXIcon size={24} />
           </button>
 
           <div className="series-hub-copy">

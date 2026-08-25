@@ -1,4 +1,14 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import {
+  TablerDotsIcon,
+  TablerMaximizeIcon,
+  TablerMinimizeIcon,
+  TablerPlayerPauseIcon,
+  TablerPlayerPlayIcon,
+  TablerRewindBackward10Icon,
+  TablerRewindForward10Icon,
+  TablerXIcon,
+} from "../icons/TablerIcons";
 import type { MediaItem } from "../../types/library";
 import {
   createPlayableMedia,
@@ -119,10 +129,13 @@ export function PlayerOverlay({
   const onProgressChangedRef = useRef(onProgressChanged);
   const lastSavedSecondRef = useRef(-1);
   const previewRequestRef = useRef(0);
+  const controlsHideTimerRef = useRef<number | null>(null);
 
   const [media, setMedia] = useState<PlayableMedia | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [fullscreenActive, setFullscreenActive] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -149,6 +162,56 @@ export function PlayerOverlay({
     onCloseRef.current = onClose;
     onProgressChangedRef.current = onProgressChanged;
   }, [onClose, onProgressChanged]);
+
+  useEffect(() => {
+    function onFullscreenChange() {
+      setFullscreenActive(document.fullscreenElement === shellRef.current);
+    }
+
+    onFullscreenChange();
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (controlsHideTimerRef.current != null) {
+      window.clearTimeout(controlsHideTimerRef.current);
+      controlsHideTimerRef.current = null;
+    }
+
+    setControlsVisible(true);
+
+    if (fullscreenActive && playing && !subtitleMenuOpen) {
+      controlsHideTimerRef.current = window.setTimeout(() => {
+        setControlsVisible(false);
+        controlsHideTimerRef.current = null;
+      }, 2500);
+    }
+
+    return () => {
+      if (controlsHideTimerRef.current != null) {
+        window.clearTimeout(controlsHideTimerRef.current);
+        controlsHideTimerRef.current = null;
+      }
+    };
+  }, [fullscreenActive, playing, subtitleMenuOpen]);
+
+  function revealFullscreenControls() {
+    if (!fullscreenActive) return;
+
+    setControlsVisible(true);
+    if (controlsHideTimerRef.current != null) {
+      window.clearTimeout(controlsHideTimerRef.current);
+      controlsHideTimerRef.current = null;
+    }
+
+    if (playing && !subtitleMenuOpen) {
+      controlsHideTimerRef.current = window.setTimeout(() => {
+        setControlsVisible(false);
+        controlsHideTimerRef.current = null;
+      }, 2500);
+    }
+  }
 
   useEffect(() => {
     document.body.classList.add("player-open");
@@ -565,14 +628,19 @@ export function PlayerOverlay({
   }
 
   return (
-    <div className="player-backdrop" ref={shellRef}>
+    <div
+      className={`player-backdrop ${fullscreenActive && !controlsVisible ? "player-controls-hidden" : ""}`}
+      ref={shellRef}
+      onPointerMove={revealFullscreenControls}
+    >
       <button
         className="player-close-floating"
+        onPointerEnter={() => setControlsVisible(true)}
         onClick={() => void closePlayer()}
         aria-label="Close player"
         title="Close"
       >
-        <span className="streamlocal-close-icon" aria-hidden="true" />
+        <TablerXIcon size={24} />
       </button>
 
       <div className="player-stage">
@@ -642,7 +710,17 @@ export function PlayerOverlay({
       </div>
 
       {media && !error && (
-        <div className="player-controls">
+        <div
+          className="player-controls"
+          onPointerEnter={() => {
+            if (controlsHideTimerRef.current != null) {
+              window.clearTimeout(controlsHideTimerRef.current);
+              controlsHideTimerRef.current = null;
+            }
+            setControlsVisible(true);
+          }}
+          onPointerLeave={revealFullscreenControls}
+        >
           <div className="player-now-playing">
             <span className="eyebrow">LOCAL PLAYBACK</span>
             <strong>{item.episodeTitle || item.title}</strong>
@@ -699,18 +777,30 @@ export function PlayerOverlay({
           <div className="player-control-row">
             <div className="player-control-group">
               <button
-                className="player-icon-button"
+                className="player-icon-button player-icon-only player-primary-control"
                 onClick={() => void togglePlayback()}
+                aria-label={playing ? "Pause" : "Play"}
+                title={playing ? "Pause" : "Play"}
               >
-                {playing ? "Pause" : "Play"}
+                {playing ? <TablerPlayerPauseIcon size={25} /> : <TablerPlayerPlayIcon size={25} />}
               </button>
 
-              <button className="player-icon-button" onClick={() => seekBy(-10)}>
-                -10s
+              <button
+                className="player-icon-button player-icon-only"
+                onClick={() => seekBy(-10)}
+                aria-label="Back 10 seconds"
+                title="Back 10 seconds"
+              >
+                <TablerRewindBackward10Icon size={25} />
               </button>
 
-              <button className="player-icon-button" onClick={() => seekBy(10)}>
-                +10s
+              <button
+                className="player-icon-button player-icon-only"
+                onClick={() => seekBy(10)}
+                aria-label="Forward 10 seconds"
+                title="Forward 10 seconds"
+              >
+                <TablerRewindForward10Icon size={25} />
               </button>
 
               <span className="player-time">
@@ -720,12 +810,13 @@ export function PlayerOverlay({
 
             <div className="player-control-group">
               <button
-                className="player-icon-button"
+                className="player-icon-button player-icon-only"
                 aria-expanded={subtitleMenuOpen}
+                aria-label="Playback options"
                 onClick={() => setSubtitleMenuOpen((open) => !open)}
                 title="Playback options"
               >
-                ⋯
+                <TablerDotsIcon size={25} />
               </button>
 
               {subtitleMenuOpen && (
@@ -816,10 +907,12 @@ export function PlayerOverlay({
               </label>
 
               <button
-                className="player-icon-button"
+                className="player-icon-button player-icon-only"
                 onClick={() => void toggleFullscreen()}
+                aria-label={fullscreenActive ? "Exit fullscreen" : "Enter fullscreen"}
+                title={fullscreenActive ? "Exit fullscreen" : "Fullscreen"}
               >
-                Fullscreen
+                {fullscreenActive ? <TablerMinimizeIcon size={25} /> : <TablerMaximizeIcon size={25} />}
               </button>
             </div>
           </div>
