@@ -10,6 +10,7 @@ import {
 } from "../services/browseData";
 import {
   filterSeries,
+  groupSeriesByGenre,
   type SeriesCard as SeriesCardModel,
 } from "../services/browseSelectors";
 import "../styles/browse.css";
@@ -34,6 +35,11 @@ export function SeriesPage() {
   const series = useMemo(
     () => filterSeries(data?.series ?? [], query),
     [data?.series, query],
+  );
+
+  const genreGroups = useMemo(
+    () => groupSeriesByGenre(series),
+    [series],
   );
 
   const selectedSeries =
@@ -91,15 +97,28 @@ export function SeriesPage() {
           No series found. Use Library and Identify first.
         </div>
       ) : (
-        <section className="series-grid">
-          {series.map((card) => (
-            <SeriesCard
-              key={card.series.id}
-              card={card}
-              onOpen={openSeries}
-            />
+        <div className="series-genre-rails">
+          {genreGroups.map(({ genre, cards }) => (
+            <section className="browse-section" key={genre}>
+              <div className="section-title-row">
+                <div>
+                  <p className="eyebrow">{cards.length} TITLE{cards.length === 1 ? "" : "S"}</p>
+                  <h2>{genre}</h2>
+                </div>
+              </div>
+
+              <div className="series-grid compact">
+                {cards.map((card) => (
+                  <SeriesCard
+                    key={`${genre}-${card.series.id}`}
+                    card={card}
+                    onOpen={openSeries}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
-        </section>
+        </div>
       )}
 
       {selectedSeries && !playing && (

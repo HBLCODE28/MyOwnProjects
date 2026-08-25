@@ -83,6 +83,69 @@ export function groupSeries(
   return output.sort((a, b) => a.series.title.localeCompare(b.series.title));
 }
 
+
+export type GenreSeriesGroup = {
+  genre: string;
+  cards: SeriesCard[];
+};
+
+const SERIES_GENRE_PRIORITY = [
+  "Drama",
+  "Comedy",
+  "Action",
+  "Crime",
+  "Thriller",
+  "Mystery",
+  "Science-Fiction",
+  "Fantasy",
+  "Horror",
+  "Romance",
+  "Adventure",
+  "Animation",
+  "Family",
+  "Documentary",
+];
+
+export function groupSeriesByGenre(seriesCards: SeriesCard[]): GenreSeriesGroup[] {
+  const groups = new Map<string, GenreSeriesGroup>();
+
+  for (const card of seriesCards) {
+    const genres = Array.from(
+      new Map(
+        card.series.genres
+          .map((genre) => genre.trim())
+          .filter(Boolean)
+          .map((genre) => [genre.toLowerCase(), genre] as const),
+      ).values(),
+    );
+
+    const effectiveGenres = genres.length > 0 ? genres : ["Other"];
+    for (const genre of effectiveGenres) {
+      const key = genre.toLowerCase();
+      const existing = groups.get(key);
+      if (existing) {
+        existing.cards.push(card);
+      } else {
+        groups.set(key, { genre, cards: [card] });
+      }
+    }
+  }
+
+  const priority = new Map(
+    SERIES_GENRE_PRIORITY.map((genre, index) => [genre.toLowerCase(), index]),
+  );
+
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.genre === "Other") return 1;
+    if (b.genre === "Other") return -1;
+
+    const aPriority = priority.get(a.genre.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+    const bPriority = priority.get(b.genre.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    return a.genre.localeCompare(b.genre);
+  });
+}
+
 export function filterSeries(seriesCards: SeriesCard[], query: string): SeriesCard[] {
   const normalizedQuery = normalizeSearch(query);
   if (!normalizedQuery) return seriesCards;

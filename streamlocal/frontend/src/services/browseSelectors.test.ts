@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MediaFile, MediaItem, Series } from "../types/library";
-import { filterMovies, filterSeries, groupSeries, libraryCounts } from "./browseSelectors";
+import { filterMovies, filterSeries, groupSeries, groupSeriesByGenre, libraryCounts } from "./browseSelectors";
 
 function item(partial: Partial<MediaItem>): MediaItem {
   return {
@@ -134,6 +134,36 @@ describe("browse selectors", () => {
     expect(
       grouped[0].seasons[0].episodes.map(({ item }) => item.episodeNumber),
     ).toEqual([1, 2]);
+  });
+
+  it("groups series into genre rails and keeps multi-genre series in each matching rail", () => {
+    const dramaComedy = groupSeries(
+      [series({ id: "s1", title: "Barry", normalizedTitle: "barry", genres: ["Drama", "Comedy", "Drama"] })],
+      [],
+      [],
+    )[0];
+    const action = groupSeries(
+      [series({ id: "s2", title: "Reacher", normalizedTitle: "reacher", genres: ["Action"] })],
+      [],
+      [],
+    )[0];
+    const uncategorized = groupSeries(
+      [series({ id: "s3", title: "Unknown", normalizedTitle: "unknown", genres: [] })],
+      [],
+      [],
+    )[0];
+
+    const groups = groupSeriesByGenre([action, uncategorized, dramaComedy]);
+
+    expect(groups.map((group) => group.genre)).toEqual([
+      "Drama",
+      "Comedy",
+      "Action",
+      "Other",
+    ]);
+    expect(groups.find((group) => group.genre === "Drama")?.cards.map((card) => card.series.title)).toEqual(["Barry"]);
+    expect(groups.find((group) => group.genre === "Comedy")?.cards.map((card) => card.series.title)).toEqual(["Barry"]);
+    expect(groups.find((group) => group.genre === "Other")?.cards.map((card) => card.series.title)).toEqual(["Unknown"]);
   });
 
   it("filters series by episode filename", () => {
