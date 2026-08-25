@@ -3,7 +3,8 @@ import type { MediaItem, Series } from "../types/library";
 import { cacheRemoteArtwork } from "./artwork";
 import { syncMoviePosters, type MoviePosterSyncResult } from "./moviePosterProvider";
 import { syncWikimediaLogos, type LogoSyncResult } from "./wikimediaLogoProvider";
-import { readSecret } from "./secretVault";
+import { listSecretIds, readSecret, vaultExists, vaultIsUnlocked } from "./secretVault";
+import { isRejectedLogoCandidateName, validateRemoteLogoUrl } from "./logoValidation";
 
 const FANART_API = "https://webservice.fanart.tv/v3.1";
 const WIKIDATA_API = "https://www.wikidata.org/w/api.php";
@@ -32,6 +33,11 @@ export type FanartSyncResult = {
   failed: number;
   missingKey: boolean;
   keyProblem?: string;
+  postersSaved: number;
+  backdropsSaved: number;
+  logosSaved: number;
+  rejectedLogos: number;
+  missingArtwork: number;
 };
 
 export type AllArtworkSyncResult = {
@@ -46,6 +52,49 @@ function firstUrl(...groups: Array<FanartImage[] | undefined>): string | null {
     if (url) return url;
   }
   return null;
+}
+
+async function firstValidatedLogoUrl(
+  groups: Array<FanartImage[] | undefined>,
+): Promise<{ url: string | null; rejected: number }> {
+  let rejected = 0;
+  for (const group of groups) {
+    for (const image of group ?? []) {
+      const url = typeof image.url === "string" ? image.url : null;
+      if (!url) continue;
+      let fileName = url;
+      try {
+        fileName = new URL(url).pathname.split("/").pop() ?? url;
+      } catch {
+        // Keep the original string when the provider returns a non-standard URL.
+      }
+      if (isRejectedLogoCandidateName(fileName) || !(await validateRemoteLogoUrl(url))) {
+        rejected += 1;
+        continue;
+      }
+      return { url, rejected };
+    }
+  }
+  return { url: null, rejected };
+}
+
+async function chooseValidatedFanartArtwork(
+  kind: "movie" | "tv",
+  response: FanartResponse,
+): Promise<{
+  artwork: ReturnType<typeof chooseFanartArtwork>;
+  rejectedLogos: number;
+}> {
+  const base = chooseFanartArtwork(kind, response);
+  const logo = await firstValidatedLogoUrl(
+    kind === "movie"
+      ? [response.hdmovielogo, response.movielogo]
+      : [response.clearlogo, response.hdtvlogo],
+  );
+  return {
+    artwork: { ...base, logo: logo.url },
+    rejectedLogos: logo.rejected,
+  };
 }
 
 export function chooseFanartArtwork(
@@ -175,31 +224,61 @@ async function findTvmazeTvdbId(series: Series): Promise<string | null> {
   return null;
 }
 
-async function saveMovieArtwork(movie: MediaItem | undefined, artwork: ReturnType<typeof chooseFanartArtwork>): Promise<boolean> {
-  if (!movie || (!artwork.poster && !artwork.backdrop && !artwork.logo)) return false;
+async function saveMovieArtwork(
+  movie: MediaItem | undefined,
+  artwork: ReturnType<typeof chooseFanartArtwork>,
+): Promise<{ updated: boolean; poster: number; backdrop: number; logo: number }> {
+  if (!movie) return { updated: false, poster: 0, backdrop: 0, logo: 0 };
+  const poster = movie.remotePosterUrl ? null : artwork.poster;
+  const backdrop = movie.remoteBackdropUrl ? null : artwork.backdrop;
+  const logo = movie.remoteLogoUrl ? null : artwork.logo;
+  if (!poster && !backdrop && !logo) {
+    return { updated: false, poster: 0, backdrop: 0, logo: 0 };
+  }
+
   await db.mediaItems.update(movie.id, {
-    remotePosterUrl: artwork.poster ?? movie.remotePosterUrl ?? null,
-    remoteBackdropUrl: artwork.backdrop ?? movie.remoteBackdropUrl ?? null,
-    remoteLogoUrl: artwork.logo ?? movie.remoteLogoUrl ?? null,
+    remotePosterUrl: poster ?? movie.remotePosterUrl ?? null,
+    remoteBackdropUrl: backdrop ?? movie.remoteBackdropUrl ?? null,
+    remoteLogoUrl: logo ?? movie.remoteLogoUrl ?? null,
     metadataProvider: "fanart",
     updatedAt: Date.now(),
   });
-  if (artwork.poster) await cacheRemoteArtwork(movie.id, artwork.poster, "poster").catch(() => false);
-  if (artwork.backdrop) await cacheRemoteArtwork(movie.id, artwork.backdrop, "backdrop").catch(() => false);
-  if (artwork.logo) await cacheRemoteArtwork(movie.id, artwork.logo, "logo").catch(() => false);
-  return true;
+  if (poster) await cacheRemoteArtwork(movie.id, poster, "poster").catch(() => false);
+  if (backdrop) await cacheRemoteArtwork(movie.id, backdrop, "backdrop").catch(() => false);
+  if (logo) await cacheRemoteArtwork(movie.id, logo, "logo").catch(() => false);
+  return {
+    updated: true,
+    poster: poster ? 1 : 0,
+    backdrop: backdrop ? 1 : 0,
+    logo: logo ? 1 : 0,
+  };
 }
 
-async function saveSeriesArtwork(series: Series | undefined, artwork: ReturnType<typeof chooseFanartArtwork>): Promise<boolean> {
-  if (!series || (!artwork.poster && !artwork.backdrop && !artwork.logo)) return false;
+async function saveSeriesArtwork(
+  series: Series | undefined,
+  artwork: ReturnType<typeof chooseFanartArtwork>,
+): Promise<{ updated: boolean; poster: number; backdrop: number; logo: number }> {
+  if (!series) return { updated: false, poster: 0, backdrop: 0, logo: 0 };
+  const poster = series.remotePosterUrl ? null : artwork.poster;
+  const backdrop = series.remoteBackdropUrl ? null : artwork.backdrop;
+  const logo = series.remoteLogoUrl ? null : artwork.logo;
+  if (!poster && !backdrop && !logo) {
+    return { updated: false, poster: 0, backdrop: 0, logo: 0 };
+  }
+
   await db.series.update(series.id, {
-    remotePosterUrl: artwork.poster ?? series.remotePosterUrl ?? null,
-    remoteBackdropUrl: artwork.backdrop ?? series.remoteBackdropUrl ?? null,
-    remoteLogoUrl: artwork.logo ?? series.remoteLogoUrl ?? null,
+    remotePosterUrl: poster ?? series.remotePosterUrl ?? null,
+    remoteBackdropUrl: backdrop ?? series.remoteBackdropUrl ?? null,
+    remoteLogoUrl: logo ?? series.remoteLogoUrl ?? null,
     metadataProvider: "fanart",
     updatedAt: Date.now(),
   });
-  return true;
+  return {
+    updated: true,
+    poster: poster ? 1 : 0,
+    backdrop: backdrop ? 1 : 0,
+    logo: logo ? 1 : 0,
+  };
 }
 
 export async function syncFanartArtwork(): Promise<FanartSyncResult> {
@@ -207,21 +286,51 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
     db.mediaItems.where("type").equals("movie").toArray(),
     db.series.toArray(),
   ]);
-  const result: FanartSyncResult = { checked: movies.length + series.length, matched: 0, updated: 0, skipped: 0, failed: 0, missingKey: false };
+  const result: FanartSyncResult = { checked: movies.length + series.length, matched: 0, updated: 0, skipped: 0, failed: 0, missingKey: false, postersSaved: 0, backdropsSaved: 0, logosSaved: 0, rejectedLogos: 0, missingArtwork: 0 };
   let apiKey: string | null;
+  if (!(await vaultExists())) {
+    result.missingKey = true;
+    result.keyProblem = "The encrypted API key vault has not been created on this StreamLocal origin.";
+    return result;
+  }
+  if (!vaultIsUnlocked()) {
+    result.missingKey = true;
+    result.keyProblem = "The encrypted API key vault is locked in this browser session.";
+    return result;
+  }
+  if (!(await listSecretIds()).includes("fanartApiKey")) {
+    result.missingKey = true;
+    result.keyProblem = "No Fanart.tv key is saved for this StreamLocal origin and port.";
+    return result;
+  }
   try {
     apiKey = (await readSecret("fanartApiKey"))?.trim() || null;
   } catch (error) {
     result.missingKey = true;
-    result.keyProblem = error instanceof Error ? error.message : "Unlock the encrypted API key vault first.";
+    result.keyProblem = error instanceof Error ? error.message : "The Fanart.tv key could not be decrypted.";
     return result;
   }
   if (!apiKey) {
     result.missingKey = true;
+    result.keyProblem = "The saved Fanart.tv key is empty.";
     return result;
   }
 
-  for (const movie of movies) {
+  for (const originalMovie of movies) {
+    let movie = originalMovie;
+    if (movie.remoteLogoUrl) {
+      try {
+        if (!(await validateRemoteLogoUrl(movie.remoteLogoUrl))) {
+          result.rejectedLogos += 1;
+          await db.mediaItems.update(movie.id, { remoteLogoUrl: null, updatedAt: Date.now() });
+          movie = { ...movie, remoteLogoUrl: null };
+        }
+      } catch {
+        result.rejectedLogos += 1;
+        await db.mediaItems.update(movie.id, { remoteLogoUrl: null, updatedAt: Date.now() });
+        movie = { ...movie, remoteLogoUrl: null };
+      }
+    }
     if (movie.remotePosterUrl && movie.remoteBackdropUrl && movie.remoteLogoUrl) {
       result.skipped += 1;
       continue;
@@ -233,11 +342,32 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
       const response = await fetchFanart("movie", imdbId, apiKey);
       if (!response) { result.skipped += 1; continue; }
       result.matched += 1;
-      if (await saveMovieArtwork(movie, chooseFanartArtwork("movie", response))) result.updated += 1;
+      const validated = await chooseValidatedFanartArtwork("movie", response);
+      result.rejectedLogos += validated.rejectedLogos;
+      const saved = await saveMovieArtwork(movie, validated.artwork);
+      if (saved.updated) result.updated += 1;
+      result.postersSaved += saved.poster;
+      result.backdropsSaved += saved.backdrop;
+      result.logosSaved += saved.logo;
+      if (!saved.updated) result.missingArtwork += 1;
     } catch { result.failed += 1; }
   }
 
-  for (const entry of series) {
+  for (const originalEntry of series) {
+    let entry = originalEntry;
+    if (entry.remoteLogoUrl) {
+      try {
+        if (!(await validateRemoteLogoUrl(entry.remoteLogoUrl))) {
+          result.rejectedLogos += 1;
+          await db.series.update(entry.id, { remoteLogoUrl: null, updatedAt: Date.now() });
+          entry = { ...entry, remoteLogoUrl: null };
+        }
+      } catch {
+        result.rejectedLogos += 1;
+        await db.series.update(entry.id, { remoteLogoUrl: null, updatedAt: Date.now() });
+        entry = { ...entry, remoteLogoUrl: null };
+      }
+    }
     if (entry.remotePosterUrl && entry.remoteBackdropUrl && entry.remoteLogoUrl) {
       result.skipped += 1;
       continue;
@@ -249,7 +379,14 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
       const response = await fetchFanart("tv", tvdbId, apiKey);
       if (!response) { result.skipped += 1; continue; }
       result.matched += 1;
-      if (await saveSeriesArtwork(entry, chooseFanartArtwork("tv", response))) result.updated += 1;
+      const validated = await chooseValidatedFanartArtwork("tv", response);
+      result.rejectedLogos += validated.rejectedLogos;
+      const saved = await saveSeriesArtwork(entry, validated.artwork);
+      if (saved.updated) result.updated += 1;
+      result.postersSaved += saved.poster;
+      result.backdropsSaved += saved.backdrop;
+      result.logosSaved += saved.logo;
+      if (!saved.updated) result.missingArtwork += 1;
     } catch { result.failed += 1; }
   }
 
@@ -257,8 +394,8 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
 }
 
 export async function syncAllArtwork(): Promise<AllArtworkSyncResult> {
+  const fanart = await syncFanartArtwork();
   const movies = await syncMoviePosters();
   const logos = await syncWikimediaLogos();
-  const fanart = await syncFanartArtwork();
   return { movies, logos, fanart };
 }

@@ -1,111 +1,110 @@
 .app-shell {
   min-height: 100vh;
-  background: #07080a;
+  background: #0f0f10;
 }
 
 .app-shell .streamlocal-nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  right: 0;
+  left: 0;
   z-index: 300;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 70px;
-  padding: 0 34px;
+  gap: 34px;
+  min-height: 68px;
+  padding: 0 4vw;
   border: 0;
-  border-bottom: 1px solid rgba(255,255,255,.055);
-  background:
-    linear-gradient(180deg, rgba(10,11,14,.97), rgba(7,8,10,.92));
-  box-shadow: 0 8px 26px rgba(0,0,0,.16);
-  backdrop-filter: blur(18px);
+  background: linear-gradient(180deg, rgba(5,5,6,.96) 0%, rgba(5,5,6,.78) 58%, rgba(5,5,6,0) 100%);
+  transition: background 180ms ease;
 }
 
 .app-shell .streamlocal-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #f6f5fa;
+  flex: 0 0 auto;
+  color: #fff;
   text-decoration: none;
-  font-size: 15px;
+  font-size: 19px;
   font-weight: 900;
-  letter-spacing: -.025em;
+  letter-spacing: -.04em;
 }
 
 .app-shell .streamlocal-brand-mark {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border: 1px solid rgba(175,157,255,.2);
-  border-radius: 10px;
-  color: #d9d2ff;
-  background:
-    linear-gradient(145deg, rgba(160,140,255,.2), rgba(160,140,255,.08));
-  box-shadow: inset 0 1px rgba(255,255,255,.08);
-  font-size: 9px;
-  letter-spacing: .08em;
+  border-radius: 4px;
+  color: #fff;
+  background: linear-gradient(145deg, #f03546, #b80f24);
+  box-shadow: 0 8px 24px rgba(176, 17, 37, .22);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: -.02em;
+}
+
+.app-shell .streamlocal-brand-name {
+  color: #f5f5f5;
 }
 
 .app-shell .streamlocal-nav-links {
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 4px;
-  border: 1px solid rgba(255,255,255,.045);
-  border-radius: 12px;
-  background: rgba(255,255,255,.02);
+  gap: 20px;
+  min-width: 0;
 }
 
 .app-shell .streamlocal-nav-link {
   position: relative;
-  padding: 9px 12px;
+  padding: 8px 0;
   border: 0;
-  border-radius: 8px;
-  color: #777981;
+  color: rgba(255,255,255,.72);
   background: transparent;
   text-decoration: none;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .01em;
+  font-size: 13px;
+  font-weight: 520;
+  transition: color 140ms ease;
 }
 
 .app-shell .streamlocal-nav-link:hover {
-  color: #d8d9df;
-  background: rgba(255,255,255,.035);
+  color: rgba(255,255,255,.92);
 }
 
 .app-shell .streamlocal-nav-link.active {
-  color: #f7f5ff;
-  background: rgba(153,132,255,.12);
-  box-shadow: inset 0 0 0 1px rgba(174,157,255,.08);
+  color: #fff;
+  font-weight: 720;
 }
 
 .app-shell .streamlocal-nav-link.active::after {
   content: "";
   position: absolute;
-  right: 12px;
-  bottom: 4px;
-  left: 12px;
+  right: 0;
+  bottom: 1px;
+  left: 0;
   height: 2px;
-  border-radius: 999px;
-  background: #a38eff;
+  border-radius: 99px;
+  background: #f03546;
 }
 
 .app-main {
-  min-height: calc(100vh - 70px);
+  min-height: 100vh;
 }
 
 @media (max-width: 900px) {
   .app-shell .streamlocal-nav {
-    padding: 0 14px;
+    gap: 16px;
+    padding: 0 18px;
   }
 
-  .app-shell .streamlocal-brand > span:last-child {
+  .app-shell .streamlocal-brand-name {
     display: none;
   }
 
   .app-shell .streamlocal-nav-links {
-    max-width: calc(100vw - 70px);
+    gap: 16px;
+    max-width: calc(100vw - 72px);
     overflow-x: auto;
   }
 }

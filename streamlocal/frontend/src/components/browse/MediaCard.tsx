@@ -57,8 +57,8 @@ export function MediaCard({
     >
       <div className="media-card-art">
         <ArtworkImage
-          artworkId={item.posterArtworkId}
-          remoteUrl={item.remotePosterUrl ?? null}
+          artworkId={item.backdropArtworkId ?? item.posterArtworkId}
+          remoteUrl={item.remoteBackdropUrl ?? item.remotePosterUrl ?? null}
           label={label ?? item.type.toUpperCase()}
           fit="cover"
         />
@@ -87,7 +87,7 @@ export function MediaCard({
 
       <div className="media-card-copy">
         {item.logoArtworkId || item.remoteLogoUrl ? (
-          <ArtworkImage className="card-logo" artworkId={item.logoArtworkId ?? null} remoteUrl={item.remoteLogoUrl ?? null} label={item.title} fit="contain" position="left center" lightBackgroundForDark />
+          <ArtworkImage className="card-logo" artworkId={item.logoArtworkId ?? null} remoteUrl={item.remoteLogoUrl ?? null} label={item.title} fallbackText={item.title} fit="contain" position="left center" lightBackgroundForDark />
         ) : <h3>{item.title}</h3>}
         <p>
           {[item.year, item.genres.slice(0, 2).join(", "), item.confidence]

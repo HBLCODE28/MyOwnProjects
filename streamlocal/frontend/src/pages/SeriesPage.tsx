@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HeroRail } from "../components/browse/HeroRail";
 import { SeriesCard } from "../components/browse/SeriesCard";
 import { SeriesHubOverlay } from "../components/browse/SeriesHubOverlay";
@@ -14,8 +14,6 @@ import {
 } from "../services/browseSelectors";
 import "../styles/browse.css";
 import { useToast } from "../components/ui/Toast";
-import { syncWikimediaLogos } from "../services/wikimediaLogoProvider";
-import { syncFanartArtwork } from "../services/fanartProvider";
 
 export function SeriesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
@@ -24,8 +22,6 @@ export function SeriesPage() {
     useState<string | null>(null);
   const [playing, setPlaying] = useState<MediaItem | null>(null);
   const { showToast } = useToast();
-  const logoSyncStarted = useRef(false);
-  const fanartSyncStarted = useRef(false);
 
   async function refresh() {
     setData(await loadBrowseData());
@@ -34,22 +30,6 @@ export function SeriesPage() {
   useEffect(() => {
     void refresh();
   }, []);
-
-  useEffect(() => {
-    if (!data || logoSyncStarted.current) return;
-    logoSyncStarted.current = true;
-    void syncWikimediaLogos().then((result) => {
-      if (result.updated > 0) void refresh();
-    }).catch(() => undefined);
-  }, [data]);
-
-  useEffect(() => {
-    if (!data || fanartSyncStarted.current) return;
-    fanartSyncStarted.current = true;
-    void syncFanartArtwork().then((result) => {
-      if (result.updated > 0) void refresh();
-    }).catch(() => undefined);
-  }, [data]);
 
   const series = useMemo(
     () => filterSeries(data?.series ?? [], query),

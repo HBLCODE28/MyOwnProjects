@@ -49,7 +49,7 @@ export function SeriesCard({ card, onOpen }: Props) {
 
       <div className="series-card-copy">
         {card.series.logoArtworkId || card.series.remoteLogoUrl ? (
-          <ArtworkImage className="card-logo" artworkId={card.series.logoArtworkId ?? null} remoteUrl={card.series.remoteLogoUrl ?? null} label={card.series.title} fit="contain" position="left center" lightBackgroundForDark />
+          <ArtworkImage className="card-logo" artworkId={card.series.logoArtworkId ?? null} remoteUrl={card.series.remoteLogoUrl ?? null} label={card.series.title} fallbackText={card.series.title} fit="contain" position="left center" lightBackgroundForDark />
         ) : <h3>{card.series.title}</h3>}
         <p>
           {card.seasons.length} season

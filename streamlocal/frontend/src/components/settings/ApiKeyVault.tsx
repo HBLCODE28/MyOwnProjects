@@ -48,9 +48,14 @@ export function ApiKeyVault() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [storedIds, setStoredIds] = useState<string[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState(SECRET_FIELDS[0].id);
+  const [addedFieldIds, setAddedFieldIds] = useState<string[]>([]);
   const [message, setMessage] = useState<string | null>(null);
-  const savedFields = SECRET_FIELDS.filter((field) => storedIds.includes(field.id));
-  const unsavedFields = SECRET_FIELDS.filter((field) => !storedIds.includes(field.id));
+  const visibleFields = SECRET_FIELDS.filter(
+    (field) => storedIds.includes(field.id) || addedFieldIds.includes(field.id),
+  );
+  const unsavedFields = SECRET_FIELDS.filter(
+    (field) => !storedIds.includes(field.id) && !addedFieldIds.includes(field.id),
+  );
 
   async function refreshState() {
     setExists(await vaultExists());
@@ -107,6 +112,7 @@ export function ApiKeyVault() {
       await saveSecret(id, value);
       setValues((current) => ({ ...current, [id]: "" }));
       setMessage("API credential encrypted and saved locally.");
+      setAddedFieldIds((current) => current.filter((fieldId) => fieldId !== id));
       await refreshState();
     } catch (value) {
       setMessage(
@@ -138,6 +144,7 @@ export function ApiKeyVault() {
   async function remove(id: string) {
     await deleteSecret(id);
     setValues((current) => ({ ...current, [id]: "" }));
+    setAddedFieldIds((current) => current.filter((fieldId) => fieldId !== id));
     setMessage("Saved credential deleted.");
     await refreshState();
   }
@@ -210,8 +217,8 @@ export function ApiKeyVault() {
       {exists && unlocked && (
         <>
           <div className="vault-fields">
-            {savedFields.map((field) => {
-              const saved = true;
+            {visibleFields.map((field) => {
+              const saved = storedIds.includes(field.id);
 
               return (
                 <div className="vault-field" key={field.id}>
@@ -269,7 +276,16 @@ export function ApiKeyVault() {
               <select value={selectedFieldId} onChange={(event) => setSelectedFieldId(event.target.value)} aria-label="API key to add">
                 {unsavedFields.map((field) => <option key={field.id} value={field.id}>{field.label}</option>)}
               </select>
-              <button className="secondary-button" onClick={() => setStoredIds((current) => [...current, selectedFieldId])}>
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setAddedFieldIds((current) =>
+                    current.includes(selectedFieldId) ? current : [...current, selectedFieldId],
+                  );
+                  const remaining = unsavedFields.find((field) => field.id !== selectedFieldId);
+                  if (remaining) setSelectedFieldId(remaining.id);
+                }}
+              >
                 Add API key
               </button>
             </div>

@@ -36,6 +36,7 @@ export function SeriesHubOverlay({
   const [lastWatchedEpisodeId, setLastWatchedEpisodeId] = useState("");
   const [viewingMessage, setViewingMessage] = useState<string | null>(null);
   const [progressAnswered, setProgressAnswered] = useState(false);
+  const [viewingStateLoaded, setViewingStateLoaded] = useState(false);
   const { showToast } = useToast();
 
   const allEpisodes = useMemo(
@@ -48,18 +49,34 @@ export function SeriesHubOverlay({
       .map(({ item }) => item.id)),
     [card.seasons],
   );
+  const seriesEpisodeIds = useMemo(
+    () => new Set(allEpisodes.map((episode) => episode.id)),
+    [allEpisodes],
+  );
   const hasPlaybackRecord = useMemo(
-    () => Object.values(progressByItemId).some((progress) => progress.started || progress.watched),
-    [progressByItemId],
+    () => Object.entries(progressByItemId).some(
+      ([itemId, progress]) =>
+        seriesEpisodeIds.has(itemId) && (progress.started || progress.watched),
+    ),
+    [progressByItemId, seriesEpisodeIds],
+  );
+  const unavailableCount = useMemo(
+    () => card.seasons.flatMap((entry) => entry.episodes).filter(({ file }) => !file?.available).length,
+    [card.seasons],
   );
 
   useEffect(() => {
+    let active = true;
+    setViewingStateLoaded(false);
     void getSeriesViewingState(card.series.id).then((state) => {
+      if (!active) return;
       setLastWatchedEpisodeId(state?.lastWatchedEpisodeId ?? "");
       setProgressAnswered(Boolean(state) || hasPlaybackRecord);
       const remembered = allEpisodes.find((episode) => episode.id === state?.lastWatchedEpisodeId);
       if (remembered?.seasonNumber != null) setProgressSeasonNumber(remembered.seasonNumber);
+      setViewingStateLoaded(true);
     });
+    return () => { active = false; };
   }, [allEpisodes, card.series.id, hasPlaybackRecord]);
 
   useEffect(() => {
@@ -138,6 +155,12 @@ export function SeriesHubOverlay({
 
           <div className="series-hub-gradient" />
 
+          {unavailableCount > 0 && (
+            <div className="series-unavailable-banner">
+              {unavailableCount} episode{unavailableCount === 1 ? " is" : "s are"} unavailable. Reconnect the media folder in Library.
+            </div>
+          )}
+
           <button
             className="series-hub-close"
             onClick={onClose}
@@ -155,6 +178,7 @@ export function SeriesHubOverlay({
                 artworkId={card.series.logoArtworkId ?? season?.episodes[0]?.item.logoArtworkId ?? null}
                 remoteUrl={card.series.remoteLogoUrl ?? season?.episodes[0]?.item.remoteLogoUrl ?? null}
                 label={card.series.title}
+                fallbackText={card.series.title}
                 fit="contain"
                 position="left center"
                 lightBackgroundForDark
@@ -191,7 +215,7 @@ export function SeriesHubOverlay({
         </div>
 
         <div className="series-hub-body">
-          {!progressAnswered && <div className="series-viewing-panel">
+          {viewingStateLoaded && !progressAnswered && !hasPlaybackRecord && <div className="series-viewing-panel">
             <div>
               <p className="eyebrow">YOUR PROGRESS</p>
               <strong>Where did you stop watching?</strong>
