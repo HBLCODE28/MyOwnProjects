@@ -34,6 +34,11 @@ const SECRET_FIELDS: SecretField[] = [
     label: "OpenSubtitles API key",
     help: "Used only to search and download subtitles for your local playback.",
   },
+  {
+    id: "fanartApiKey",
+    label: "Fanart.tv API key",
+    help: "Used to find movie and series posters, backdrops and title logos.",
+  },
 ];
 
 export function ApiKeyVault() {
@@ -160,8 +165,8 @@ export function ApiKeyVault() {
     <section className="settings-card">
       <h2>Encrypted optional API keys</h2>
       <p>
-        TVmaze does not need a key. This encrypted vault remains available for
-        other metadata or poster providers that you may choose later.
+        TVmaze and the public Wikimedia fallbacks do not need a key. Fanart.tv
+        and OpenSubtitles keys are encrypted locally and never committed to Git.
       </p>
 
       {!exists && (

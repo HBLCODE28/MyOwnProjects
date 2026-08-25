@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ApiKeyVault } from "../components/settings/ApiKeyVault";
 import { TvmazeProviderCard } from "../components/settings/TvmazeProviderCard";
 import { MoviePosterProviderCard } from "../components/settings/MoviePosterProviderCard";
+import { FanartProviderCard } from "../components/settings/FanartProviderCard";
 import { LogoProviderCard } from "../components/settings/LogoProviderCard";
 import { db, requestPersistentStorage } from "../db/streamlocalDb";
 import {
@@ -155,6 +156,7 @@ export function SettingsPage() {
 
       <TvmazeProviderCard />
       <MoviePosterProviderCard />
+      <FanartProviderCard />
       <LogoProviderCard />
       <ApiKeyVault />
 

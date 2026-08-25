@@ -9,6 +9,7 @@ import "../styles/browse.css";
 import { useToast } from "../components/ui/Toast";
 import { syncWikimediaLogos } from "../services/wikimediaLogoProvider";
 import { syncMoviePosters } from "../services/moviePosterProvider";
+import { syncFanartArtwork } from "../services/fanartProvider";
 
 export function MoviesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
@@ -17,6 +18,7 @@ export function MoviesPage() {
   const { showToast } = useToast();
   const logoSyncStarted = useRef(false);
   const posterSyncStarted = useRef(false);
+  const fanartSyncStarted = useRef(false);
 
   async function refresh() {
     setData(await loadBrowseData());
@@ -28,6 +30,14 @@ export function MoviesPage() {
     if (!data || logoSyncStarted.current) return;
     logoSyncStarted.current = true;
     void syncWikimediaLogos().then((result) => {
+      if (result.updated > 0) void refresh();
+    }).catch(() => undefined);
+  }, [data]);
+
+  useEffect(() => {
+    if (!data || fanartSyncStarted.current) return;
+    fanartSyncStarted.current = true;
+    void syncFanartArtwork().then((result) => {
       if (result.updated > 0) void refresh();
     }).catch(() => undefined);
   }, [data]);

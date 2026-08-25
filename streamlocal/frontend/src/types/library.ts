@@ -46,7 +46,7 @@ export type MediaItem = {
   remotePosterUrl?: string | null;
   remoteBackdropUrl?: string | null;
   remoteLogoUrl?: string | null;
-  metadataProvider?: "wikipedia" | null;
+  metadataProvider?: "wikipedia" | "fanart" | null;
   providerId?: string | null;
   createdAt: number;
   updatedAt: number;
@@ -65,7 +65,7 @@ export type Series = {
   remotePosterUrl?: string | null;
   remoteBackdropUrl?: string | null;
   remoteLogoUrl?: string | null;
-  metadataProvider?: "tvmaze" | null;
+  metadataProvider?: "tvmaze" | "fanart" | null;
   providerId?: string | null;
   createdAt: number;
   updatedAt: number;
