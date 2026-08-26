@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isContextCompatibleLogoCandidate,
+  isContextCompatibleLogoCandidateWithEvidence,
   isNamedLogoUrlContextCompatible,
 } from "./wikimediaLogoProvider";
 
@@ -96,6 +97,32 @@ describe("Wikimedia logo title validation", () => {
     expect(isContextCompatibleLogoCandidate(
       "Arrival",
       "File:Arrival (2016 film) title logo.svg",
+      { kind: "movie", year: 2016 },
+    )).toBe(true);
+  });
+
+  it("accepts an identity-safe Commons logo when the filename omits the word logo but metadata identifies it as a logotype", () => {
+    expect(isContextCompatibleLogoCandidateWithEvidence(
+      "Arrival",
+      "File:Arrival 2016 Film.png",
+      "Logotype of the 2016 science fiction movie Arrival. Category:Movie logos in English language",
+      { kind: "movie", year: 2016 },
+    )).toBe(true);
+  });
+
+  it("keeps rejecting a same-title film photo when Commons metadata does not identify it as a logo", () => {
+    expect(isContextCompatibleLogoCandidateWithEvidence(
+      "Arrival",
+      "File:Arrival 2016 Film premiere.jpg",
+      "Press photograph from the 2016 film premiere",
+      { kind: "movie", year: 2016 },
+    )).toBe(false);
+  });
+
+  it("accepts a stored exact-title movie logo URL whose filename carries film and year identity", () => {
+    expect(isNamedLogoUrlContextCompatible(
+      "Arrival",
+      "https://upload.wikimedia.org/Arrival_2016_Film.png",
       { kind: "movie", year: 2016 },
     )).toBe(true);
   });

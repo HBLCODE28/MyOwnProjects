@@ -185,6 +185,7 @@ export function SeriesHubOverlay({
                 lightBackgroundForDark
                 logoKind="series"
                 logoYear={card.series.year}
+                artworkOwnerId={card.series.logoArtworkId ? card.series.id : season?.episodes[0]?.item.id}
               />
             ) : (
               <h2>{card.series.title}</h2>

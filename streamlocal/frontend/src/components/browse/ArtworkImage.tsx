@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { artworkObjectUrl } from "../../services/artwork";
+import { artworkObjectSource, isAutoCachedArtworkFileName } from "../../services/artwork";
 import { analyzeLogoImageElement } from "../../services/logoValidation";
 import {
   findAlternateWikimediaLogo,
@@ -18,6 +18,7 @@ type Props = {
   lightBackgroundForDark?: boolean;
   logoKind?: LogoSearchContext["kind"];
   logoYear?: number | null;
+  artworkOwnerId?: string;
 };
 
 export function ArtworkImage({
@@ -31,8 +32,9 @@ export function ArtworkImage({
   lightBackgroundForDark = false,
   logoKind,
   logoYear = null,
+  artworkOwnerId,
 }: Props) {
-  const [localUrl, setLocalUrl] = useState<string | null>(null);
+  const [localSource, setLocalSource] = useState<{ url: string; fileName: string } | null>(null);
   const [alternateUrl, setAlternateUrl] = useState<string | null>(null);
   const [rejectedUrls, setRejectedUrls] = useState<Set<string>>(() => new Set());
   const alternateLookupInFlight = useRef(false);
@@ -46,17 +48,17 @@ export function ArtworkImage({
     alternateLookupInFlight.current = false;
 
     if (!artworkId) {
-      setLocalUrl(null);
+      setLocalSource(null);
       return () => undefined;
     }
 
-    void artworkObjectUrl(artworkId).then((value) => {
+    void artworkObjectSource(artworkId).then((value) => {
       if (!active) {
-        if (value) URL.revokeObjectURL(value);
+        if (value?.url) URL.revokeObjectURL(value.url);
         return;
       }
-      objectUrl = value;
-      setLocalUrl(value);
+      objectUrl = value?.url ?? null;
+      setLocalSource(value);
     });
 
     return () => {
@@ -65,10 +67,23 @@ export function ArtworkImage({
     };
   }, [artworkId]);
 
+  const localIsGeneratedLogoCache = Boolean(
+    lightBackgroundForDark &&
+    artworkOwnerId &&
+    localSource &&
+    (
+      isAutoCachedArtworkFileName(localSource.fileName, artworkOwnerId, "logo") ||
+      Boolean(remoteUrl && localSource.fileName === `${label}.logo.jpg`)
+    ),
+  );
+
   const displayUrl = useMemo(
-    () => [localUrl, remoteUrl ?? null, alternateUrl]
-      .find((candidate) => candidate && !rejectedUrls.has(candidate)) ?? null,
-    [alternateUrl, localUrl, rejectedUrls, remoteUrl],
+    () => [
+      localIsGeneratedLogoCache ? null : localSource?.url ?? null,
+      remoteUrl ?? null,
+      alternateUrl,
+    ].find((candidate) => candidate && !rejectedUrls.has(candidate)) ?? null,
+    [alternateUrl, localIsGeneratedLogoCache, localSource, rejectedUrls, remoteUrl],
   );
 
   function reject(url: string) {

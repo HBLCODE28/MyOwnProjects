@@ -116,6 +116,7 @@ export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
               lightBackgroundForDark
               logoKind="series"
               logoYear={card.series.year}
+              artworkOwnerId={card.series.logoArtworkId ? card.series.id : firstEpisode?.id}
             />
           ) : (
             <h1>{card.series.title}</h1>
@@ -167,6 +168,7 @@ export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
             lightBackgroundForDark
             logoKind="movie"
             logoYear={item.year}
+            artworkOwnerId={item.id}
           />
         ) : (
           <h1>{item.title}</h1>

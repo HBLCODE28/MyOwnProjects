@@ -10,6 +10,13 @@ const REJECTED_ARTWORK_TERMS = [
   "thumbnail",
   "frame",
   "fanart",
+  "photo",
+  "photograph",
+  "premiere",
+  "press",
+  "cast",
+  "still",
+  "scene",
 ];
 
 export type LogoPixelAnalysis = {

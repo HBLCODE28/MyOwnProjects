@@ -42,10 +42,29 @@ export async function attachArtworkToItem(
   });
 }
 
-export async function artworkObjectUrl(id: string | null): Promise<string | null> {
+export type ArtworkObjectSource = {
+  url: string;
+  fileName: string;
+};
+
+export async function artworkObjectSource(id: string | null): Promise<ArtworkObjectSource | null> {
   if (!id) return null;
   const artwork = await db.artwork.get(id);
-  return artwork ? URL.createObjectURL(artwork.blob) : null;
+  return artwork
+    ? { url: URL.createObjectURL(artwork.blob), fileName: artwork.fileName }
+    : null;
+}
+
+export async function artworkObjectUrl(id: string | null): Promise<string | null> {
+  return (await artworkObjectSource(id))?.url ?? null;
+}
+
+export function isAutoCachedArtworkFileName(
+  fileName: string,
+  ownerId: string,
+  kind: "poster" | "backdrop" | "logo",
+): boolean {
+  return fileName === `streamlocal-remote-${ownerId}-${kind}.jpg`;
 }
 
 export async function cacheRemoteArtwork(

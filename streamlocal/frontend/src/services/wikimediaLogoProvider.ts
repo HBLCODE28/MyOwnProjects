@@ -7,9 +7,16 @@ import {
 
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 
+type CommonsMetadataValue = { value?: string };
+
 type CommonsPage = {
   title: string;
-  imageinfo?: Array<{ thumburl?: string; url?: string }>;
+  imageinfo?: Array<{
+    thumburl?: string;
+    url?: string;
+    extmetadata?: Record<string, CommonsMetadataValue>;
+  }>;
+  categories?: Array<{ title?: string }>;
 };
 
 export type LogoSyncResult = {
@@ -44,6 +51,29 @@ function candidateUrl(page: CommonsPage): string | null {
   return page.imageinfo?.[0]?.thumburl ?? page.imageinfo?.[0]?.url ?? null;
 }
 
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, " and ")
+    .replace(/&quot;|&#34;/gi, " ")
+    .replace(/&#39;|&apos;/gi, " ");
+}
+
+function candidateEvidence(page: CommonsPage): string {
+  const description = page.imageinfo?.[0]?.extmetadata?.ImageDescription?.value ?? "";
+  const categories = (page.categories ?? [])
+    .map((category) => category.title ?? "")
+    .join(" ");
+  return `${page.title} ${stripHtml(description)} ${categories}`;
+}
+
+function hasExplicitLogoEvidence(value: string): boolean {
+  const normalized = normalize(value);
+  return /(^|\s)(logo|logos|logotype|logotypes|wordmark|wordmarks|clearlogo|typography)(\s|$)/i.test(normalized) ||
+    /(^|\s)title\s+(logo|card|treatment)(\s|$)/i.test(normalized);
+}
+
 function candidateQualifiers(title: string, pageTitle: string): string | null {
   const wanted = normalize(title);
   const normalizedPage = normalize(pageTitle.replace(/^file\s*:/i, ""));
@@ -68,10 +98,7 @@ export function isContextCompatibleLogoCandidate(
   // premiere photo, press image, cast photo, screenshot, etc. Require an
   // explicit title-art descriptor before a Commons image may enter a logo slot.
   const normalizedCandidate = normalize(pageTitle.replace(/^file\s*:/i, ""));
-  const hasExplicitLogoDescriptor =
-    /(^|\s)(logo|wordmark|clearlogo)(\s|$)/i.test(normalizedCandidate) ||
-    /(^|\s)title\s+(logo|card|treatment)(\s|$)/i.test(normalizedCandidate);
-  if (!hasExplicitLogoDescriptor) return false;
+  if (!hasExplicitLogoEvidence(normalizedCandidate)) return false;
 
   // These qualifiers identify another work/edition even when the base title is exact.
   // This prevents examples such as "The Last of Us Remastered" (video game) from
@@ -114,6 +141,89 @@ export function isContextCompatibleLogoCandidate(
   return true;
 }
 
+function isContextCompatibleLogoPage(
+  title: string,
+  page: CommonsPage,
+  context: LogoSearchContext,
+): boolean {
+  if (isRejectedLogoCandidateName(page.title)) return false;
+  const qualifiers = candidateQualifiers(title, page.title);
+  if (qualifiers == null) return false;
+
+  const evidence = candidateEvidence(page);
+  const normalizedEvidence = normalize(evidence);
+  if (!hasExplicitLogoEvidence(normalizedEvidence)) return false;
+
+  if (/\b(remaster|remastered|video game|game|soundtrack|album|book|novel|comic|musical|stage play|franchise)\b/i.test(qualifiers)) {
+    return false;
+  }
+  if (/\b(company|companies|corporation|corp|inc|llc|ltd|technologies|technology|brand|product|software|application|website|agency|organisation|organization|publisher|record label)\b/i.test(qualifiers)) {
+    return false;
+  }
+
+  if (context.kind === "series" && /\b(film|movie)\b/i.test(qualifiers)) return false;
+  if (context.kind === "movie" && /\b(tv|television|series|episode|season)\b/i.test(qualifiers)) return false;
+
+  const evidenceYears = [...normalizedEvidence.matchAll(/\b(19\d{2}|20\d{2})\b/g)]
+    .map((match) => Number(match[1]));
+  if (context.year && evidenceYears.length > 0 && !evidenceYears.includes(context.year)) {
+    return false;
+  }
+
+  if (context.kind === "series") {
+    const explicitWrongKind = /\b(film|movie)\b/i.test(normalizedEvidence) &&
+      !/\b(tv|television)\s+(series|show|program|programme)\b/i.test(normalizedEvidence);
+    if (explicitWrongKind) return false;
+  }
+  if (context.kind === "movie") {
+    const hasMovieIdentity = /\b(film|movie)\b/i.test(normalizedEvidence);
+    const hasRequestedYear = Boolean(context.year && evidenceYears.includes(context.year));
+    if (!hasMovieIdentity && !hasRequestedYear) return false;
+  }
+
+  return true;
+}
+
+export function isContextCompatibleLogoCandidateWithEvidence(
+  title: string,
+  pageTitle: string,
+  evidence: string,
+  context: LogoSearchContext = {},
+): boolean {
+  return isContextCompatibleLogoPage(
+    title,
+    {
+      title: pageTitle,
+      imageinfo: [{ extmetadata: { ImageDescription: { value: evidence } } }],
+    },
+    context,
+  );
+}
+
+function isStoredLogoFilenameContextCompatible(
+  title: string,
+  fileName: string,
+  context: LogoSearchContext,
+): boolean {
+  if (isRejectedLogoCandidateName(fileName)) return false;
+  const qualifiers = candidateQualifiers(title, fileName);
+  if (qualifiers == null) return false;
+  if (/\b(remaster|remastered|video game|game|soundtrack|album|book|novel|comic|musical|stage play|franchise)\b/i.test(qualifiers)) return false;
+  if (/\b(company|companies|corporation|corp|inc|llc|ltd|technologies|technology|brand|product|software|application|website|agency|organisation|organization|publisher|record label)\b/i.test(qualifiers)) return false;
+  if (context.kind === "series" && /\b(film|movie)\b/i.test(qualifiers)) return false;
+  if (context.kind === "movie" && /\b(tv|television|series|episode|season)\b/i.test(qualifiers)) return false;
+
+  const years = [...qualifiers.matchAll(/\b(19\d{2}|20\d{2})\b/g)]
+    .map((match) => Number(match[1]));
+  if (context.year && years.length > 0 && !years.includes(context.year)) return false;
+  if (context.kind === "movie") {
+    const hasMovieQualifier = /\b(film|movie)\b/i.test(qualifiers);
+    const hasRequestedYear = Boolean(context.year && years.includes(context.year));
+    if (!hasMovieQualifier && !hasRequestedYear) return false;
+  }
+  return true;
+}
+
 export function isNamedLogoUrlContextCompatible(
   title: string,
   url: string,
@@ -143,7 +253,7 @@ export function isNamedLogoUrlContextCompatible(
     if (host.endsWith("wikimedia.org") || host.endsWith("wikipedia.org")) return false;
     return true;
   }
-  return isContextCompatibleLogoCandidate(title, fileName, context);
+  return isStoredLogoFilenameContextCompatible(title, fileName, context);
 }
 
 function scoreCandidate(
@@ -151,7 +261,7 @@ function scoreCandidate(
   page: CommonsPage,
   context: LogoSearchContext,
 ): number {
-  if (!isContextCompatibleLogoCandidate(title, page.title, context)) return 0;
+  if (!isContextCompatibleLogoPage(title, page, context)) return 0;
 
   const wanted = normalize(title);
   const pageTitle = normalize(page.title.replace(/^file\s*:/i, ""));
@@ -179,8 +289,11 @@ async function searchCommons(query: string): Promise<CommonsPage[]> {
     gsrnamespace: "6",
     gsrlimit: "30",
     gsrsearch: query,
-    prop: "imageinfo",
-    iiprop: "url",
+    prop: "imageinfo|categories",
+    iiprop: "url|extmetadata",
+    iiextmetadatafilter: "ImageDescription",
+    iiextmetadatalanguage: "en",
+    cllimit: "max",
     iiurlwidth: "1200",
   });
   const response = await fetch(`${COMMONS_API}?${params.toString()}`, {

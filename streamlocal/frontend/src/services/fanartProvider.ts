@@ -13,10 +13,13 @@ const WIKIDATA_API = "https://www.wikidata.org/w/api.php";
 
 type UnknownRecord = Record<string, unknown>;
 
-type FanartImage = { url?: string; lang?: string; likes?: string | number };
+type FanartImage = { url?: string; lang?: string; likes?: string | number; width?: string | number; height?: string | number };
 
 type FanartResponse = {
   name?: string;
+  tmdb_id?: string | number;
+  imdb_id?: string;
+  thetvdb_id?: string | number;
   movieposter?: FanartImage[];
   moviebackground?: FanartImage[];
   hdmovielogo?: FanartImage[];
@@ -139,14 +142,18 @@ function normalize(value: string): string {
     .trim();
 }
 
-async function findWikidataEntity(title: string, year: number | null): Promise<UnknownRecord | null> {
+async function findWikidataEntity(
+  title: string,
+  year: number | null,
+  kind: "movie" | "series",
+): Promise<UnknownRecord | null> {
   const params = new URLSearchParams({
     action: "wbsearchentities",
     format: "json",
     origin: "*",
     language: "en",
     uselang: "en",
-    limit: "8",
+    limit: "12",
     search: title,
   });
   const response = await fetch(`${WIKIDATA_API}?${params.toString()}`, {
@@ -154,22 +161,23 @@ async function findWikidataEntity(title: string, year: number | null): Promise<U
   });
   if (!response.ok) return null;
 
-  const search = (await response.json()) as { search?: Array<{ id: string; label?: string; description?: string }> };
+  const search = (await response.json()) as {
+    search?: Array<{ id: string; label?: string; description?: string }>;
+  };
   const wanted = normalize(title);
-  const candidates = search.search ?? [];
-  const ranked = candidates
-    .map((candidate) => {
-      const label = normalize(candidate.label ?? "");
-      const description = normalize(candidate.description ?? "");
-      let score = label === wanted ? 100 : label.includes(wanted) ? 60 : 0;
-      if (description.includes("film") || description.includes("television series")) score += 20;
-      if (year && description.includes(String(year))) score += 10;
-      return { candidate, score };
-    })
-    .filter(({ score }) => score > 0)
-    .sort((a, b) => b.score - a.score);
+  const candidates = (search.search ?? []).filter(
+    (candidate) => normalize(candidate.label ?? "") === wanted,
+  );
 
-  for (const { candidate } of ranked) {
+  let best: { entity: UnknownRecord; score: number } | null = null;
+  for (const candidate of candidates) {
+    const description = normalize(candidate.description ?? "");
+    const wrongKind = kind === "movie"
+      ? /television series|tv series|company|organization|organisation|software|album|novel|book|video game/.test(description)
+      : /film|movie|company|organization|organisation|software|album|novel|book|video game/.test(description) &&
+        !/television series|tv series/.test(description);
+    if (wrongKind) continue;
+
     const entityParams = new URLSearchParams({
       action: "wbgetentities",
       format: "json",
@@ -183,10 +191,47 @@ async function findWikidataEntity(title: string, year: number | null): Promise<U
     if (!entityResponse.ok) continue;
     const json = (await entityResponse.json()) as { entities?: Record<string, UnknownRecord> };
     const entity = json.entities?.[candidate.id];
-    if (entity) return entity;
+    if (!entity) continue;
+
+    let score = 100;
+    if (kind === "movie" && /film|movie/.test(description)) score += 35;
+    if (kind === "series" && /television series|tv series/.test(description)) score += 35;
+
+    const releaseYears = claimYears(entity, "P577");
+    if (year) {
+      if (releaseYears.length > 0 && !releaseYears.includes(year)) continue;
+      if (releaseYears.includes(year)) score += 50;
+      else if (description.includes(String(year))) score += 35;
+    }
+
+    if (!best || score > best.score) best = { entity, score };
   }
 
-  return null;
+  return best?.entity ?? null;
+}
+
+function claimYears(entity: UnknownRecord | null, property: string): number[] {
+  const claims = entity?.claims;
+  if (!claims || typeof claims !== "object") return [];
+  const propertyClaims = (claims as UnknownRecord)[property];
+  if (!Array.isArray(propertyClaims)) return [];
+  const years = new Set<number>();
+  for (const claim of propertyClaims) {
+    const mainsnak = (claim as UnknownRecord).mainsnak;
+    const datavalue = mainsnak && typeof mainsnak === "object"
+      ? (mainsnak as UnknownRecord).datavalue
+      : null;
+    const value = datavalue && typeof datavalue === "object"
+      ? (datavalue as UnknownRecord).value
+      : null;
+    const time = value && typeof value === "object"
+      ? (value as UnknownRecord).time
+      : null;
+    if (typeof time !== "string") continue;
+    const match = time.match(/[+-](\d{4,})-/);
+    if (match) years.add(Number(match[1]));
+  }
+  return [...years];
 }
 
 function claimValue(entity: UnknownRecord | null, property: string): string | null {
@@ -229,6 +274,21 @@ async function fetchFanart(kind: "movie" | "tv", id: string, apiKey: string): Pr
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Fanart.tv returned HTTP ${response.status}.`);
   return (await response.json()) as FanartResponse;
+}
+
+export function fanartResponseMatchesRequestedId(
+  kind: "movie" | "tv",
+  requestedId: string,
+  response: FanartResponse,
+): boolean {
+  const wanted = requestedId.trim().toLowerCase();
+  if (kind === "movie") {
+    if (wanted.startsWith("tt")) {
+      return Boolean(response.imdb_id && response.imdb_id.trim().toLowerCase() === wanted);
+    }
+    return response.tmdb_id != null && String(response.tmdb_id) === requestedId;
+  }
+  return response.thetvdb_id != null && String(response.thetvdb_id) === requestedId;
 }
 
 async function findTvmazeTvdbId(series: Series): Promise<string | null> {
@@ -281,7 +341,9 @@ async function saveMovieArtwork(
   });
   if (poster) await cacheRemoteArtwork(movie.id, poster, "poster").catch(() => false);
   if (backdrop) await cacheRemoteArtwork(movie.id, backdrop, "backdrop").catch(() => false);
-  if (logo) await cacheRemoteArtwork(movie.id, logo, "logo").catch(() => false);
+  // Keep provider logos remote-only. Older builds cached them into IndexedDB, which
+  // could leave a stale wrong logo with higher display priority after the provider
+  // URL was corrected. Manual/local logos still keep their normal priority.
   return {
     updated: true,
     poster: poster ? 1 : 0,
@@ -394,11 +456,15 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
       continue;
     }
     try {
-      const entity = await findWikidataEntity(movie.title, movie.year);
+      const entity = await findWikidataEntity(movie.title, movie.year, "movie");
       const imdbId = claimValue(entity, "P345");
       if (!imdbId) { result.skipped += 1; continue; }
       const response = await fetchFanart("movie", imdbId, apiKey);
       if (!response) { result.skipped += 1; continue; }
+      if (!fanartResponseMatchesRequestedId("movie", imdbId, response)) {
+        result.skipped += 1;
+        continue;
+      }
       if (response.name && normalize(response.name) !== normalize(movie.title)) {
         result.skipped += 1;
         continue;
@@ -427,7 +493,12 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
     }
     if (entry.remoteLogoUrl) {
       try {
-        if (!(await validateRemoteLogoUrl(entry.remoteLogoUrl))) {
+        const correctTitle = isNamedLogoUrlContextCompatible(
+          entry.title,
+          entry.remoteLogoUrl,
+          { kind: "series", year: entry.year },
+        );
+        if (!correctTitle || !(await validateRemoteLogoUrl(entry.remoteLogoUrl))) {
           result.rejectedLogos += 1;
           await db.series.update(entry.id, { remoteLogoUrl: null, updatedAt: Date.now() });
           entry = { ...entry, remoteLogoUrl: null };
@@ -448,11 +519,15 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
       continue;
     }
     try {
-      const entity = await findWikidataEntity(entry.title, entry.year);
+      const entity = await findWikidataEntity(entry.title, entry.year, "series");
       const tvdbId = await findTvmazeTvdbId(entry) ?? claimValue(entity, "P4835");
       if (!tvdbId) { result.skipped += 1; continue; }
       const response = await fetchFanart("tv", tvdbId, apiKey);
       if (!response) { result.skipped += 1; continue; }
+      if (!fanartResponseMatchesRequestedId("tv", tvdbId, response)) {
+        result.skipped += 1;
+        continue;
+      }
       if (response.name && normalize(response.name) !== normalize(entry.title)) {
         result.skipped += 1;
         continue;
