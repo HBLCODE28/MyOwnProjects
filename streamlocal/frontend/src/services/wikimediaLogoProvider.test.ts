@@ -76,4 +76,28 @@ describe("Wikimedia logo title validation", () => {
       { kind: "movie", year: 2014 },
     )).toBe(false);
   });
+  it("rejects a Wikimedia URL whose visible filename belongs to another title", () => {
+    expect(isNamedLogoUrlContextCompatible(
+      "Arrival",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a1/Some_Other_Film_logo.svg",
+      { kind: "movie", year: 2016 },
+    )).toBe(false);
+  });
+
+  it("rejects a normal Arrival film photograph even though title, year and film identity match", () => {
+    expect(isContextCompatibleLogoCandidate(
+      "Arrival",
+      "File:Arrival (2016 film) premiere photo.jpg",
+      { kind: "movie", year: 2016 },
+    )).toBe(false);
+  });
+
+  it("accepts an explicit Arrival movie logo for the correct year", () => {
+    expect(isContextCompatibleLogoCandidate(
+      "Arrival",
+      "File:Arrival (2016 film) title logo.svg",
+      { kind: "movie", year: 2016 },
+    )).toBe(true);
+  });
+
 });

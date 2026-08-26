@@ -58,4 +58,34 @@ describe("logo validation", () => {
     expect(isRejectedLogoCandidateName("Breaking Bad video frame.jpg")).toBe(true);
     expect(isRejectedLogoCandidateName("Stranger Things logo transparent.png")).toBe(false);
   });
+  it("rejects a fully opaque photographic rectangle used as a logo", () => {
+    const entries: Array<[number, number, number, number]> = [];
+    for (let y = 0; y < 12; y += 1) {
+      for (let x = 0; x < 20; x += 1) {
+        entries.push([
+          (x * 31 + y * 17) % 220 + 20,
+          (x * 13 + y * 37) % 220 + 20,
+          (x * 47 + y * 11) % 220 + 20,
+          255,
+        ]);
+      }
+    }
+    expect(analyzeLogoPixels(pixels(entries), 20, 12).usable).toBe(false);
+  });
+
+  it("rejects an opaque photo-like title card even with fewer quantized colors", () => {
+    const entries: Array<[number, number, number, number]> = [];
+    const palette: Array<[number, number, number]> = [
+      [42, 58, 74], [88, 110, 126], [150, 132, 104], [202, 188, 158],
+      [36, 74, 48], [118, 82, 64], [210, 222, 226], [82, 42, 34],
+    ];
+    for (let y = 0; y < 10; y += 1) {
+      for (let x = 0; x < 16; x += 1) {
+        const [r, g, b] = palette[(x * 3 + y * 5) % palette.length];
+        entries.push([r, g, b, 255]);
+      }
+    }
+    expect(analyzeLogoPixels(pixels(entries), 16, 10).usable).toBe(false);
+  });
+
 });

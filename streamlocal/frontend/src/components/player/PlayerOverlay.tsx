@@ -80,6 +80,23 @@ function formatTime(seconds: number): string {
     : `${minutes}:${String(secs).padStart(2, "0")}`;
 }
 
+function resolvedVideoDuration(video: HTMLVideoElement): number {
+  if (Number.isFinite(video.duration) && video.duration > 0) return video.duration;
+
+  try {
+    if (video.seekable.length > 0) {
+      const end = video.seekable.end(video.seekable.length - 1);
+      if (Number.isFinite(end) && end > 0) return end;
+    }
+  } catch {
+    // Some local containers do not expose a stable seekable range immediately.
+  }
+
+  // Do not use buffered.end() as a duration fallback. A partially buffered local
+  // file can make the current position look like 90%+ and be marked watched early.
+  return 0;
+}
+
 function isTextInput(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLInputElement ||
@@ -131,6 +148,10 @@ export function PlayerOverlay({
   const lastSavedSecondRef = useRef(-1);
   const previewRequestRef = useRef(0);
   const controlsHideTimerRef = useRef<number | null>(null);
+  const progressWriteChainRef = useRef<Promise<void>>(Promise.resolve());
+  const resumeAppliedItemRef = useRef<string | null>(null);
+  const resumeLookupRef = useRef<Promise<void> | null>(null);
+  const resumeTargetRef = useRef<number | null>(null);
 
   const [media, setMedia] = useState<PlayableMedia | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +171,11 @@ export function PlayerOverlay({
   const [subtitleBusy, setSubtitleBusy] = useState(false);
   const [subtitleNotice, setSubtitleNotice] = useState<string | null>(null);
   const [subtitleOffset, setSubtitleOffset] = useState(0);
+  const [subtitleSeenMark, setSubtitleSeenMark] = useState<number | null>(null);
+  const [subtitleHeardMark, setSubtitleHeardMark] = useState<number | null>(null);
+  const subtitleOffsetRef = useRef(0);
   const subtitleSeeTimeRef = useRef<number | null>(null);
+  const subtitleHearTimeRef = useRef<number | null>(null);
   const [timelinePreview, setTimelinePreview] = useState<{
     url: string | null;
     positionSeconds: number;
@@ -240,6 +265,10 @@ export function PlayerOverlay({
   useEffect(() => {
     let active = true;
     let loaded: PlayableMedia | null = null;
+    resumeAppliedItemRef.current = null;
+    resumeLookupRef.current = null;
+    resumeTargetRef.current = null;
+    lastSavedSecondRef.current = -1;
 
     createPlayableMedia(item.mediaFileId)
       .then((value) => {
@@ -282,25 +311,60 @@ export function PlayerOverlay({
     };
   }, [item, media]);
 
-  async function persistProgress(video: HTMLVideoElement) {
-    const result = video.ended
-      ? await markPlaybackCompleted(item, video.currentTime, video.duration)
-      : await savePlaybackProgress(
-          item,
-          video.currentTime,
-          video.duration,
-        );
+  function queueProgressSave(
+    positionSeconds: number,
+    durationSeconds: number,
+    completed: boolean,
+  ): Promise<void> {
+    const snapshotItem = item;
+    const write = async () => {
+      const result = completed
+        ? await markPlaybackCompleted(snapshotItem, positionSeconds, durationSeconds)
+        : await savePlaybackProgress(snapshotItem, positionSeconds, durationSeconds);
+      if (result) onProgressChangedRef.current?.();
+    };
 
-    if (result) onProgressChangedRef.current?.();
+    progressWriteChainRef.current = progressWriteChainRef.current
+      .catch(() => undefined)
+      .then(write);
+    return progressWriteChainRef.current;
+  }
+
+  function persistProgress(video: HTMLVideoElement, completed = video.ended): Promise<void> {
+    return queueProgressSave(
+      video.currentTime,
+      resolvedVideoDuration(video),
+      completed,
+    );
   }
 
   async function closePlayer() {
     if (videoRef.current) {
       await persistProgress(videoRef.current);
+    } else {
+      await progressWriteChainRef.current.catch(() => undefined);
     }
 
     onCloseRef.current();
   }
+
+  useEffect(() => {
+    const persistCurrentPosition = () => {
+      const video = videoRef.current;
+      if (video) void persistProgress(video);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") persistCurrentPosition();
+    };
+
+    window.addEventListener("pagehide", persistCurrentPosition);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", persistCurrentPosition);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      persistCurrentPosition();
+    };
+  }, [item.id]);
 
   async function togglePlayback() {
     const video = videoRef.current;
@@ -456,16 +520,41 @@ export function PlayerOverlay({
   }
 
   function applySubtitleTrackMode(index: number) {
-    const tracks = videoRef.current?.textTracks;
-    if (!tracks) return;
-    for (let trackIndex = 0; trackIndex < tracks.length; trackIndex += 1) {
-      tracks[trackIndex].mode = index >= 0 && trackIndex === index ? "showing" : "disabled";
-    }
+    const video = videoRef.current;
+    if (!video) return;
+
+    const elements = Array.from(video.querySelectorAll<HTMLTrackElement>('track[kind="subtitles"]'));
+    elements.forEach((element, trackIndex) => {
+      element.track.mode = index >= 0 && trackIndex === index ? "showing" : "disabled";
+    });
+  }
+
+  function activateSubtitleElement(element: HTMLTrackElement, index: number) {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const elements = Array.from(video.querySelectorAll<HTMLTrackElement>('track[kind="subtitles"]'));
+    elements.forEach((candidate, trackIndex) => {
+      candidate.track.mode = selectedSubtitleTrack >= 0 && trackIndex === selectedSubtitleTrack
+        ? "showing"
+        : "disabled";
+    });
+
+    if (index === selectedSubtitleTrack) element.track.mode = "showing";
   }
 
   function selectSubtitleTrack(index: number) {
     applySubtitleTrackMode(index);
     setSelectedSubtitleTrack(index);
+    subtitleSeeTimeRef.current = null;
+    subtitleHearTimeRef.current = null;
+    setSubtitleSeenMark(null);
+    setSubtitleHeardMark(null);
+    const track = index >= 0 ? media?.subtitles[index] : null;
+    const offset = track?.offsetSeconds ?? 0;
+    subtitleOffsetRef.current = offset;
+    setSubtitleOffset(offset);
+    setSubtitleNotice(null);
   }
 
   useEffect(() => {
@@ -493,37 +582,120 @@ export function PlayerOverlay({
     );
   }
 
-  function applySubtitleOffset(value: number) {
+  function applySubtitleOffset(value: number): boolean {
     const track = media?.subtitles[selectedSubtitleTrack];
-    if (!track) return;
-    const nextOffset = value;
+    const video = videoRef.current;
+    if (!track || !video || selectedSubtitleTrack < 0 || !Number.isFinite(value)) return false;
+
+    const nextOffset = Math.max(-120, Math.min(120, value));
+    const previousOffset = subtitleOffsetRef.current;
+    const delta = nextOffset - previousOffset;
+    if (Math.abs(delta) < 0.001) return true;
+
+    const elements = Array.from(video.querySelectorAll<HTMLTrackElement>('track[kind="subtitles"]'));
+    const element = elements[selectedSubtitleTrack];
+    const cues = element?.track.cues;
+    let shiftedLoadedCues = false;
+
+    if (cues && cues.length > 0) {
+      for (let cueIndex = 0; cueIndex < cues.length; cueIndex += 1) {
+        const cue = cues[cueIndex];
+        const shiftedStart = cue.startTime + delta;
+        const shiftedEnd = cue.endTime + delta;
+        cue.startTime = Math.max(0, shiftedStart);
+        cue.endTime = Math.max(cue.startTime + 0.001, shiftedEnd);
+      }
+      shiftedLoadedCues = true;
+    }
+
+    subtitleOffsetRef.current = nextOffset;
+    setSubtitleOffset(nextOffset);
+
+    if (shiftedLoadedCues) {
+      setMedia((current) => current ? {
+        ...current,
+        subtitles: current.subtitles.map((entry, index) =>
+          index === selectedSubtitleTrack ? { ...entry, offsetSeconds: nextOffset } : entry),
+      } : current);
+      applySubtitleTrackMode(selectedSubtitleTrack);
+      return true;
+    }
+
+    // Fallback for a track whose cues have not loaded yet. Recreate the element
+    // with a new Blob URL and revision, then reactivate it from its load event.
+    const oldSrc = track.src;
     const nextTrack: SubtitleTrack = {
       ...track,
+      offsetSeconds: nextOffset,
+      renderRevision: (track.renderRevision ?? 0) + 1,
       src: subtitleUrl(shiftVtt(track.text, nextOffset)),
     };
-    URL.revokeObjectURL(track.src);
+
     setMedia((current) => current ? {
       ...current,
-      subtitles: current.subtitles.map((entry, index) => index === selectedSubtitleTrack ? nextTrack : entry),
+      subtitles: current.subtitles.map((entry, index) =>
+        index === selectedSubtitleTrack ? nextTrack : entry),
     } : current);
-    setSubtitleOffset(nextOffset);
+
+    window.setTimeout(() => URL.revokeObjectURL(oldSrc), 1000);
+    window.setTimeout(() => applySubtitleTrackMode(selectedSubtitleTrack), 75);
+    return true;
+  }
+
+  function finishSubtitleCalibrationIfReady(): boolean {
+    const seenAt = subtitleSeeTimeRef.current;
+    const heardAt = subtitleHearTimeRef.current;
+    if (seenAt == null || heardAt == null) return false;
+
+    const delta = heardAt - seenAt;
+    const nextOffset = subtitleOffsetRef.current + delta;
+    if (!applySubtitleOffset(nextOffset)) {
+      setSubtitleNotice("The selected subtitle track could not be adjusted.");
+      return false;
+    }
+
+    subtitleSeeTimeRef.current = null;
+    subtitleHearTimeRef.current = null;
+    setSubtitleSeenMark(null);
+    setSubtitleHeardMark(null);
+    setSubtitleNotice(`Subtitle sync adjusted by ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}s. Total offset: ${nextOffset >= 0 ? "+" : ""}${nextOffset.toFixed(2)}s.`);
+    return true;
   }
 
   function markSubtitleSeen() {
-    subtitleSeeTimeRef.current = videoRef.current?.currentTime ?? null;
-    setSubtitleNotice("Now press I HEAR THE LINE NOW when the audio line is heard.");
+    const track = media?.subtitles[selectedSubtitleTrack];
+    const video = videoRef.current;
+    if (!track || selectedSubtitleTrack < 0) {
+      setSubtitleNotice("Select a subtitle track first.");
+      return;
+    }
+    if (!video || !Number.isFinite(video.currentTime)) {
+      setSubtitleNotice("Playback time is not available yet.");
+      return;
+    }
+
+    subtitleSeeTimeRef.current = video.currentTime;
+    setSubtitleSeenMark(video.currentTime);
+    if (finishSubtitleCalibrationIfReady()) return;
+    setSubtitleNotice(`Subtitle marked at ${formatTime(video.currentTime)}. Press I HEAR THE LINE NOW when the matching audio is heard.`);
   }
 
   function markSubtitleHeard() {
-    const seenAt = subtitleSeeTimeRef.current;
-    const heardAt = videoRef.current?.currentTime;
-    if (seenAt == null || heardAt == null) {
-      setSubtitleNotice("Press I SEE THE LINE NOW first.");
+    const track = media?.subtitles[selectedSubtitleTrack];
+    const video = videoRef.current;
+    if (!track || selectedSubtitleTrack < 0) {
+      setSubtitleNotice("Select a subtitle track first.");
       return;
     }
-    applySubtitleOffset(subtitleOffset + (heardAt - seenAt));
-    subtitleSeeTimeRef.current = null;
-    setSubtitleNotice(null);
+    if (!video || !Number.isFinite(video.currentTime)) {
+      setSubtitleNotice("Playback time is not available yet.");
+      return;
+    }
+
+    subtitleHearTimeRef.current = video.currentTime;
+    setSubtitleHeardMark(video.currentTime);
+    if (finishSubtitleCalibrationIfReady()) return;
+    setSubtitleNotice(`Audio marked at ${formatTime(video.currentTime)}. Press I SEE THE LINE NOW when the matching subtitle appears.`);
   }
 
   async function findOpenSubtitles() {
@@ -550,6 +722,7 @@ export function PlayerOverlay({
         source: "opensubtitles",
         fileName: downloaded.fileName,
         text: downloaded.text,
+        offsetSeconds: 0,
         src: downloaded.src,
       };
       setMedia((current) => current ? { ...current, subtitles: [...current.subtitles, track] } : current);
@@ -563,21 +736,84 @@ export function PlayerOverlay({
     }
   }
 
-  async function initializeMedia(video: HTMLVideoElement) {
-    setDuration(video.duration);
-    refreshAudioTracks(video);
-
-    const previous = await getPlaybackProgress(item.id);
-
-    if (
-      previous &&
-      !previous.watched &&
-      previous.positionSeconds > 1 &&
-      previous.positionSeconds < video.duration - 1
-    ) {
-      video.currentTime = previous.positionSeconds;
-      setCurrent(previous.positionSeconds);
+  function canSeekToResumeTarget(video: HTMLVideoElement, target: number): boolean {
+    if (video.readyState < HTMLMediaElement.HAVE_METADATA) return false;
+    try {
+      if (video.seekable.length === 0) return false;
+      for (let index = 0; index < video.seekable.length; index += 1) {
+        const start = video.seekable.start(index);
+        const end = video.seekable.end(index);
+        if (target >= Math.max(0, start - 0.25) && target <= end + 0.25) return true;
+      }
+    } catch {
+      return false;
     }
+    return false;
+  }
+
+  function confirmResumeIfApplied(video: HTMLVideoElement) {
+    const target = resumeTargetRef.current;
+    if (target == null) return;
+    if (Math.abs(video.currentTime - target) <= 1.5) {
+      resumeAppliedItemRef.current = item.id;
+      resumeTargetRef.current = null;
+      setCurrent(video.currentTime);
+    }
+  }
+
+  async function restoreSavedResume(video: HTMLVideoElement) {
+    if (resumeAppliedItemRef.current === item.id) return;
+    if (resumeTargetRef.current != null) {
+      if (canSeekToResumeTarget(video, resumeTargetRef.current)) {
+        try {
+          video.currentTime = resumeTargetRef.current;
+          window.requestAnimationFrame(() => confirmResumeIfApplied(video));
+        } catch {
+          // A later media readiness event will retry.
+        }
+      }
+      return;
+    }
+    if (resumeLookupRef.current) {
+      await resumeLookupRef.current;
+      return;
+    }
+
+    const lookup = (async () => {
+      const previous = await getPlaybackProgress(item.id);
+      if (!previous || previous.watched || previous.positionSeconds <= 1) return;
+
+      const knownDuration = resolvedVideoDuration(video);
+      if (knownDuration > 0 && previous.positionSeconds >= knownDuration - 1) return;
+
+      // Setting currentTime too early on a local Blob URL can be silently ignored
+      // by Chromium without throwing. Keep the target pending until seekable ranges
+      // confirm that the browser can actually seek there.
+      resumeTargetRef.current = previous.positionSeconds;
+      if (!canSeekToResumeTarget(video, previous.positionSeconds)) return;
+
+      try {
+        video.currentTime = previous.positionSeconds;
+        setCurrent(previous.positionSeconds);
+        window.requestAnimationFrame(() => confirmResumeIfApplied(video));
+      } catch {
+        // onCanPlay/onProgress/onDurationChange will retry once seekable.
+      }
+    })();
+
+    resumeLookupRef.current = lookup;
+    try {
+      await lookup;
+    } finally {
+      if (resumeLookupRef.current === lookup) resumeLookupRef.current = null;
+    }
+  }
+
+  async function initializeMedia(video: HTMLVideoElement) {
+    const knownDuration = resolvedVideoDuration(video);
+    if (knownDuration > 0) setDuration(knownDuration);
+    refreshAudioTracks(video);
+    await restoreSavedResume(video);
   }
 
   function changeVolume(value: number) {
@@ -688,7 +924,21 @@ export function PlayerOverlay({
             onLoadedMetadata={(event) => {
               void initializeMedia(event.currentTarget);
             }}
-            onCanPlay={(event) => refreshAudioTracks(event.currentTarget)}
+            onCanPlay={(event) => {
+              refreshAudioTracks(event.currentTarget);
+              void restoreSavedResume(event.currentTarget);
+            }}
+            onProgress={(event) => {
+              void restoreSavedResume(event.currentTarget);
+            }}
+            onSeeked={(event) => {
+              confirmResumeIfApplied(event.currentTarget);
+            }}
+            onDurationChange={(event) => {
+              const knownDuration = resolvedVideoDuration(event.currentTarget);
+              if (knownDuration > 0) setDuration(knownDuration);
+              void restoreSavedResume(event.currentTarget);
+            }}
             onEnded={(event) => {
               const video = event.currentTarget;
               setPlaying(false);
@@ -697,13 +947,7 @@ export function PlayerOverlay({
                   ? video.duration
                   : video.currentTime;
               setCurrent(completedPosition);
-              void markPlaybackCompleted(
-                item,
-                video.currentTime,
-                video.duration,
-              ).then(() => {
-                onProgressChangedRef.current?.();
-              });
+              void persistProgress(video, true);
             }}
             onError={(event) =>
               setError(mediaErrorMessage(event.currentTarget, media))
@@ -712,13 +956,13 @@ export function PlayerOverlay({
           >
             {(media.subtitles ?? []).map((track, index) => (
               <track
-                key={`${track.id}-${track.src}`}
+                key={`${track.id}-${track.renderRevision ?? 0}-${track.src}`}
                 kind="subtitles"
                 src={track.src}
                 srcLang={track.language}
                 label={track.label}
                 default={index === selectedSubtitleTrack}
-                onLoad={() => applySubtitleTrackMode(selectedSubtitleTrack)}
+                onLoad={(event) => activateSubtitleElement(event.currentTarget, index)}
               />
             ))}
           </video>
@@ -858,8 +1102,12 @@ export function PlayerOverlay({
                     <button className="player-icon-button" disabled={!media.subtitles.length} onClick={() => applySubtitleOffset(subtitleOffset + .5)}>+0.5s</button>
                   </div>
                   <div className="player-option-actions">
-                    <button className="player-icon-button" disabled={!media.subtitles.length} onClick={markSubtitleSeen}>I SEE THE LINE NOW</button>
-                    <button className="player-icon-button" disabled={!media.subtitles.length} onClick={markSubtitleHeard}>I HEAR THE LINE NOW</button>
+                    <button type="button" className="player-icon-button" disabled={!media.subtitles.length || selectedSubtitleTrack < 0} onClick={markSubtitleSeen}>
+                      {subtitleSeenMark == null ? "I SEE THE LINE NOW" : `SEEN ${formatTime(subtitleSeenMark)}`}
+                    </button>
+                    <button type="button" className="player-icon-button" disabled={!media.subtitles.length || selectedSubtitleTrack < 0} onClick={markSubtitleHeard}>
+                      {subtitleHeardMark == null ? "I HEAR THE LINE NOW" : `HEARD ${formatTime(subtitleHeardMark)}`}
+                    </button>
                   </div>
                   <button className="player-icon-button" onClick={() => void findOpenSubtitles()} disabled={subtitleBusy}>
                     {subtitleBusy ? "Searching..." : "Find OpenSubtitles"}

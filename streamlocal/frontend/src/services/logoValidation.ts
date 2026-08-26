@@ -19,6 +19,9 @@ export type LogoPixelAnalysis = {
   averageLuminance: number;
   darkPixelRatio: number;
   highContrastPixelRatio: number;
+  opaqueRatio: number;
+  colorBinCount: number;
+  strongEdgeRatio: number;
 };
 
 export function isRejectedLogoCandidateName(value: string): boolean {
@@ -38,6 +41,10 @@ export function analyzeLogoPixels(
   let luminanceSum = 0;
   let darkPixels = 0;
   let highContrastPixels = 0;
+  let opaquePixels = 0;
+  let strongEdges = 0;
+  let edgeComparisons = 0;
+  const colorBins = new Set<number>();
 
   for (let index = 0; index < pixels.length; index += 4) {
     const alpha = pixels[index + 3];
@@ -51,6 +58,10 @@ export function analyzeLogoPixels(
     const chroma = maxChannel - minChannel;
 
     visiblePixels += 1;
+    if (alpha >= 240) opaquePixels += 1;
+    // Quantize to 4 bits per channel. Photographic images fill many more bins
+    // than normal title logos while simple gradients and antialiasing remain compact.
+    colorBins.add(((red >> 4) << 8) | ((green >> 4) << 4) | (blue >> 4));
     const luminance =
       red * 0.2126 +
       green * 0.7152 +
@@ -67,6 +78,33 @@ export function analyzeLogoPixels(
 
     // White/light pixels and strongly saturated colors remain readable on the dark UI.
     if (maxChannel >= 116 || chroma >= 72) highContrastPixels += 1;
+
+    const pixelNumber = index / 4;
+    const x = pixelNumber % width;
+    if (x > 0) {
+      const left = index - 4;
+      if (pixels[left + 3] >= 32) {
+        edgeComparisons += 1;
+        const difference = Math.max(
+          Math.abs(red - pixels[left]),
+          Math.abs(green - pixels[left + 1]),
+          Math.abs(blue - pixels[left + 2]),
+        );
+        if (difference >= 42) strongEdges += 1;
+      }
+    }
+    if (pixelNumber >= width) {
+      const above = index - width * 4;
+      if (pixels[above + 3] >= 32) {
+        edgeComparisons += 1;
+        const difference = Math.max(
+          Math.abs(red - pixels[above]),
+          Math.abs(green - pixels[above + 1]),
+          Math.abs(blue - pixels[above + 2]),
+        );
+        if (difference >= 42) strongEdges += 1;
+      }
+    }
   }
 
   const visibleRatio = visiblePixels / totalPixels;
@@ -75,6 +113,9 @@ export function analyzeLogoPixels(
   const highContrastPixelRatio = visiblePixels > 0
     ? highContrastPixels / visiblePixels
     : 0;
+  const opaqueRatio = visiblePixels > 0 ? opaquePixels / visiblePixels : 0;
+  const colorBinCount = colorBins.size;
+  const strongEdgeRatio = edgeComparisons > 0 ? strongEdges / edgeComparisons : 0;
 
   // Reject logos whose actual visible artwork is dominated by near-black pixels.
   // This catches variants such as a mostly-black wordmark with only a small bright
@@ -86,18 +127,43 @@ export function analyzeLogoPixels(
       (darkPixelRatio >= 0.66 && highContrastPixelRatio < 0.2)
     );
   const portraitLike = height > width * 1.08;
+  // A fully opaque, color-complex rectangle is almost certainly a photo, poster,
+  // frame or backdrop rather than a title logo. Reject it and fall back to text.
+  // This specifically prevents cached provider photos from occupying logo slots.
+  const photographicRectangle =
+    visibleRatio >= 0.82 &&
+    opaqueRatio >= 0.94 &&
+    (
+      colorBinCount >= 120 ||
+      (colorBinCount >= 48 && strongEdgeRatio >= 0.12)
+    );
+
+  // Hero title logos are expected to be wordmarks/title treatments. A moderately
+  // narrow, fully opaque and visually complex rectangle is much more likely to
+  // be a press photo or still. Prefer the plain text title over a false positive.
+  const opaquePhotoLikeTitleCard =
+    visibleRatio >= 0.94 &&
+    opaqueRatio >= 0.98 &&
+    width / Math.max(1, height) < 1.9 &&
+    colorBinCount >= 36 &&
+    strongEdgeRatio >= 0.08;
 
   return {
     usable:
       visiblePixels > 8 &&
       visibleRatio > 0.002 &&
       !unreadableOnDark &&
-      !portraitLike,
+      !portraitLike &&
+      !photographicRectangle &&
+      !opaquePhotoLikeTitleCard,
     visiblePixels,
     visibleRatio,
     averageLuminance,
     darkPixelRatio,
     highContrastPixelRatio,
+    opaqueRatio,
+    colorBinCount,
+    strongEdgeRatio,
   };
 }
 

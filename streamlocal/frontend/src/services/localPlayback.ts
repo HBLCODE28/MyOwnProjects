@@ -18,6 +18,8 @@ export type SubtitleTrack = {
   source: "local" | "opensubtitles";
   fileName: string;
   text: string;
+  offsetSeconds?: number;
+  renderRevision?: number;
   src: string;
 };
 
@@ -70,9 +72,12 @@ export function releasePlayableMedia(media: PlayableMedia | null): void {
   for (const subtitle of media?.subtitles ?? []) URL.revokeObjectURL(subtitle.src);
 }
 
-function toWebVtt(text: string, extension: string): string {
-  if (extension === "vtt") return text.startsWith("WEBVTT") ? text : `WEBVTT\n\n${text}`;
-  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+export function subtitleTextToWebVtt(text: string, extension: string): string {
+  const withoutBom = text.replace(/^\uFEFF/, "");
+  const normalized = withoutBom.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  if (extension.toLowerCase() === "vtt") {
+    return normalized.startsWith("WEBVTT") ? normalized : `WEBVTT\n\n${normalized}`;
+  }
   return `WEBVTT\n\n${normalized.replace(/(\d{2}:\d{2}:\d{2}),([0-9]{3})/g, "$1.$2")}`;
 }
 
@@ -103,7 +108,7 @@ async function loadLocalSubtitles(
     try {
       const subtitleFile = await directory.getFileHandle(candidate).then((handle) => handle.getFile());
       const extension = candidate.toLowerCase().endsWith(".vtt") ? "vtt" : "srt";
-      const text = toWebVtt(await subtitleFile.text(), extension);
+      const text = subtitleTextToWebVtt(await subtitleFile.text(), extension);
       const info = subtitleLabel(candidate);
       tracks.push({
         id: `local-${candidate}`,
@@ -112,6 +117,7 @@ async function loadLocalSubtitles(
         source: "local",
         fileName: candidate,
         text,
+        offsetSeconds: 0,
         src: URL.createObjectURL(new Blob([text], { type: "text/vtt" })),
       });
     } catch {

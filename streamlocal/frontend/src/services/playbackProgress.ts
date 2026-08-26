@@ -59,32 +59,35 @@ export async function savePlaybackProgress(
   positionSeconds: number,
   durationSeconds: number,
 ): Promise<PlaybackProgress | null> {
-  if (
-    !Number.isFinite(positionSeconds) ||
-    !Number.isFinite(durationSeconds) ||
-    durationSeconds <= 0
-  ) {
+  if (!Number.isFinite(positionSeconds) || positionSeconds < 0) {
     return null;
   }
-
-  const normalizedPosition = Math.max(
-    0,
-    Math.min(positionSeconds, durationSeconds),
-  );
 
   return db.transaction("rw", db.playbackProgress, async () => {
     const previous = await db.playbackProgress.get(item.id);
     const now = Date.now();
+    const incomingDuration =
+      Number.isFinite(durationSeconds) && durationSeconds > 0
+        ? durationSeconds
+        : 0;
+    const resolvedDuration = Math.max(
+      incomingDuration,
+      previous?.durationSeconds ?? 0,
+    );
+    const normalizedPosition = resolvedDuration > 0
+      ? Math.max(0, Math.min(positionSeconds, resolvedDuration))
+      : Math.max(0, positionSeconds);
 
     // Watched is intentionally monotonic. A normal progress save must never
     // undo a completed playback because pause/timeupdate/ended events can race
     // with each other for local files in Chromium.
     if (previous?.watched) {
-      const resolvedDuration = Math.max(previous.durationSeconds, durationSeconds);
       const resolvedPosition = Math.max(previous.positionSeconds, normalizedPosition);
       const record: PlaybackProgress = {
         ...previous,
-        positionSeconds: resolvedDuration > 0 ? Math.min(resolvedDuration, resolvedPosition) : resolvedPosition,
+        positionSeconds: resolvedDuration > 0
+          ? Math.min(resolvedDuration, resolvedPosition)
+          : resolvedPosition,
         durationSeconds: resolvedDuration,
         percent: 1,
         started: true,
@@ -96,20 +99,17 @@ export async function savePlaybackProgress(
       return record;
     }
 
-    const percent = Math.max(
-      0,
-      Math.min(1, normalizedPosition / durationSeconds),
-    );
-    const watched = watchedFromPosition(
-      item,
-      normalizedPosition,
-      durationSeconds,
-    );
+    const watched = resolvedDuration > 0
+      ? watchedFromPosition(item, normalizedPosition, resolvedDuration)
+      : false;
+    const percent = resolvedDuration > 0
+      ? Math.max(0, Math.min(1, normalizedPosition / resolvedDuration))
+      : previous?.percent ?? 0;
 
     const record: PlaybackProgress = {
       mediaItemId: item.id,
-      positionSeconds: watched ? durationSeconds : normalizedPosition,
-      durationSeconds,
+      positionSeconds: watched ? resolvedDuration : normalizedPosition,
+      durationSeconds: resolvedDuration,
       percent: watched ? 1 : percent,
       started: true,
       firstPlayedAt: previous?.firstPlayedAt ?? now,

@@ -260,7 +260,9 @@ async function saveMovieArtwork(
   if (!movie) return { updated: false, poster: 0, backdrop: 0, logo: 0 };
   const poster = movie.remotePosterUrl ? null : artwork.poster;
   const backdrop = movie.remoteBackdropUrl ? null : artwork.backdrop;
-  const logo = movie.remoteLogoUrl ? null : artwork.logo;
+  const logo = artwork.logo && (!movie.remoteLogoUrl || movie.metadataProvider === "fanart")
+    ? artwork.logo
+    : null;
   if (!poster && !backdrop && !logo) {
     return { updated: false, poster: 0, backdrop: 0, logo: 0 };
   }
@@ -295,7 +297,9 @@ async function saveSeriesArtwork(
   if (!series) return { updated: false, poster: 0, backdrop: 0, logo: 0 };
   const poster = series.remotePosterUrl ? null : artwork.poster;
   const backdrop = series.remoteBackdropUrl ? null : artwork.backdrop;
-  const logo = series.remoteLogoUrl ? null : artwork.logo;
+  const logo = artwork.logo && (!series.remoteLogoUrl || series.metadataProvider === "fanart")
+    ? artwork.logo
+    : null;
   if (!poster && !backdrop && !logo) {
     return { updated: false, poster: 0, backdrop: 0, logo: 0 };
   }
@@ -380,7 +384,12 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
         movie = { ...movie, remoteLogoUrl: null, logoArtworkId: null };
       }
     }
-    if (movie.remotePosterUrl && movie.remoteBackdropUrl && movie.remoteLogoUrl) {
+    if (
+      movie.remotePosterUrl &&
+      movie.remoteBackdropUrl &&
+      movie.remoteLogoUrl &&
+      movie.metadataProvider !== "fanart"
+    ) {
       result.skipped += 1;
       continue;
     }
@@ -429,7 +438,12 @@ export async function syncFanartArtwork(): Promise<FanartSyncResult> {
         entry = { ...entry, remoteLogoUrl: null };
       }
     }
-    if (entry.remotePosterUrl && entry.remoteBackdropUrl && entry.remoteLogoUrl) {
+    if (
+      entry.remotePosterUrl &&
+      entry.remoteBackdropUrl &&
+      entry.remoteLogoUrl &&
+      entry.metadataProvider !== "fanart"
+    ) {
       result.skipped += 1;
       continue;
     }

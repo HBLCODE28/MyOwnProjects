@@ -1,6 +1,7 @@
 import { db } from "../db/streamlocalDb";
 import type { Artwork, MediaItem } from "../types/library";
 import { createId } from "../utils/id";
+import { validateRemoteLogoUrl } from "./logoValidation";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -57,6 +58,7 @@ export async function cacheRemoteArtwork(
   if (kind === "poster" && item.posterArtworkId) return false;
   if (kind === "backdrop" && item.backdropArtworkId) return false;
   if (kind === "logo" && item.logoArtworkId) return false;
+  if (kind === "logo" && !(await validateRemoteLogoUrl(remoteUrl))) return false;
 
   const response = await fetch(remoteUrl, { mode: "cors" });
   if (!response.ok) return false;

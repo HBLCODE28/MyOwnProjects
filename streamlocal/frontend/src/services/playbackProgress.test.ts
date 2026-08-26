@@ -132,4 +132,14 @@ describe("playback state", () => {
     expect(progress?.started).toBe(true);
     expect(progress?.watched).toBe(false);
   });
+  it("persists resume position even when Chromium has not resolved duration yet", async () => {
+    await savePlaybackProgress(movie(), 75, Number.POSITIVE_INFINITY);
+
+    const progress = await getPlaybackProgress("movie-1");
+    expect(progress?.positionSeconds).toBe(75);
+    expect(progress?.durationSeconds).toBe(0);
+    expect(progress?.started).toBe(true);
+    expect(progress?.watched).toBe(false);
+  });
+
 });

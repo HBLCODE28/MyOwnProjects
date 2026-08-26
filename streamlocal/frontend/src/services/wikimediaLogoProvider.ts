@@ -63,6 +63,16 @@ export function isContextCompatibleLogoCandidate(
   const qualifiers = candidateQualifiers(title, pageTitle);
   if (qualifiers == null) return false;
 
+  // Wikimedia Commons is a general image repository, not a logo database.
+  // A filename that merely contains the title and "film"/year can still be a
+  // premiere photo, press image, cast photo, screenshot, etc. Require an
+  // explicit title-art descriptor before a Commons image may enter a logo slot.
+  const normalizedCandidate = normalize(pageTitle.replace(/^file\s*:/i, ""));
+  const hasExplicitLogoDescriptor =
+    /(^|\s)(logo|wordmark|clearlogo)(\s|$)/i.test(normalizedCandidate) ||
+    /(^|\s)title\s+(logo|card|treatment)(\s|$)/i.test(normalizedCandidate);
+  if (!hasExplicitLogoDescriptor) return false;
+
   // These qualifiers identify another work/edition even when the base title is exact.
   // This prevents examples such as "The Last of Us Remastered" (video game) from
   // being accepted as the logo for "The Last of Us" (TV series).
@@ -110,8 +120,11 @@ export function isNamedLogoUrlContextCompatible(
   context: LogoSearchContext = {},
 ): boolean {
   let fileName = url;
+  let host = "";
   try {
-    const path = new URL(url).pathname;
+    const parsed = new URL(url);
+    host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname;
     fileName = decodeURIComponent(path.split("/").filter(Boolean).pop() ?? path);
   } catch {
     try {
@@ -121,9 +134,15 @@ export function isNamedLogoUrlContextCompatible(
     }
   }
 
-  // Provider URLs that do not expose a human-readable title cannot be checked here;
-  // their pixel validation and provider ID matching still apply.
-  if (!normalize(fileName).includes(normalize(title))) return true;
+  const fileContainsTitle = normalize(fileName).includes(normalize(title));
+  // Wikimedia upload URLs expose the actual Commons filename. If that filename
+  // does not contain the requested title, it is a different work and must not
+  // survive as a cached logo. Other providers can use opaque/hash filenames, so
+  // those still rely on provider-ID matching plus pixel validation.
+  if (!fileContainsTitle) {
+    if (host.endsWith("wikimedia.org") || host.endsWith("wikipedia.org")) return false;
+    return true;
+  }
   return isContextCompatibleLogoCandidate(title, fileName, context);
 }
 
@@ -271,11 +290,11 @@ export async function syncWikimediaLogos(): Promise<LogoSyncResult> {
   for (const originalMovie of movies) {
     const existingLogo = originalMovie.remoteLogoUrl ?? null;
     try {
-      // Old StreamLocal versions cached provider logos into logoArtworkId. When
-      // the corresponding remote URL is already gone, that cache has no identity
-      // information left to validate. Remove only the generated cache so a stale
-      // wrong logo cannot continue to outrank the corrected remote/text fallback.
-      if (!existingLogo) await clearAutoCachedArtwork(originalMovie, "logo");
+      // Provider logos are identified by their remote URL, while old versions also
+      // cached them into logoArtworkId. Always discard only that generated cache
+      // before validation so a stale photo/old logo cannot outrank a corrected URL.
+      // Manually selected local logos are preserved by clearAutoCachedArtwork().
+      await clearAutoCachedArtwork(originalMovie, "logo");
       if (
         existingLogo &&
         isNamedLogoUrlContextCompatible(
