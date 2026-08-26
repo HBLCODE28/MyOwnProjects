@@ -18,6 +18,13 @@ import {
 } from "../services/maintenance";
 import "../styles/settings.css";
 import { useToast } from "../components/ui/Toast";
+import {
+  connectVlcHistory,
+  connectWindowsMediaPlayerHistory,
+  externalHistoryConnectionState,
+  syncConnectedExternalHistories,
+  type ExternalHistoryImportReport,
+} from "../services/externalPlaybackHistory";
 
 function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
@@ -32,11 +39,15 @@ export function SettingsPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [seekInterval, setSeekInterval] = useState(5);
+  const [externalConnections, setExternalConnections] = useState({ vlc: false, windowsMediaPlayer: false });
+  const [externalReports, setExternalReports] = useState<ExternalHistoryImportReport[]>([]);
+  const [externalSyncBusy, setExternalSyncBusy] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
     void getCacheStats().then(setCacheStats);
     void getPlaybackSetting("playback.seekInterval", 5).then(setSeekInterval);
+    void externalHistoryConnectionState().then(setExternalConnections);
   }, []);
 
   async function exportBackup() {
@@ -126,6 +137,31 @@ export function SettingsPage() {
     showToast("Playback seek interval saved.", "success");
   }
 
+
+  async function runExternalHistoryAction(action: () => Promise<ExternalHistoryImportReport | ExternalHistoryImportReport[]>) {
+    setExternalSyncBusy(true);
+    try {
+      const result = await action();
+      const reports = Array.isArray(result) ? result : [result];
+      if (reports.length > 0) {
+        setExternalReports(reports);
+        setStatus(reports.map((report) => report.message).join(" "));
+        showToast(reports.map((report) => report.message).join(" "), "success");
+      } else {
+        setStatus("External player history is already up to date.");
+        showToast("External player history is already up to date.", "info");
+      }
+      setExternalConnections(await externalHistoryConnectionState());
+    } catch (value) {
+      if (value instanceof DOMException && value.name === "AbortError") return;
+      const message = value instanceof Error ? value.message : "External player history sync failed.";
+      setStatus(message);
+      showToast(message, "error");
+    } finally {
+      setExternalSyncBusy(false);
+    }
+  }
+
   async function clearTimelineCache() {
     const count = await clearTimelinePreviewCache();
     await refreshMaintenance();
@@ -155,6 +191,80 @@ export function SettingsPage() {
       <TvmazeProviderCard />
       <FanartProviderCard />
       <ApiKeyVault />
+
+
+      <section className="settings-card external-history-card">
+        <h2>External player history</h2>
+        <p>
+          Import viewing activity from VLC and the Windows 11 Media Player. StreamLocal matches the external file path to files already in your local library and updates Started, Resume and Watched state without modifying the video files.
+        </p>
+        <div className="external-history-sources">
+          <div className="external-history-source">
+            <div>
+              <strong>VLC</strong>
+              <span className={externalConnections.vlc ? "connection-state connected" : "connection-state"}>
+                {externalConnections.vlc ? "Connected" : "Not connected"}
+              </span>
+              <p className="vault-security-note">
+                Select <code>%APPDATA%\vlc\vlc-qt-interface.ini</code>. VLC resume positions are imported; a VLC recent item with saved time 0 is treated as completed.
+              </p>
+            </div>
+            <button
+              className="secondary-button"
+              disabled={externalSyncBusy}
+              onClick={() => void runExternalHistoryAction(connectVlcHistory)}
+            >
+              {externalConnections.vlc ? "Reconnect VLC" : "Connect VLC"}
+            </button>
+          </div>
+
+          <div className="external-history-source">
+            <div>
+              <strong>Windows Media Player</strong>
+              <span className={externalConnections.windowsMediaPlayer ? "connection-state connected" : "connection-state"}>
+                {externalConnections.windowsMediaPlayer ? "Connected" : "Not connected"}
+              </span>
+              <p className="vault-security-note">
+                Close Media Player first, then select <code>MediaPlayer.db</code> and, when present, <code>MediaPlayer.db-wal</code> and <code>AppState.json</code> from <code>%LOCALAPPDATA%\Packages\Microsoft.ZuneMusic_8wekyb3d8bbwe\LocalState</code>. The picker intentionally shows all files because Chromium does not allow <code>.db-wal</code> as an extension filter. Use Ctrl-click to select multiple files. The database supplies recent video history and AppState can supply the last playback position when Windows stores it.
+              </p>
+            </div>
+            <button
+              className="secondary-button"
+              disabled={externalSyncBusy}
+              onClick={() => void runExternalHistoryAction(connectWindowsMediaPlayerHistory)}
+            >
+              {externalConnections.windowsMediaPlayer ? "Reconnect Media Player" : "Connect Media Player"}
+            </button>
+          </div>
+        </div>
+
+        <div className="settings-actions external-history-actions">
+          <button
+            className="primary-button"
+            disabled={externalSyncBusy || (!externalConnections.vlc && !externalConnections.windowsMediaPlayer)}
+            onClick={() => void runExternalHistoryAction(() => syncConnectedExternalHistories({ requestPermission: true, force: true }))}
+          >
+            {externalSyncBusy ? "Syncing..." : "Sync player history now"}
+          </button>
+        </div>
+
+        {externalReports.length > 0 && (
+          <div className="external-history-report">
+            {externalReports.map((report) => (
+              <div key={report.source}>
+                <strong>{report.source}</strong>
+                <span>{report.matched}/{report.found} matched</span>
+                <span>{report.watched} watched</span>
+                <span>{report.started} updated</span>
+                <span>{report.unmatched} unmatched</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="vault-security-note">
+          After connection, StreamLocal checks connected history files about once per minute while the site is open. Chrome may require permission again after a browser restart. Windows Media Player recent history proves that a file was played, but it does not always contain a completion position; those entries are imported as Started unless a usable position is available.
+        </p>
+      </section>
 
       <section className="settings-card">
         <h2>Browser storage</h2>
