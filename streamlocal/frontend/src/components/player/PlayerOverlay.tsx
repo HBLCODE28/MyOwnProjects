@@ -283,11 +283,13 @@ export function PlayerOverlay({
   }, [item, media]);
 
   async function persistProgress(video: HTMLVideoElement) {
-    const result = await savePlaybackProgress(
-      item,
-      video.currentTime,
-      video.duration,
-    );
+    const result = video.ended
+      ? await markPlaybackCompleted(item, video.currentTime, video.duration)
+      : await savePlaybackProgress(
+          item,
+          video.currentTime,
+          video.duration,
+        );
 
     if (result) onProgressChangedRef.current?.();
   }

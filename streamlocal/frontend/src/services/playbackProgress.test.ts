@@ -98,6 +98,31 @@ describe("playback state", () => {
     expect(progress?.completedAt).not.toBeNull();
   });
 
+
+  it("keeps completion when pause and ended saves race", async () => {
+    await markPlaybackStarted(movie());
+
+    await Promise.all([
+      savePlaybackProgress(movie(), 400, 1200),
+      markPlaybackCompleted(movie(), 1200, 1200),
+    ]);
+
+    const progress = await getPlaybackProgress("movie-1");
+    expect(progress?.watched).toBe(true);
+    expect(progress?.percent).toBe(1);
+    expect(progress?.positionSeconds).toBe(1200);
+  });
+
+  it("keeps a watched record at 100 percent during a later partial save", async () => {
+    await markPlaybackCompleted(episode(), 2400, 2400);
+    await savePlaybackProgress(episode(), 30, 2400);
+
+    const progress = await getPlaybackProgress("episode-1");
+    expect(progress?.watched).toBe(true);
+    expect(progress?.percent).toBe(1);
+    expect(progress?.positionSeconds).toBe(2400);
+  });
+
   it("persists an unfinished movie position for resume", async () => {
     await savePlaybackProgress(movie(), 60, 1200);
 

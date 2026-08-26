@@ -137,7 +137,10 @@ function Merge-LivePlayerHistory {
         }
         $completed = $false
         if ($previous -and $previous.completed) { $completed = $true }
-        if ($duration -gt 0 -and ($position / $duration -ge 0.99 -or $duration - $position -le 2)) { $completed = $true }
+        # StreamLocal's universal completion threshold is 90%. Using the same
+        # threshold here is important because Windows/VLC media sessions often
+        # disappear before Windows reports the exact final frame.
+        if ($duration -gt 0 -and ($position / $duration -ge 0.90 -or $duration - $position -le 2)) { $completed = $true }
 
         $byKey[$key] = [pscustomobject]@{
             source = [string]$row.source

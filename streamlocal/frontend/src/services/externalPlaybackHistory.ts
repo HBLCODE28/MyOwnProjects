@@ -389,7 +389,13 @@ function attachLiveSessionPaths(
     const titleMatches = pathRecords.filter((candidate) => {
       if (candidate.source !== record.source || !candidate.path) return false;
       const stem = normalizedMediaLabel(candidate.path);
-      return stem === title || stem.startsWith(`${title} `) || title.startsWith(`${stem} `);
+      if (stem === title || stem.startsWith(`${title} `) || title.startsWith(`${stem} `)) return true;
+      // Media Player can expose only the episode title (for example "Pilot")
+      // while the recent-history database stores the full release filename.
+      // Accept a unique token-boundary containment match, never an arbitrary
+      // substring match, so a live session can inherit the correct file path.
+      if (title.length < 4) return false;
+      return stem.endsWith(` ${title}`) || stem.includes(` ${title} `);
     });
     if (titleMatches.length === 1) return { ...record, path: titleMatches[0].path };
 
@@ -475,7 +481,24 @@ function bestRecordMatch(
     ].filter(Boolean));
     return labels.has(title) ? [{ file, item }] : [];
   });
-  return candidates.length === 1 ? candidates[0] : null;
+  if (candidates.length === 1) return candidates[0];
+  if (candidates.length > 1 || title.length < 4) return null;
+
+  const relatedCandidates = files.flatMap((file) => {
+    const item = items.find((candidate) => candidate.mediaFileId === file.id);
+    if (!item) return [];
+    const labels = [
+      normalizedMediaLabel(file.fileName),
+      normalizedMediaLabel(item.episodeTitle),
+    ].filter(Boolean);
+    const related = labels.some((label) =>
+      label.startsWith(`${title} `) ||
+      label.endsWith(` ${title}`) ||
+      label.includes(` ${title} `),
+    );
+    return related ? [{ file, item }] : [];
+  });
+  return relatedCandidates.length === 1 ? relatedCandidates[0] : null;
 }
 
 function progressChanged(a: PlaybackProgress | undefined, b: PlaybackProgress): boolean {
