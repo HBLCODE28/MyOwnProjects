@@ -3,6 +3,7 @@ import { db } from "../db/streamlocalDb";
 import type { MediaItem } from "../types/library";
 import {
   getPlaybackProgress,
+  markPlaybackCompleted,
   markPlaybackStarted,
   savePlaybackProgress,
   watchedFromPosition,
@@ -75,6 +76,26 @@ describe("playback state", () => {
 
   it("does not mark an early episode watched", () => {
     expect(watchedFromPosition({ type: "episode" }, 600, 2400)).toBe(false);
+  });
+
+
+  it("marks an actual media end as watched even when duration is unavailable", async () => {
+    await markPlaybackStarted(movie());
+    await markPlaybackCompleted(movie(), 1199.5, Number.POSITIVE_INFINITY);
+
+    const progress = await getPlaybackProgress("movie-1");
+    expect(progress?.watched).toBe(true);
+    expect(progress?.percent).toBe(1);
+    expect(progress?.completedAt).not.toBeNull();
+  });
+
+  it("does not clear watched state during a later partial playback save", async () => {
+    await markPlaybackCompleted(movie(), 1200, 1200);
+    await savePlaybackProgress(movie(), 30, 1200);
+
+    const progress = await getPlaybackProgress("movie-1");
+    expect(progress?.watched).toBe(true);
+    expect(progress?.completedAt).not.toBeNull();
   });
 
   it("persists an unfinished movie position for resume", async () => {

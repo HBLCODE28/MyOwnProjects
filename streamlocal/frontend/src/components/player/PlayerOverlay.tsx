@@ -20,6 +20,7 @@ import {
 import { downloadOpenSubtitle, searchOpenSubtitles, type OpenSubtitleMatch } from "../../services/openSubtitles";
 import {
   getPlaybackProgress,
+  markPlaybackCompleted,
   markPlaybackStarted,
   savePlaybackProgress,
 } from "../../services/playbackProgress";
@@ -687,7 +688,20 @@ export function PlayerOverlay({
             }}
             onCanPlay={(event) => refreshAudioTracks(event.currentTarget)}
             onEnded={(event) => {
-              void persistProgress(event.currentTarget);
+              const video = event.currentTarget;
+              setPlaying(false);
+              const completedPosition =
+                Number.isFinite(video.duration) && video.duration > 0
+                  ? video.duration
+                  : video.currentTime;
+              setCurrent(completedPosition);
+              void markPlaybackCompleted(
+                item,
+                video.currentTime,
+                video.duration,
+              ).then(() => {
+                onProgressChangedRef.current?.();
+              });
             }}
             onError={(event) =>
               setError(mediaErrorMessage(event.currentTarget, media))
