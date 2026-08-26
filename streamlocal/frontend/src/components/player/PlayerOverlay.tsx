@@ -519,6 +519,20 @@ export function PlayerOverlay({
     setSelectedAudioTrack(index);
   }
 
+  function positionSubtitleCues(track: TextTrack) {
+    const cues = track.cues;
+    if (!cues) return;
+
+    for (let cueIndex = 0; cueIndex < cues.length; cueIndex += 1) {
+      const cue = cues[cueIndex] as VTTCue;
+      // Native browser subtitles sit almost on the bottom edge of the video.
+      // Keep them above the fixed player controls so multi-line cues stay visible.
+      cue.snapToLines = false;
+      cue.line = 82;
+      cue.lineAlign = "center";
+    }
+  }
+
   function applySubtitleTrackMode(index: number) {
     const video = videoRef.current;
     if (!video) return;
@@ -526,6 +540,7 @@ export function PlayerOverlay({
     const elements = Array.from(video.querySelectorAll<HTMLTrackElement>('track[kind="subtitles"]'));
     elements.forEach((element, trackIndex) => {
       element.track.mode = index >= 0 && trackIndex === index ? "showing" : "disabled";
+      if (trackIndex === index) positionSubtitleCues(element.track);
     });
   }
 
@@ -540,7 +555,10 @@ export function PlayerOverlay({
         : "disabled";
     });
 
-    if (index === selectedSubtitleTrack) element.track.mode = "showing";
+    if (index === selectedSubtitleTrack) {
+      element.track.mode = "showing";
+      positionSubtitleCues(element.track);
+    }
   }
 
   function selectSubtitleTrack(index: number) {
