@@ -9,11 +9,16 @@ const VLC_HANDLE_KEY = "externalHistory.vlcHandle";
 const VLC_SIGNATURE_KEY = "externalHistory.vlcSignature";
 const WINDOWS_HANDLES_KEY = "externalHistory.windowsHandles";
 const WINDOWS_SIGNATURE_KEY = "externalHistory.windowsSignature";
+const BRIDGE_DIRECTORY_KEY = "externalHistory.bridgeDirectory";
+const BRIDGE_SIGNATURE_KEY = "externalHistory.bridgeSignature";
+const BRIDGE_SOURCES_KEY = "externalHistory.bridgeSources";
 
 const VIDEO_EXTENSIONS = new Set(["mp4", "mkv", "avi", "mov", "wmv", "m4v", "webm", "mts", "m2ts"]);
 
 type ExternalPlaybackRecord = {
-  path: string;
+  path: string | null;
+  title?: string | null;
+  albumTitle?: string | null;
   positionSeconds: number | null;
   durationSeconds: number | null;
   playedAt: number | null;
@@ -37,6 +42,11 @@ type SavedWindowsHandles = {
   database?: FileSystemFileHandle;
   wal?: FileSystemFileHandle;
   appState?: FileSystemFileHandle;
+};
+
+type BridgeSources = {
+  vlc: boolean;
+  windowsMediaPlayer: boolean;
 };
 
 type SyncOptions = {
@@ -310,25 +320,119 @@ export function parseWindowsMediaPlayerAppState(text: string): ExternalPlaybackR
   return [...found.values()];
 }
 
+export function parseLivePlaybackHistory(text: string): ExternalPlaybackRecord[] {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    throw new Error("live-playback-history.json is not valid JSON.");
+  }
+
+  const rows = payload && typeof payload === "object" && Array.isArray((payload as { records?: unknown }).records)
+    ? (payload as { records: unknown[] }).records
+    : [];
+
+  return rows.flatMap((value) => {
+    if (!value || typeof value !== "object") return [];
+    const row = value as Record<string, unknown>;
+    const source = row.source === "vlc" || row.source === "windows_media_player" ? row.source : null;
+    const title = typeof row.title === "string" ? row.title.trim() : "";
+    if (!source || !title) return [];
+    const positionSeconds = typeof row.positionSeconds === "number" && Number.isFinite(row.positionSeconds)
+      ? Math.max(0, row.positionSeconds)
+      : null;
+    const durationSeconds = typeof row.durationSeconds === "number" && Number.isFinite(row.durationSeconds)
+      ? Math.max(0, row.durationSeconds)
+      : null;
+    const playedAt = typeof row.firstSeenAt === "string" ? Date.parse(row.firstSeenAt) : Number.NaN;
+    return [{
+      path: null,
+      title,
+      albumTitle: typeof row.albumTitle === "string" ? row.albumTitle : null,
+      positionSeconds,
+      durationSeconds,
+      playedAt: Number.isFinite(playedAt) ? playedAt : null,
+      completed: row.completed === true,
+      source,
+    } satisfies ExternalPlaybackRecord];
+  });
+}
+
+function normalizedMediaLabel(value: string | null | undefined): string {
+  if (!value) return "";
+  let label = value.trim();
+  if (/^file:/i.test(label) || /[\\/]/.test(label)) label = basename(label);
+  label = label.replace(/\.[a-z0-9]{2,5}$/i, "");
+  return label
+    .toLowerCase()
+    .replace(/[._-]+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function recordKey(record: ExternalPlaybackRecord): string {
+  if (record.path) return `path:${normalizedPath(record.path)}`;
+  return `session:${record.source}:${normalizedMediaLabel(record.title)}:${normalizedMediaLabel(record.albumTitle)}`;
+}
+
+function attachLiveSessionPaths(
+  liveRecords: ExternalPlaybackRecord[],
+  staticRecords: ExternalPlaybackRecord[],
+): ExternalPlaybackRecord[] {
+  const pathRecords = staticRecords.filter((record) => Boolean(record.path));
+  return liveRecords.map((record) => {
+    if (record.path) return record;
+    const title = normalizedMediaLabel(record.title);
+    if (!title) return record;
+
+    const titleMatches = pathRecords.filter((candidate) => {
+      if (candidate.source !== record.source || !candidate.path) return false;
+      const stem = normalizedMediaLabel(candidate.path);
+      return stem === title || stem.startsWith(`${title} `) || title.startsWith(`${stem} `);
+    });
+    if (titleMatches.length === 1) return { ...record, path: titleMatches[0].path };
+
+    if (record.source === "windows_media_player" && record.playedAt !== null) {
+      const timed = pathRecords
+        .filter((candidate) => candidate.source === record.source && candidate.path && candidate.playedAt !== null)
+        .map((candidate) => ({ candidate, distance: Math.abs((candidate.playedAt ?? 0) - (record.playedAt ?? 0)) }))
+        .sort((a, b) => a.distance - b.distance);
+      if (timed[0] && timed[0].distance <= 15 * 60 * 1000) {
+        return { ...record, path: timed[0].candidate.path };
+      }
+    }
+
+    if (record.source === "vlc") {
+      const vlcCandidates = pathRecords.filter((candidate) => candidate.source === "vlc" && candidate.path);
+      if (vlcCandidates.length > 0) return { ...record, path: vlcCandidates[0].path };
+    }
+    return record;
+  });
+}
+
 function mergeRecords(records: ExternalPlaybackRecord[]): ExternalPlaybackRecord[] {
-  const byPath = new Map<string, ExternalPlaybackRecord>();
+  const byKey = new Map<string, ExternalPlaybackRecord>();
   for (const record of records) {
-    const key = normalizedPath(record.path);
-    const previous = byPath.get(key);
+    const key = recordKey(record);
+    const previous = byKey.get(key);
     if (!previous) {
-      byPath.set(key, record);
+      byKey.set(key, record);
       continue;
     }
-    byPath.set(key, {
+    byKey.set(key, {
       ...previous,
       ...record,
-      positionSeconds: record.positionSeconds ?? previous.positionSeconds,
-      durationSeconds: record.durationSeconds ?? previous.durationSeconds,
-      playedAt: record.playedAt ?? previous.playedAt,
+      path: record.path ?? previous.path,
+      title: record.title ?? previous.title,
+      albumTitle: record.albumTitle ?? previous.albumTitle,
+      positionSeconds: Math.max(previous.positionSeconds ?? 0, record.positionSeconds ?? 0),
+      durationSeconds: Math.max(previous.durationSeconds ?? 0, record.durationSeconds ?? 0),
+      playedAt: Math.max(previous.playedAt ?? 0, record.playedAt ?? 0) || null,
       completed: previous.completed || record.completed,
     });
   }
-  return [...byPath.values()];
+  return [...byKey.values()];
 }
 
 function bestFileMatch(path: string, files: MediaFile[]): MediaFile | null {
@@ -345,6 +449,33 @@ function bestFileMatch(path: string, files: MediaFile[]): MediaFile | null {
 
   const byName = files.filter((file) => file.fileName.toLowerCase() === targetName);
   return byName.length === 1 ? byName[0] : null;
+}
+
+function bestRecordMatch(
+  record: ExternalPlaybackRecord,
+  files: MediaFile[],
+  items: MediaItem[],
+): { file: MediaFile; item: MediaItem } | null {
+  if (record.path) {
+    const file = bestFileMatch(record.path, files);
+    if (!file) return null;
+    const item = items.find((candidate) => candidate.mediaFileId === file.id);
+    return item ? { file, item } : null;
+  }
+
+  const title = normalizedMediaLabel(record.title);
+  if (!title) return null;
+  const candidates = files.flatMap((file) => {
+    const item = items.find((candidate) => candidate.mediaFileId === file.id);
+    if (!item) return [];
+    const labels = new Set([
+      normalizedMediaLabel(file.fileName),
+      normalizedMediaLabel(item.title),
+      normalizedMediaLabel(item.episodeTitle),
+    ].filter(Boolean));
+    return labels.has(title) ? [{ file, item }] : [];
+  });
+  return candidates.length === 1 ? candidates[0] : null;
 }
 
 function progressChanged(a: PlaybackProgress | undefined, b: PlaybackProgress): boolean {
@@ -370,7 +501,6 @@ async function applyRecords(
     db.mediaItems.toArray(),
     db.playbackProgress.toArray(),
   ]);
-  const itemByFileId = new Map(items.map((item) => [item.mediaFileId, item]));
   const existingByItemId = new Map(existingRows.map((row) => [row.mediaItemId, row]));
   const importTime = Date.now();
 
@@ -383,13 +513,13 @@ async function applyRecords(
   const updates: PlaybackProgress[] = [];
 
   records.forEach((record, index) => {
-    const file = bestFileMatch(record.path, files);
-    if (!file) {
+    const match = bestRecordMatch(record, files, items);
+    if (!match) {
       unmatched += 1;
       return;
     }
-    const item = itemByFileId.get(file.id);
-    if (!item || item.type === "unmatched") {
+    const { item } = match;
+    if (item.type === "unmatched") {
       skipped += 1;
       return;
     }
@@ -461,7 +591,7 @@ async function saveSetting(key: string, value: unknown): Promise<void> {
 }
 
 async function permissionGranted(
-  handle: FileSystemFileHandle,
+  handle: FileSystemHandle,
   requestPermission: boolean,
 ): Promise<boolean> {
   const current = await handle.queryPermission({ mode: "read" });
@@ -502,6 +632,117 @@ async function openFileHandles(options: {
   };
   if (options.types?.length) pickerOptions.types = options.types;
   return window.showOpenFilePicker(pickerOptions);
+}
+
+
+async function openHistoryBridgeDirectory(): Promise<FileSystemDirectoryHandle> {
+  if (!window.showDirectoryPicker) {
+    throw new Error("Use current Chrome or Edge on Windows to connect the StreamLocal history bridge folder.");
+  }
+  return window.showDirectoryPicker({
+    id: normalizePickerId("sl-player-history-bridge"),
+    mode: "read",
+    startIn: "documents",
+  });
+}
+
+async function filesFromBridgeDirectory(
+  handle: FileSystemDirectoryHandle,
+  requestPermission: boolean,
+): Promise<Map<string, File>> {
+  if (!(await permissionGranted(handle, requestPermission))) {
+    throw new Error("StreamLocal does not currently have permission to read the history bridge folder.");
+  }
+
+  const files = new Map<string, File>();
+  for await (const [name, child] of handle.entries()) {
+    if (!("getFile" in child) || typeof child.getFile !== "function") continue;
+    const lower = name.toLowerCase();
+    if (![
+      "vlc-qt-interface.ini",
+      "mediaplayer.db",
+      "mediaplayer.db-wal",
+      "appstate.json",
+      "bridge-status.json",
+      "live-playback-history.json",
+    ].includes(lower)) continue;
+    files.set(lower, await child.getFile());
+  }
+  return files;
+}
+
+export async function connectExternalHistoryBridge(): Promise<ExternalHistoryImportReport[]> {
+  const handle = await openHistoryBridgeDirectory();
+  await saveSetting(BRIDGE_DIRECTORY_KEY, handle);
+  await saveSetting(BRIDGE_SIGNATURE_KEY, "");
+  return syncExternalHistoryBridge({ requestPermission: true, force: true });
+}
+
+export async function syncExternalHistoryBridge(options: SyncOptions = {}): Promise<ExternalHistoryImportReport[]> {
+  const handle = await settingValue<FileSystemDirectoryHandle>(BRIDGE_DIRECTORY_KEY);
+  if (!handle) return [];
+
+  const files = await filesFromBridgeDirectory(handle, options.requestPermission ?? false);
+  const payloadFiles = [...files.values()].filter((file) => file.name.toLowerCase() !== "bridge-status.json");
+  if (payloadFiles.length === 0) {
+    if (options.force) {
+      throw new Error(
+        "No mirrored player-history files were found. Start scripts\\start-player-history-bridge.cmd, then select Documents\\StreamLocal\\ExternalPlayerHistory.",
+      );
+    }
+    return [];
+  }
+
+  const currentSignature = signature(payloadFiles);
+  const previousSignature = await settingValue<string>(BRIDGE_SIGNATURE_KEY);
+  if (!options.force && previousSignature === currentSignature) return [];
+
+  const reports: ExternalHistoryImportReport[] = [];
+  const vlc = files.get("vlc-qt-interface.ini");
+  const database = files.get("mediaplayer.db");
+  const appState = files.get("appstate.json");
+  const liveHistory = files.get("live-playback-history.json");
+  const liveRecords = liveHistory ? parseLivePlaybackHistory(await liveHistory.text()) : [];
+
+  const vlcStatic = vlc ? parseVlcRecentHistory(await vlc.text()) : [];
+  const vlcLive = attachLiveSessionPaths(
+    liveRecords.filter((record) => record.source === "vlc"),
+    vlcStatic,
+  );
+  if (vlcStatic.length > 0 || vlcLive.length > 0) {
+    reports.push(await applyRecords("VLC", [...vlcStatic, ...vlcLive]));
+  }
+
+  const windowsStatic: ExternalPlaybackRecord[] = [];
+  if (database) {
+    const databaseBytes = new Uint8Array(await database.arrayBuffer());
+    const wal = files.get("mediaplayer.db-wal");
+    const walBytes = wal ? new Uint8Array(await wal.arrayBuffer()) : null;
+    try {
+      windowsStatic.push(...parseWindowsMediaPlayerDatabase(databaseBytes, walBytes));
+    } catch (error) {
+      if (!walBytes) throw error;
+      windowsStatic.push(...parseWindowsMediaPlayerDatabase(databaseBytes, null));
+    }
+  }
+  if (appState) windowsStatic.push(...parseWindowsMediaPlayerAppState(await appState.text()));
+  const windowsLive = attachLiveSessionPaths(
+    liveRecords.filter((record) => record.source === "windows_media_player"),
+    windowsStatic,
+  );
+  if (windowsStatic.length > 0 || windowsLive.length > 0) {
+    reports.push(await applyRecords("Windows Media Player", [...windowsStatic, ...windowsLive]));
+  }
+
+  const sources: BridgeSources = {
+    vlc: Boolean(vlc || liveRecords.some((record) => record.source === "vlc")),
+    windowsMediaPlayer: Boolean(database || appState || liveRecords.some((record) => record.source === "windows_media_player")),
+  };
+  await Promise.all([
+    saveSetting(BRIDGE_SIGNATURE_KEY, currentSignature),
+    saveSetting(BRIDGE_SOURCES_KEY, sources),
+  ]);
+  return reports;
 }
 
 export async function connectVlcHistory(): Promise<ExternalHistoryImportReport> {
@@ -581,11 +822,15 @@ export async function syncWindowsMediaPlayerHistory(options: SyncOptions = {}): 
   const records: ExternalPlaybackRecord[] = [];
   const databaseFile = byName.get("mediaplayer.db");
   if (databaseFile) {
+    const databaseBytes = new Uint8Array(await databaseFile.arrayBuffer());
     const walFile = byName.get("mediaplayer.db-wal");
-    records.push(...parseWindowsMediaPlayerDatabase(
-      new Uint8Array(await databaseFile.arrayBuffer()),
-      walFile ? new Uint8Array(await walFile.arrayBuffer()) : null,
-    ));
+    const walBytes = walFile ? new Uint8Array(await walFile.arrayBuffer()) : null;
+    try {
+      records.push(...parseWindowsMediaPlayerDatabase(databaseBytes, walBytes));
+    } catch (error) {
+      if (!walBytes) throw error;
+      records.push(...parseWindowsMediaPlayerDatabase(databaseBytes, null));
+    }
   }
   const appState = byName.get("appstate.json");
   if (appState) records.push(...parseWindowsMediaPlayerAppState(await appState.text()));
@@ -596,6 +841,20 @@ export async function syncWindowsMediaPlayerHistory(options: SyncOptions = {}): 
 }
 
 export async function syncConnectedExternalHistories(options: SyncOptions = {}): Promise<ExternalHistoryImportReport[]> {
+  const bridge = await settingValue<FileSystemDirectoryHandle>(BRIDGE_DIRECTORY_KEY);
+  if (bridge) {
+    try {
+      return await syncExternalHistoryBridge(options);
+    } catch (error) {
+      if (options.force) throw error;
+      console.warn("External playback history bridge sync failed:", error);
+      return [];
+    }
+  }
+
+  // Legacy direct-file handles are retained for existing installations, but
+  // Chromium may block AppData and other protected locations. New connections
+  // should use the safe Documents bridge folder instead.
   const reports: ExternalHistoryImportReport[] = [];
   for (const sync of [syncVlcHistory, syncWindowsMediaPlayerHistory]) {
     try {
@@ -610,12 +869,41 @@ export async function syncConnectedExternalHistories(options: SyncOptions = {}):
 }
 
 export async function externalHistoryConnectionState(): Promise<{
+  bridge: boolean;
   vlc: boolean;
   windowsMediaPlayer: boolean;
 }> {
-  const [vlc, windows] = await Promise.all([
+  const [bridge, bridgeSources, vlc, windows] = await Promise.all([
+    settingValue<FileSystemDirectoryHandle>(BRIDGE_DIRECTORY_KEY),
+    settingValue<BridgeSources>(BRIDGE_SOURCES_KEY),
     settingValue<FileSystemFileHandle>(VLC_HANDLE_KEY),
     settingValue<SavedWindowsHandles>(WINDOWS_HANDLES_KEY),
   ]);
-  return { vlc: Boolean(vlc), windowsMediaPlayer: Boolean(windows?.database || windows?.appState) };
+  if (bridge) {
+    try {
+      const files = await filesFromBridgeDirectory(bridge, false);
+      const live = files.get("live-playback-history.json");
+      const liveRecords = live ? parseLivePlaybackHistory(await live.text()) : [];
+      return {
+        bridge: true,
+        vlc: Boolean(files.get("vlc-qt-interface.ini") || liveRecords.some((record) => record.source === "vlc")),
+        windowsMediaPlayer: Boolean(
+          files.get("mediaplayer.db") ||
+          files.get("appstate.json") ||
+          liveRecords.some((record) => record.source === "windows_media_player"),
+        ),
+      };
+    } catch {
+      return {
+        bridge: true,
+        vlc: bridgeSources?.vlc ?? false,
+        windowsMediaPlayer: bridgeSources?.windowsMediaPlayer ?? false,
+      };
+    }
+  }
+  return {
+    bridge: false,
+    vlc: Boolean(vlc),
+    windowsMediaPlayer: Boolean(windows?.database || windows?.appState),
+  };
 }

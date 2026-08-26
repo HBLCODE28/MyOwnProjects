@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import "../../styles/appShell.css";
 import "../../styles/stage8BrowseAdditions.css";
 import { ToastProvider } from "../ui/Toast";
+import { syncConnectedExternalHistories } from "../../services/externalPlaybackHistory";
 
 type Props = {
   children: ReactNode;
@@ -18,6 +19,24 @@ const links = [
 ];
 
 export function AppShell({ children }: Props) {
+  useEffect(() => {
+    let active = true;
+    const sync = () => {
+      if (!active) return;
+      void syncConnectedExternalHistories().catch((error) => {
+        console.warn("External playback history sync failed:", error);
+      });
+    };
+
+    const initial = window.setTimeout(sync, 3000);
+    const interval = window.setInterval(sync, 10000);
+    return () => {
+      active = false;
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, []);
+
   return (
     <ToastProvider>
       <div className="app-shell">

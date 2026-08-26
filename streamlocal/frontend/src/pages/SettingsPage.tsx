@@ -19,8 +19,7 @@ import {
 import "../styles/settings.css";
 import { useToast } from "../components/ui/Toast";
 import {
-  connectVlcHistory,
-  connectWindowsMediaPlayerHistory,
+  connectExternalHistoryBridge,
   externalHistoryConnectionState,
   syncConnectedExternalHistories,
   type ExternalHistoryImportReport,
@@ -39,7 +38,7 @@ export function SettingsPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [seekInterval, setSeekInterval] = useState(5);
-  const [externalConnections, setExternalConnections] = useState({ vlc: false, windowsMediaPlayer: false });
+  const [externalConnections, setExternalConnections] = useState({ bridge: false, vlc: false, windowsMediaPlayer: false });
   const [externalReports, setExternalReports] = useState<ExternalHistoryImportReport[]>([]);
   const [externalSyncBusy, setExternalSyncBusy] = useState(false);
   const { showToast } = useToast();
@@ -196,52 +195,66 @@ export function SettingsPage() {
       <section className="settings-card external-history-card">
         <h2>External player history</h2>
         <p>
-          Import viewing activity from external players. VLC and Windows Media Player are independent optional sources - connect either one, both, or neither. StreamLocal matches external file paths to files already in your local library and updates Started, Resume and Watched state without modifying the video files.
+          Chromium blocks direct access to protected AppData files used by VLC and Windows Media Player.
+          StreamLocal therefore uses a read-only local bridge: a small Windows helper mirrors only the history files into your Documents folder, and the browser reads that safe copy. Original player files and video files are never modified.
         </p>
+
+        <div className="history-bridge-steps">
+          <div>
+            <strong>1. Start the history bridge</strong>
+            <p className="vault-security-note">
+              From the StreamLocal project folder, double-click <code>scripts\start-player-history-bridge.cmd</code>, or run:
+            </p>
+            <code className="history-command">powershell -ExecutionPolicy Bypass -File .\scripts\player-history-bridge.ps1</code>
+            <p className="vault-security-note">
+              Keep the helper window open while you want VLC or Windows Media Player activity mirrored. It refreshes the safe copy and checks the Windows playback timeline every 5 seconds.
+            </p>
+          </div>
+          <div>
+            <strong>2. Connect the safe bridge folder</strong>
+            <p className="vault-security-note">
+              Select <code>Documents\StreamLocal\ExternalPlayerHistory</code>. This folder is not a protected system location, so Chrome can remember read permission.
+            </p>
+            <button
+              className="secondary-button"
+              disabled={externalSyncBusy}
+              onClick={() => void runExternalHistoryAction(connectExternalHistoryBridge)}
+            >
+              {externalConnections.bridge ? "Reconnect bridge folder" : "Connect bridge folder"}
+            </button>
+          </div>
+        </div>
+
         <div className="external-history-sources">
           <div className="external-history-source">
             <div>
               <strong>VLC</strong>
-              <span className={externalConnections.vlc ? "connection-state connected" : "connection-state"}>
-                {externalConnections.vlc ? "Connected" : "Not connected"}
+              <span className={externalConnections.vlc ? "connection-state connected" : "connection-state optional"}>
+                {externalConnections.vlc ? "Detected" : "Waiting for bridge"}
               </span>
               <p className="vault-security-note">
-                Select <code>%APPDATA%\vlc\vlc-qt-interface.ini</code>. VLC resume positions are imported; a VLC recent item with saved time 0 is treated as completed.
+                VLC resume positions are imported when <code>vlc-qt-interface.ini</code> is available in the mirrored folder. On VLC versions that expose a Windows system playback timeline, the helper also imports live position and duration.
               </p>
             </div>
-            <button
-              className="secondary-button"
-              disabled={externalSyncBusy}
-              onClick={() => void runExternalHistoryAction(connectVlcHistory)}
-            >
-              {externalConnections.vlc ? "Reconnect VLC" : "Connect VLC"}
-            </button>
           </div>
 
           <div className="external-history-source">
             <div>
               <strong>Windows Media Player</strong>
               <span className={externalConnections.windowsMediaPlayer ? "connection-state connected" : "connection-state optional"}>
-                {externalConnections.windowsMediaPlayer ? "Connected" : "Optional"}
+                {externalConnections.windowsMediaPlayer ? "Detected" : "Optional"}
               </span>
               <p className="vault-security-note">
-                Optional source. You can leave Windows Media Player disconnected without affecting VLC sync or StreamLocal playback history. To connect it, close Media Player first, then select <code>MediaPlayer.db</code> and, when present, <code>MediaPlayer.db-wal</code> and <code>AppState.json</code> from <code>%LOCALAPPDATA%\Packages\Microsoft.ZuneMusic_8wekyb3d8bbwe\LocalState</code>. The picker intentionally shows all files because Chromium does not allow <code>.db-wal</code> as an extension filter. Use Ctrl-click to select multiple files. The database supplies recent video history and AppState can supply the last playback position when Windows stores it.
+                Optional. The helper mirrors <code>MediaPlayer.db</code>, <code>MediaPlayer.db-wal</code> when present, and <code>AppState.json</code>. While Media Player is active, it also reads the Windows system playback timeline so StreamLocal can distinguish Started from completed playback. If Windows Media Player is not installed, VLC and StreamLocal continue normally.
               </p>
             </div>
-            <button
-              className="secondary-button"
-              disabled={externalSyncBusy}
-              onClick={() => void runExternalHistoryAction(connectWindowsMediaPlayerHistory)}
-            >
-              {externalConnections.windowsMediaPlayer ? "Reconnect Media Player" : "Connect Media Player"}
-            </button>
           </div>
         </div>
 
         <div className="settings-actions external-history-actions">
           <button
             className="primary-button"
-            disabled={externalSyncBusy || (!externalConnections.vlc && !externalConnections.windowsMediaPlayer)}
+            disabled={externalSyncBusy || !externalConnections.bridge}
             onClick={() => void runExternalHistoryAction(() => syncConnectedExternalHistories({ requestPermission: true, force: true }))}
           >
             {externalSyncBusy ? "Syncing..." : "Sync player history now"}
@@ -262,7 +275,7 @@ export function SettingsPage() {
           </div>
         )}
         <p className="vault-security-note">
-          After connection, StreamLocal checks connected history files about once per minute while the site is open. Chrome may require permission again after a browser restart. Windows Media Player recent history proves that a file was played, but it does not always contain a completion position; those entries are imported as Started unless a usable position is available.
+          StreamLocal checks the connected bridge folder about once per minute while the site is open. The helper only copies history metadata from the players; it never writes to VLC, Windows Media Player, or your media files.
         </p>
       </section>
 

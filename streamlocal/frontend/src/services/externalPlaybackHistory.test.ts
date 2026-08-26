@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseVlcRecentHistory,
   parseWindowsMediaPlayerAppState,
+  parseLivePlaybackHistory,
   normalizePickerId,
 } from "./externalPlaybackHistory";
 
@@ -50,6 +51,33 @@ foo=bar
       source: "windows_media_player",
     });
   });
+
+  it("parses live Windows playback timeline records for completion tracking", () => {
+    const rows = parseLivePlaybackHistory(JSON.stringify({
+      version: 1,
+      records: [{
+        source: "windows_media_player",
+        sourceAppUserModelId: "Microsoft.ZuneMusic_8wekyb3d8bbwe!Microsoft.ZuneMusic",
+        title: "Interstellar",
+        positionSeconds: 7070,
+        durationSeconds: 7200,
+        firstSeenAt: "2026-08-26T06:00:00.000Z",
+        lastSeenAt: "2026-08-26T07:57:50.000Z",
+        completed: false,
+      }],
+    }));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      path: null,
+      title: "Interstellar",
+      positionSeconds: 7070,
+      durationSeconds: 7200,
+      source: "windows_media_player",
+    });
+    expect(rows[0].playedAt).toBe(Date.parse("2026-08-26T06:00:00.000Z"));
+  });
+
   it("normalizes file-picker ids to Chromium's 32-character limit", () => {
     const id = normalizePickerId("streamlocal-windows-media-player-history/with spaces");
     expect(id.length).toBeLessThanOrEqual(32);
