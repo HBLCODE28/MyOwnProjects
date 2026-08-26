@@ -15,4 +15,12 @@ interface Window {
     id?: string;
     startIn?: string;
   }) => Promise<FileSystemDirectoryHandle>;
+  showOpenFilePicker?: (options?: {
+    id?: string;
+    multiple?: boolean;
+    types?: Array<{
+      description?: string;
+      accept: Record<string, string[]>;
+    }>;
+  }) => Promise<FileSystemFileHandle[]>;
 }

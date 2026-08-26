@@ -13,6 +13,7 @@ import {
   groupSeriesByGenre,
   type SeriesCard as SeriesCardModel,
 } from "../services/browseSelectors";
+import { PLAYBACK_HISTORY_UPDATED_EVENT } from "../services/externalPlaybackHistory";
 import "../styles/browse.css";
 import { useToast } from "../components/ui/Toast";
 
@@ -30,6 +31,9 @@ export function SeriesPage() {
 
   useEffect(() => {
     void refresh();
+    const onExternalHistoryUpdated = () => { void refresh(); };
+    window.addEventListener(PLAYBACK_HISTORY_UPDATED_EVENT, onExternalHistoryUpdated);
+    return () => window.removeEventListener(PLAYBACK_HISTORY_UPDATED_EVENT, onExternalHistoryUpdated);
   }, []);
 
   const series = useMemo(

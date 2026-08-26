@@ -3,7 +3,13 @@ import { db } from "../db/streamlocalDb";
 import type { Artwork } from "../types/library";
 
 const FORMAT_VERSION = 3;
-const PRIVATE_SETTING_KEYS = new Set(["encryptedSecretVault"]);
+const PRIVATE_SETTING_KEYS = new Set([
+  "encryptedSecretVault",
+  "externalHistory.vlcHandle",
+  "externalHistory.vlcSignature",
+  "externalHistory.windowsHandles",
+  "externalHistory.windowsSignature",
+]);
 
 type ExportSource = {
   id: string;

@@ -5,6 +5,7 @@ import { PlayerOverlay } from "../components/player/PlayerOverlay";
 import type { MediaItem } from "../types/library";
 import { loadBrowseData, type BrowseData } from "../services/browseData";
 import { filterMovies } from "../services/browseSelectors";
+import { PLAYBACK_HISTORY_UPDATED_EVENT } from "../services/externalPlaybackHistory";
 import "../styles/browse.css";
 import { useToast } from "../components/ui/Toast";
 
@@ -18,7 +19,12 @@ export function MoviesPage() {
     setData(await loadBrowseData());
   }
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => {
+    void refresh();
+    const onExternalHistoryUpdated = () => { void refresh(); };
+    window.addEventListener(PLAYBACK_HISTORY_UPDATED_EVENT, onExternalHistoryUpdated);
+    return () => window.removeEventListener(PLAYBACK_HISTORY_UPDATED_EVENT, onExternalHistoryUpdated);
+  }, []);
 
   const movies = useMemo(
     () => filterMovies(data?.movies ?? [], query),
