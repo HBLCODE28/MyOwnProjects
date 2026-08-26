@@ -68,6 +68,9 @@ type AudioTrackOption = {
   label: string;
 };
 
+const FULLSCREEN_CONTROLS_HIDE_MS = 5000;
+const SUBTITLE_LINE_PERCENT = 76;
+
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds)) return "0:00";
   const total = Math.max(0, Math.floor(seconds));
@@ -207,11 +210,11 @@ export function PlayerOverlay({
 
     setControlsVisible(true);
 
-    if (fullscreenActive && playing && !subtitleMenuOpen) {
+    if (fullscreenActive && !subtitleMenuOpen) {
       controlsHideTimerRef.current = window.setTimeout(() => {
         setControlsVisible(false);
         controlsHideTimerRef.current = null;
-      }, 2500);
+      }, FULLSCREEN_CONTROLS_HIDE_MS);
     }
 
     return () => {
@@ -220,7 +223,7 @@ export function PlayerOverlay({
         controlsHideTimerRef.current = null;
       }
     };
-  }, [fullscreenActive, playing, subtitleMenuOpen]);
+  }, [fullscreenActive, subtitleMenuOpen]);
 
   function revealFullscreenControls() {
     if (!fullscreenActive) return;
@@ -231,11 +234,11 @@ export function PlayerOverlay({
       controlsHideTimerRef.current = null;
     }
 
-    if (playing && !subtitleMenuOpen) {
+    if (!subtitleMenuOpen) {
       controlsHideTimerRef.current = window.setTimeout(() => {
         setControlsVisible(false);
         controlsHideTimerRef.current = null;
-      }, 2500);
+      }, FULLSCREEN_CONTROLS_HIDE_MS);
     }
   }
 
@@ -528,7 +531,7 @@ export function PlayerOverlay({
       // Native browser subtitles sit almost on the bottom edge of the video.
       // Keep them above the fixed player controls so multi-line cues stay visible.
       cue.snapToLines = false;
-      cue.line = 82;
+      cue.line = SUBTITLE_LINE_PERCENT;
       cue.lineAlign = "center";
     }
   }
@@ -892,7 +895,7 @@ export function PlayerOverlay({
     >
       <button
         className="player-close-floating"
-        onPointerEnter={() => setControlsVisible(true)}
+        onPointerEnter={revealFullscreenControls}
         onClick={() => void closePlayer()}
         aria-label="Close player"
         title="Close"
@@ -990,13 +993,7 @@ export function PlayerOverlay({
       {media && !error && (
         <div
           className="player-controls"
-          onPointerEnter={() => {
-            if (controlsHideTimerRef.current != null) {
-              window.clearTimeout(controlsHideTimerRef.current);
-              controlsHideTimerRef.current = null;
-            }
-            setControlsVisible(true);
-          }}
+          onPointerEnter={revealFullscreenControls}
           onPointerLeave={revealFullscreenControls}
         >
           <div className="player-now-playing">
