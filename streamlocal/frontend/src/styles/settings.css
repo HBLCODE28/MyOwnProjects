@@ -114,3 +114,96 @@
 .artwork-scan-report strong { color: #fff; font-size: 20px; }
 .artwork-scan-report span { color: #858585; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
 .artwork-key-state { grid-column: 1 / -1; margin: 5px 0 0 !important; padding: 10px 12px; border-left: 3px solid #f03546; background: rgba(240,53,70,.06); }
+
+
+.external-history-card {
+  border-color: rgba(240,53,70,.16);
+}
+
+.external-history-sources {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.external-history-source {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  background: rgba(0,0,0,.16);
+}
+
+.external-history-source strong {
+  margin-right: 10px;
+  color: #f2f2f4;
+}
+
+.external-history-source code {
+  color: #c7c7cb;
+  font-size: 10px;
+}
+
+.connection-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 999px;
+  color: #7f8187;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.connection-state.connected {
+  border-color: rgba(78,201,126,.28);
+  color: #79d69e;
+  background: rgba(78,201,126,.08);
+}
+
+.connection-state.optional {
+  border-color: rgba(255,255,255,.09);
+  color: #a7a7ac;
+  background: rgba(255,255,255,.025);
+}
+
+.external-history-actions {
+  margin-top: 12px;
+}
+
+.external-history-report {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.external-history-report > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 14px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 8px;
+  background: rgba(0,0,0,.18);
+}
+
+.external-history-report strong {
+  grid-column: 1 / -1;
+  color: #fff;
+}
+
+.external-history-report span {
+  color: #8b8d93;
+  font-size: 11px;
+}
+
+@media (max-width: 700px) {
+  .external-history-source { grid-template-columns: 1fr; }
+  .external-history-report { grid-template-columns: 1fr; }
+}

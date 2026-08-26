@@ -477,6 +477,12 @@ function signature(files: File[]): string {
     .join("|");
 }
 
+export function normalizePickerId(value: string): string {
+  return value
+    .replace(/[^A-Za-z0-9_-]/g, "-")
+    .slice(0, 32) || "streamlocal-picker";
+}
+
 async function openFileHandles(options: {
   id: string;
   multiple?: boolean;
@@ -485,12 +491,13 @@ async function openFileHandles(options: {
   if (!window.showOpenFilePicker) {
     throw new Error("Use current Chrome or Edge on Windows to connect external player history.");
   }
+  const pickerId = normalizePickerId(options.id);
   const pickerOptions: {
     id: string;
     multiple: boolean;
     types?: Array<{ description: string; accept: Record<string, string[]> }>;
   } = {
-    id: options.id,
+    id: pickerId,
     multiple: options.multiple ?? false,
   };
   if (options.types?.length) pickerOptions.types = options.types;
@@ -499,7 +506,7 @@ async function openFileHandles(options: {
 
 export async function connectVlcHistory(): Promise<ExternalHistoryImportReport> {
   const [handle] = await openFileHandles({
-    id: "streamlocal-vlc-history",
+    id: "sl-vlc-history",
     types: [{
       description: "VLC interface history",
       accept: { "text/plain": [".ini"] },
@@ -518,7 +525,7 @@ export async function connectWindowsMediaPlayerHistory(): Promise<ExternalHistor
   // such as `.db-wal` in showOpenFilePicker() accept lists. Let the native
   // picker show all files and validate the exact Media Player filenames below.
   const handles = await openFileHandles({
-    id: "streamlocal-windows-media-player-history",
+    id: "sl-wmp-history",
     multiple: true,
   });
 

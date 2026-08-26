@@ -196,7 +196,7 @@ export function SettingsPage() {
       <section className="settings-card external-history-card">
         <h2>External player history</h2>
         <p>
-          Import viewing activity from VLC and the Windows 11 Media Player. StreamLocal matches the external file path to files already in your local library and updates Started, Resume and Watched state without modifying the video files.
+          Import viewing activity from external players. VLC and Windows Media Player are independent optional sources - connect either one, both, or neither. StreamLocal matches external file paths to files already in your local library and updates Started, Resume and Watched state without modifying the video files.
         </p>
         <div className="external-history-sources">
           <div className="external-history-source">
@@ -221,11 +221,11 @@ export function SettingsPage() {
           <div className="external-history-source">
             <div>
               <strong>Windows Media Player</strong>
-              <span className={externalConnections.windowsMediaPlayer ? "connection-state connected" : "connection-state"}>
-                {externalConnections.windowsMediaPlayer ? "Connected" : "Not connected"}
+              <span className={externalConnections.windowsMediaPlayer ? "connection-state connected" : "connection-state optional"}>
+                {externalConnections.windowsMediaPlayer ? "Connected" : "Optional"}
               </span>
               <p className="vault-security-note">
-                Close Media Player first, then select <code>MediaPlayer.db</code> and, when present, <code>MediaPlayer.db-wal</code> and <code>AppState.json</code> from <code>%LOCALAPPDATA%\Packages\Microsoft.ZuneMusic_8wekyb3d8bbwe\LocalState</code>. The picker intentionally shows all files because Chromium does not allow <code>.db-wal</code> as an extension filter. Use Ctrl-click to select multiple files. The database supplies recent video history and AppState can supply the last playback position when Windows stores it.
+                Optional source. You can leave Windows Media Player disconnected without affecting VLC sync or StreamLocal playback history. To connect it, close Media Player first, then select <code>MediaPlayer.db</code> and, when present, <code>MediaPlayer.db-wal</code> and <code>AppState.json</code> from <code>%LOCALAPPDATA%\Packages\Microsoft.ZuneMusic_8wekyb3d8bbwe\LocalState</code>. The picker intentionally shows all files because Chromium does not allow <code>.db-wal</code> as an extension filter. Use Ctrl-click to select multiple files. The database supplies recent video history and AppState can supply the last playback position when Windows stores it.
               </p>
             </div>
             <button
