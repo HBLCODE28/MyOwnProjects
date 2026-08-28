@@ -1,4 +1,4 @@
-import { TablerXIcon } from "../icons/TablerIcons";
+import { TablerPlayerPlayIcon, TablerXIcon } from "../icons/TablerIcons";
 import { useEffect, useMemo, useState } from "react";
 import type {
   MediaItem,
@@ -39,6 +39,21 @@ export function SeriesHubOverlay({
   const [progressAnswered, setProgressAnswered] = useState(false);
   const [viewingStateLoaded, setViewingStateLoaded] = useState(false);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
 
   const allEpisodes = useMemo(
     () => card.seasons.flatMap((entry) => entry.episodes).map(({ item }) => item),
@@ -116,6 +131,10 @@ export function SeriesHubOverlay({
       episode.id !== lastWatchedEpisodeId,
   );
 
+  const featuredEpisode = nextEpisode ?? allEpisodes.find(
+    (episode) => availableEpisodeIds.has(episode.id),
+  );
+
   async function markLastWatched() {
     const episode = allEpisodes.find((item) => item.id === lastWatchedEpisodeId);
     if (!episode) return;
@@ -149,7 +168,7 @@ export function SeriesHubOverlay({
               artworkId={heroArtwork}
               remoteUrl={remoteArtwork}
               label="SERIES"
-              fit="contain"
+              fit="cover"
               position="center"
             />
           </div>
@@ -209,9 +228,15 @@ export function SeriesHubOverlay({
             )}
 
             <div className="series-hub-actions">
-              {nextEpisode && (
-                <button className="primary-button" onClick={() => onPlay(nextEpisode)}>
-                  Continue with S{String(nextEpisode.seasonNumber ?? 0).padStart(2, "0")}E{String(nextEpisode.episodeNumber ?? 0).padStart(2, "0")}
+              {featuredEpisode && (
+                <button className="primary-button series-hub-play" onClick={() => onPlay(featuredEpisode)}>
+                  <TablerPlayerPlayIcon size={24} />
+                  <span>
+                    {nextEpisode ? "Continue" : "Play"}
+                    <small>
+                      S{String(featuredEpisode.seasonNumber ?? 0).padStart(2, "0")}E{String(featuredEpisode.episodeNumber ?? 0).padStart(2, "0")}
+                    </small>
+                  </span>
                 </button>
               )}
             </div>
@@ -219,199 +244,215 @@ export function SeriesHubOverlay({
         </div>
 
         <div className="series-hub-body">
-          {viewingStateLoaded && !progressAnswered && !hasPlaybackRecord && <div className="series-viewing-panel">
-            <div>
-              <p className="eyebrow">YOUR PROGRESS</p>
-              <strong>Where did you stop watching?</strong>
-              <p>Use this if StreamLocal has no playback record for the series.</p>
-            </div>
-            <div className="series-viewing-controls">
-              <select
-                aria-label="Last watched season"
-                value={progressSeasonNumber}
-                onChange={(event) => {
-                  const value = Number(event.target.value);
-                  setProgressSeasonNumber(value);
-                  const firstEpisode = allEpisodes.find((episode) => episode.seasonNumber === value);
-                  setLastWatchedEpisodeId(firstEpisode?.id ?? "");
-                }}
-              >
-                {card.seasons.map((seasonEntry) => (
-                  <option key={seasonEntry.seasonNumber} value={seasonEntry.seasonNumber}>Season {seasonEntry.seasonNumber}</option>
-                ))}
-              </select>
-              <select
-                aria-label="Last watched episode"
-                value={lastWatchedEpisodeId}
-                onChange={(event) => setLastWatchedEpisodeId(event.target.value)}
-              >
-                <option value="">Select episode</option>
-                {allEpisodes.filter((episode) => episode.seasonNumber === progressSeasonNumber).map((episode) => (
-                  <option key={episode.id} value={episode.id}>
-                    S{String(episode.seasonNumber ?? 0).padStart(2, "0")}E{String(episode.episodeNumber ?? 0).padStart(2, "0")} · {episode.episodeTitle || episode.title}
-                  </option>
-                ))}
-              </select>
-              <button className="secondary-button" disabled={!lastWatchedEpisodeId} onClick={() => void markLastWatched()}>
-                Save last episode
-              </button>
-              <button className="text-button" onClick={() => void markNotWatched()}>
-                I haven’t watched this series
-              </button>
-            </div>
-            {viewingMessage && <span className="series-viewing-message">{viewingMessage}</span>}
-          </div>}
+          <div className="series-hub-content-grid">
+            <main className="series-episodes-panel">
+              <div className="series-hub-toolbar">
+                <div className="series-season-heading">
+                  <p className="eyebrow">EPISODES</p>
+                  <h3>Season {season?.seasonNumber ?? seasonNumber}</h3>
+                  <span className="series-episodes-label">
+                    {season?.episodes.length ?? 0} episode{season?.episodes.length === 1 ? "" : "s"}
+                  </span>
+                </div>
+              </div>
 
-          <div className="series-hub-toolbar">
-            <div className="series-season-heading">
-              <h3>
-                Season {season?.seasonNumber ?? seasonNumber}
-              </h3>
-              <span className="series-episodes-label">EPISODES</span>
-            </div>
+              <div className="episode-list">
+                {season?.episodes.map(({ item, file }) => {
+                  const canPlay =
+                    Boolean(file?.available) &&
+                    ["mp4", "mkv"].includes(
+                      file?.extension.toLowerCase() ?? "",
+                    );
 
-            <label className="series-season-select">
-              Season
-              <select
-                value={season?.seasonNumber ?? seasonNumber}
-                onChange={(event) =>
-                  setSeasonNumber(Number(event.target.value))
-                }
-              >
-                {card.seasons.map((entry) => (
-                  <option
-                    key={entry.seasonNumber}
-                    value={entry.seasonNumber}
-                  >
-                    Season {entry.seasonNumber}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+                  const progress = progressByItemId[item.id];
+                  const state = progress?.watched
+                    ? "Watched"
+                    : progress?.started
+                      ? "Started"
+                      : null;
 
-          <div className="episode-list">
-            {season?.episodes.map(({ item, file }) => {
-              const canPlay =
-                Boolean(file?.available) &&
-                ["mp4", "mkv"].includes(
-                  file?.extension.toLowerCase() ?? "",
-                );
+                  return (
+                    <article
+                      className={`episode-row ${
+                        progress?.watched
+                          ? "episode-row-watched"
+                          : progress?.started
+                            ? "episode-row-started"
+                            : ""
+                      }`}
+                      key={item.id}
+                      onDoubleClick={() => { if (canPlay) onPlay(item); }}
+                    >
+                      <div className="episode-number">
+                        {item.episodeNumber ?? "-"}
+                      </div>
 
-              const progress = progressByItemId[item.id];
-              const state = progress?.watched
-                ? "Watched"
-                : progress?.started
-                  ? "Started"
-                  : null;
+                      <div className="episode-thumbnail">
+                        <ArtworkImage
+                          artworkId={
+                            item.backdropArtworkId ??
+                            item.posterArtworkId ??
+                            card.series.backdropArtworkId ??
+                            null
+                          }
+                          remoteUrl={
+                            card.series.remoteBackdropUrl ??
+                            card.series.remotePosterUrl ??
+                            null
+                          }
+                          label={`S${String(item.seasonNumber ?? 0).padStart(2, "0")}E${String(item.episodeNumber ?? 0).padStart(2, "0")}`}
+                          fit="cover"
+                        />
 
-              return (
-                <article
-                  className={`episode-row ${
-                    progress?.watched
-                      ? "episode-row-watched"
-                      : progress?.started
-                        ? "episode-row-started"
-                        : ""
-                  }`}
-                  key={item.id}
-                >
-                  <div className="episode-number">
-                    {item.episodeNumber ?? "-"}
-                  </div>
+                        {state && (
+                          <span
+                            className={
+                              progress?.watched
+                                ? "episode-state watched"
+                                : "episode-state started"
+                            }
+                          >
+                            {state}
+                          </span>
+                        )}
 
-                  <div className="episode-thumbnail">
-                    <ArtworkImage
-                      artworkId={
-                        item.backdropArtworkId ??
-                        item.posterArtworkId ??
-                        card.series.backdropArtworkId ??
-                        null
-                      }
-                      remoteUrl={
-                        card.series.remoteBackdropUrl ??
-                        card.series.remotePosterUrl ??
-                        null
-                      }
-                      label={`S${String(item.seasonNumber ?? 0).padStart(2, "0")}E${String(item.episodeNumber ?? 0).padStart(2, "0")}`}
-                      fit="cover"
-                    />
+                        {progress &&
+                          progress.percent > 0 &&
+                          !progress.watched && (
+                            <div className="episode-progress-track">
+                              <div
+                                className="episode-progress-value"
+                                style={{
+                                  width: `${Math.max(
+                                    2,
+                                    Math.min(100, progress.percent * 100),
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                          )}
+                      </div>
 
-                    {state && (
-                      <span
-                        className={
-                          progress?.watched
-                            ? "episode-state watched"
-                            : "episode-state started"
-                        }
-                      >
-                        {state}
-                      </span>
-                    )}
+                      <div className="episode-copy">
+                        <div className="episode-title-row">
+                          <h4>
+                            {item.episodeTitle ||
+                              item.title ||
+                              `Episode ${item.episodeNumber ?? ""}`}
+                          </h4>
 
-                    {progress &&
-                      progress.percent > 0 &&
-                      !progress.watched && (
-                        <div className="episode-progress-track">
-                          <div
-                            className="episode-progress-value"
-                            style={{
-                              width: `${Math.max(
-                                2,
-                                Math.min(100, progress.percent * 100),
-                              )}%`,
-                            }}
-                          />
+                          <span>
+                            S{String(item.seasonNumber ?? 0).padStart(2, "0")}
+                            E{String(item.episodeNumber ?? 0).padStart(2, "0")}
+                          </span>
                         </div>
-                      )}
+
+                        {item.overview && <p>{item.overview}</p>}
+
+                        <div className="episode-file-meta">
+                          {file?.fileName ?? "File unavailable"}
+                        </div>
+                      </div>
+
+                      <div className="episode-actions">
+                        {canPlay ? (
+                          <button
+                            className="primary-button episode-play-button"
+                            onClick={() => onPlay(item)}
+                          >
+                            <TablerPlayerPlayIcon size={18} />
+                            {progress?.started && !progress.watched
+                              ? "Resume"
+                              : progress?.watched
+                                ? "Play again"
+                                : "Play"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="episode-unavailable episode-unavailable-button"
+                            onClick={() => onUnavailable?.(item)}
+                          >
+                            Unavailable · Reconnect folder
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </main>
+
+            <aside className="series-season-sidebar" aria-label="Series seasons">
+              <div className="series-season-sidebar-heading">
+                <p className="eyebrow">SEASONS</p>
+                <strong>{card.seasons.length} season{card.seasons.length === 1 ? "" : "s"}</strong>
+              </div>
+
+              <div className="series-season-list">
+                {card.seasons.map((entry) => (
+                  <button
+                    type="button"
+                    key={entry.seasonNumber}
+                    className={`series-season-button ${
+                      entry.seasonNumber === (season?.seasonNumber ?? seasonNumber)
+                        ? "series-season-button-active"
+                        : ""
+                    }`}
+                    aria-pressed={entry.seasonNumber === (season?.seasonNumber ?? seasonNumber)}
+                    onClick={() => setSeasonNumber(entry.seasonNumber)}
+                  >
+                    <span>Season {entry.seasonNumber}</span>
+                    <small>{entry.episodes.length} episode{entry.episodes.length === 1 ? "" : "s"}</small>
+                  </button>
+                ))}
+              </div>
+
+              {viewingStateLoaded && !progressAnswered && !hasPlaybackRecord && (
+                <div className="series-viewing-panel">
+                  <div>
+                    <p className="eyebrow">YOUR PROGRESS</p>
+                    <strong>Where did you stop watching?</strong>
+                    <p>Use this if StreamLocal has no playback record for the series.</p>
                   </div>
-
-                  <div className="episode-copy">
-                    <div className="episode-title-row">
-                      <h4>
-                        {item.episodeTitle ||
-                          item.title ||
-                          `Episode ${item.episodeNumber ?? ""}`}
-                      </h4>
-
-                      <span>
-                        S{String(item.seasonNumber ?? 0).padStart(2, "0")}
-                        E{String(item.episodeNumber ?? 0).padStart(2, "0")}
-                      </span>
-                    </div>
-
-                    {item.overview && <p>{item.overview}</p>}
-
-                    <div className="episode-file-meta">
-                      {file?.fileName ?? "File unavailable"}
-                    </div>
+                  <div className="series-viewing-controls">
+                    <select
+                      aria-label="Last watched season"
+                      value={progressSeasonNumber}
+                      onChange={(event) => {
+                        const value = Number(event.target.value);
+                        setProgressSeasonNumber(value);
+                        const firstEpisode = allEpisodes.find((episode) => episode.seasonNumber === value);
+                        setLastWatchedEpisodeId(firstEpisode?.id ?? "");
+                      }}
+                    >
+                      {card.seasons.map((seasonEntry) => (
+                        <option key={seasonEntry.seasonNumber} value={seasonEntry.seasonNumber}>Season {seasonEntry.seasonNumber}</option>
+                      ))}
+                    </select>
+                    <select
+                      aria-label="Last watched episode"
+                      value={lastWatchedEpisodeId}
+                      onChange={(event) => setLastWatchedEpisodeId(event.target.value)}
+                    >
+                      <option value="">Select episode</option>
+                      {allEpisodes.filter((episode) => episode.seasonNumber === progressSeasonNumber).map((episode) => (
+                        <option key={episode.id} value={episode.id}>
+                          S{String(episode.seasonNumber ?? 0).padStart(2, "0")}E{String(episode.episodeNumber ?? 0).padStart(2, "0")} · {episode.episodeTitle || episode.title}
+                        </option>
+                      ))}
+                    </select>
+                    <button className="secondary-button" disabled={!lastWatchedEpisodeId} onClick={() => void markLastWatched()}>
+                      Save last episode
+                    </button>
+                    <button className="text-button" onClick={() => void markNotWatched()}>
+                      I haven’t watched this series
+                    </button>
                   </div>
-
-                  <div className="episode-actions">
-                    {canPlay ? (
-                      <button
-                        className="primary-button"
-                        onClick={() => onPlay(item)}
-                      >
-                        {progress?.started && !progress.watched
-                          ? "Resume"
-                          : progress?.watched
-                            ? "Play again"
-                            : "Play"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="episode-unavailable episode-unavailable-button"
-                        onClick={() => onUnavailable?.(item)}
-                      >
-                        Unavailable · Reconnect folder
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+                  {viewingMessage && <span className="series-viewing-message">{viewingMessage}</span>}
+                </div>
+              )}
+            </aside>
           </div>
         </div>
       </section>
