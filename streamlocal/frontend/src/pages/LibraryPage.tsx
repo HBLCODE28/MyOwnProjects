@@ -11,6 +11,9 @@ import { removeMediaFileFromLibrary, setWatchedState } from "../services/library
 import "../styles/library.css";
 import { useToast } from "../components/ui/Toast";
 import { importStreamLocalBackup } from "../services/backup";
+import { networkBridgeAvailable, validateNetworkFolder } from "../services/networkBridge";
+
+const FILES_PER_PAGE = 150;
 
 export function LibraryPage() {
   const [sources, setSources] = useState<LibrarySource[]>([]);
@@ -21,6 +24,9 @@ export function LibraryPage() {
   const [summary, setSummary] = useState<ScanSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [networkMode, setNetworkMode] = useState(false);
+  const [fileQuery, setFileQuery] = useState("");
+  const [filePage, setFilePage] = useState(1);
   const { showToast } = useToast();
 
   async function importBackup(file: File | undefined) {
@@ -53,6 +59,7 @@ export function LibraryPage() {
   useEffect(() => {
     void requestPersistentStorage();
     void refresh();
+    void networkBridgeAvailable().then(setNetworkMode);
   }, []);
 
   async function addFolder() {
@@ -95,7 +102,56 @@ export function LibraryPage() {
     }
   }
 
+  async function addNetworkPath(existingSource?: LibrarySource) {
+    const initial = existingSource?.nativePath ?? "\\\\SERVER\\Share\\Movies";
+    const entered = window.prompt("Enter the network share path (UNC). Example: \\\\SERVER\\Movies", initial);
+    if (!entered?.trim()) return;
+    setError(null);
+    try {
+      if (!(await networkBridgeAvailable())) {
+        throw new Error("Network folders require StreamLocal Website Portable on http://127.0.0.1:17836.");
+      }
+      const selected = await validateNetworkFolder(entered.trim());
+      const byPath = sources.find((source) => source.nativePath?.toLowerCase() === selected.path.toLowerCase());
+      const target = existingSource ?? byPath;
+      if (target) {
+        await db.librarySources.update(target.id, {
+          enabled: true,
+          handle: null,
+          nativePath: selected.path,
+          name: selected.name,
+        });
+        const updated = await db.librarySources.get(target.id);
+        if (updated) await scan(updated);
+        showToast(`Connected network folder ${selected.name}.`, "success");
+        return;
+      }
+      const source: LibrarySource = {
+        id: createId("source"),
+        name: selected.name,
+        createdAt: Date.now(),
+        lastScanAt: null,
+        enabled: true,
+        recursive: true,
+        handle: null,
+        nativePath: selected.path,
+      };
+      await db.librarySources.add(source);
+      await refresh();
+      await scan(source);
+      showToast(`Added and scanned ${selected.name}.`, "success");
+    } catch (value) {
+      const message = value instanceof Error ? value.message : "Could not open network folder.";
+      setError(message);
+      showToast(message, "error");
+    }
+  }
+
   async function reconnect(source: LibrarySource) {
+    if (source.nativePath) {
+      await addNetworkPath(source);
+      return;
+    }
     setError(null);
     try {
       const location = await chooseLibraryLocation();
@@ -192,7 +248,44 @@ export function LibraryPage() {
     folders: sources.filter((source) => source.enabled).length,
   }), [files, sources]);
 
-  const itemByFileId = new Map(items.map((item) => [item.mediaFileId, item]));
+  const itemByFileId = useMemo(
+    () => new Map(items.map((item) => [item.mediaFileId, item])),
+    [items],
+  );
+  const sourceById = useMemo(
+    () => new Map(sources.map((source) => [source.id, source])),
+    [sources],
+  );
+
+  const filteredFiles = useMemo(() => {
+    const normalized = fileQuery.trim().toLowerCase();
+    if (!normalized) return files;
+
+    return files.filter((file) => {
+      const item = itemByFileId.get(file.id);
+      const source = sourceById.get(file.sourceId);
+      const searchable = [
+        item?.title ?? "",
+        file.fileName,
+        file.relativePath,
+        source?.name ?? "",
+        file.extension,
+        file.available ? "available online" : "unavailable offline",
+      ].join(" ").toLowerCase();
+      return searchable.includes(normalized);
+    });
+  }, [fileQuery, files, itemByFileId, sourceById]);
+
+  const filePageCount = Math.max(1, Math.ceil(filteredFiles.length / FILES_PER_PAGE));
+  const safeFilePage = Math.min(filePage, filePageCount);
+  const visibleFiles = useMemo(() => {
+    const start = (safeFilePage - 1) * FILES_PER_PAGE;
+    return filteredFiles.slice(start, start + FILES_PER_PAGE);
+  }, [filteredFiles, safeFilePage]);
+
+  useEffect(() => {
+    if (filePage > filePageCount) setFilePage(filePageCount);
+  }, [filePage, filePageCount]);
 
   return (
     <div className="page library-page">
@@ -201,11 +294,14 @@ export function LibraryPage() {
           <p className="eyebrow">LOCAL LIBRARY</p>
           <h1>Library</h1>
           <p>
-            StreamLocal reads only folders you explicitly choose in Chrome or Edge. For a network share,
-            map it to a Windows drive letter first, then choose that mapped folder with Add folder.
+            StreamLocal reads only folders you explicitly choose. Local folders use Chrome/Edge permissions.
+            Website Portable can also read a direct Windows network path such as \\\\NAS\\Movies without mapping a drive.
           </p>
         </div>
         <div className="library-heading-actions">
+          <button type="button" className="secondary-button" onClick={() => void addNetworkPath()}>
+            Add network path
+          </button>
           <button type="button" className="primary-button" onClick={addFolder}>
             Add folder
           </button>
@@ -249,17 +345,18 @@ export function LibraryPage() {
                 <div className="source-main">
                   <strong>{source.name}</strong>
                   <span>
-                    {source.enabled && source.handle ? "Connected" : "Needs reconnect"}
+                    {source.enabled && (source.handle || (source.nativePath && networkMode)) ? "Connected" : "Needs reconnect"}
+                    {source.nativePath ? ` · ${source.nativePath}` : ""}
                     {source.lastScanAt ? ` · ${new Date(source.lastScanAt).toLocaleString()}` : ""}
                   </span>
                 </div>
                 <div className="source-actions">
-                  {(!source.enabled || !source.handle) && (
+                  {(!source.enabled || (!source.handle && !(source.nativePath && networkMode))) && (
                     <button className="secondary-button" onClick={() => reconnect(source)}>
                       Reconnect folder
                     </button>
                   )}
-                  {source.enabled && source.handle && (
+                  {source.enabled && (source.handle || (source.nativePath && networkMode)) && (
                     <button
                       className="secondary-button"
                       disabled={busy === source.id}
@@ -290,15 +387,53 @@ export function LibraryPage() {
             Remove unavailable entries
           </button>
         </div>
+        {files.length > 0 && (
+          <div className="library-file-toolbar">
+            <input
+              type="search"
+              value={fileQuery}
+              onChange={(event) => {
+                setFileQuery(event.target.value);
+                setFilePage(1);
+              }}
+              placeholder="Search title, filename, path or folder"
+              aria-label="Search discovered media"
+            />
+            <div className="library-file-page-controls">
+              <span>
+                {filteredFiles.length.toLocaleString()} result{filteredFiles.length === 1 ? "" : "s"}
+                {filteredFiles.length > FILES_PER_PAGE ? ` · page ${safeFilePage} of ${filePageCount}` : ""}
+              </span>
+              <button
+                type="button"
+                className="secondary-button compact-button"
+                disabled={safeFilePage <= 1}
+                onClick={() => setFilePage((current) => Math.max(1, current - 1))}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="secondary-button compact-button"
+                disabled={safeFilePage >= filePageCount}
+                onClick={() => setFilePage((current) => Math.min(filePageCount, current + 1))}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
         {files.length === 0 ? (
           <div className="library-empty">No MP4 or MKV files found yet.</div>
+        ) : filteredFiles.length === 0 ? (
+          <div className="library-empty">No files match this search.</div>
         ) : (
           <div className="media-table">
             <div className="media-table-header">
               <span>File / metadata</span><span>Folder</span><span>Size</span><span>Status / actions</span>
             </div>
-            {files.map((file) => {
-              const source = sources.find((candidate) => candidate.id === file.sourceId);
+            {visibleFiles.map((file) => {
+              const source = sourceById.get(file.sourceId);
               const item = itemByFileId.get(file.id);
               const progress = item ? progressByItemId[item.id] : undefined;
               return (

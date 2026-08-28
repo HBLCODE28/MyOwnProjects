@@ -112,37 +112,48 @@ export function groupSeries(
   files: MediaFile[],
 ): SeriesCard[] {
   const fileById = new Map(files.map((file) => [file.id, file]));
-  const output: SeriesCard[] = [];
+  const episodesBySeries = new Map<string, EpisodeCard[]>();
 
-  for (const series of seriesRows) {
-    const episodes = episodeItems
-      .filter((item) => item.seriesId === series.id)
-      .map((item) => ({
-        item,
-        file: fileById.get(item.mediaFileId),
-      }))
-      .sort((a, b) => {
-        const seasonDelta = (a.item.seasonNumber ?? 0) - (b.item.seasonNumber ?? 0);
-        if (seasonDelta !== 0) return seasonDelta;
-        return (a.item.episodeNumber ?? 0) - (b.item.episodeNumber ?? 0);
-      });
-
-    const seasonNumbers = Array.from(
-      new Set(episodes.map(({ item }) => item.seasonNumber ?? 0)),
-    ).sort((a, b) => a - b);
-
-    output.push({
-      series,
-      seasons: seasonNumbers.map((seasonNumber) => ({
-        seasonNumber,
-        episodes: episodes.filter(
-          ({ item }) => (item.seasonNumber ?? 0) === seasonNumber,
-        ),
-      })),
-      episodeCount: episodes.length,
-      availableEpisodeCount: episodes.filter(({ file }) => file?.available).length,
-    });
+  for (const item of episodeItems) {
+    if (!item.seriesId) continue;
+    const bucket = episodesBySeries.get(item.seriesId) ?? [];
+    bucket.push({ item, file: fileById.get(item.mediaFileId) });
+    episodesBySeries.set(item.seriesId, bucket);
   }
+
+  const output: SeriesCard[] = seriesRows.map((series) => {
+    const episodes = episodesBySeries.get(series.id) ?? [];
+    episodes.sort((a, b) => {
+      const seasonDelta = (a.item.seasonNumber ?? 0) - (b.item.seasonNumber ?? 0);
+      if (seasonDelta !== 0) return seasonDelta;
+      return (a.item.episodeNumber ?? 0) - (b.item.episodeNumber ?? 0);
+    });
+
+    const seasonsByNumber = new Map<number, EpisodeCard[]>();
+    let availableEpisodeCount = 0;
+
+    for (const episode of episodes) {
+      const seasonNumber = episode.item.seasonNumber ?? 0;
+      const seasonEpisodes = seasonsByNumber.get(seasonNumber) ?? [];
+      seasonEpisodes.push(episode);
+      seasonsByNumber.set(seasonNumber, seasonEpisodes);
+      if (episode.file?.available) availableEpisodeCount += 1;
+    }
+
+    const seasons = Array.from(seasonsByNumber.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([seasonNumber, seasonEpisodes]) => ({
+        seasonNumber,
+        episodes: seasonEpisodes,
+      }));
+
+    return {
+      series,
+      seasons,
+      episodeCount: episodes.length,
+      availableEpisodeCount,
+    };
+  });
 
   return output.sort((a, b) => a.series.title.localeCompare(b.series.title));
 }

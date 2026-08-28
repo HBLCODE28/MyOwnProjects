@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { BrowseRail } from "../components/browse/BrowseRail";
 import { HeroRail } from "../components/browse/HeroRail";
+import { BrowseRail } from "../components/browse/BrowseRail";
 import { MediaCard } from "../components/browse/MediaCard";
 import { PlayerOverlay } from "../components/player/PlayerOverlay";
 import type { MediaItem } from "../types/library";
@@ -37,17 +37,15 @@ export function MoviesPage() {
     [movies],
   );
 
-  const searching = query.trim().length > 0;
-
   if (!data) {
-    return <div className="page browse-page"><div className="library-empty">Loading movies...</div></div>;
+    return <div className="page browse-page movies-page"><div className="library-empty">Loading movies...</div></div>;
   }
 
   return (
-    <div className="page browse-page movies-page">
+    <div className="page browse-page">
       <HeroRail movies={data.movies} series={[]} onPlayMovie={setPlaying} />
 
-      <section className="browse-toolbar movies-toolbar">
+      <section className="browse-toolbar">
         <div>
           <p className="eyebrow">MOVIES</p>
           <h2>{movies.length} local movie{movies.length === 1 ? "" : "s"}</h2>
@@ -65,28 +63,6 @@ export function MoviesPage() {
         <div className="library-empty movies-empty">
           No movies found. Use Library and Identify first.
         </div>
-      ) : searching ? (
-        <section className="browse-section movies-search-section">
-          <div className="section-title-row">
-            <div>
-              <p className="eyebrow">{movies.length} RESULT{movies.length === 1 ? "" : "S"}</p>
-              <h2>Search results</h2>
-            </div>
-          </div>
-          <div className="poster-grid movies-search-grid">
-            {movies.map(({ item, file }) => (
-              <MediaCard
-                key={item.id}
-                item={item}
-                file={file}
-                label="MOVIE"
-                progress={data.progressByItemId[item.id]}
-                onPlay={setPlaying}
-                onUnavailable={(entry) => showToast(`${entry.title} is unavailable. Reconnect its media folder in Library.`, "error")}
-              />
-            ))}
-          </div>
-        </section>
       ) : (
         <div className="movie-genre-rails">
           {genreGroups.map(({ genre, cards }) => (
@@ -98,7 +74,10 @@ export function MoviesPage() {
                 </div>
               </div>
 
-              <BrowseRail trackClassName="rail-grid movie-rail-grid" ariaLabel={`${genre} movies`}>
+              <BrowseRail
+                trackClassName="rail-grid movie-rail-grid"
+                ariaLabel={`${genre} movies`}
+              >
                 {cards.map(({ item, file }) => (
                   <MediaCard
                     key={`${genre}-${item.id}`}

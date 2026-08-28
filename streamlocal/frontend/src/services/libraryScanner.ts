@@ -4,6 +4,7 @@ import { createId } from "../utils/id";
 import { createFingerprint } from "./fingerprint";
 import { verifyReadPermission } from "./fileSystem";
 import { clearTimelinePreviews } from "./timelinePreview";
+import { networkFingerprint, scanNetworkFolder } from "./networkBridge";
 
 const VIDEO_EXTENSIONS = new Set(["mp4", "mkv"]);
 
@@ -51,6 +52,11 @@ async function walkDirectory(
 }
 
 async function discoverSource(source: LibrarySource): Promise<DiscoveredFile[]> {
+  if (source.nativePath) {
+    const result = await scanNetworkFolder(source.nativePath, source.recursive);
+    return result.files.map((file) => ({ ...file }));
+  }
+
   if (!source.handle) {
     throw new Error("This folder is not connected on this computer.");
   }
@@ -76,6 +82,7 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
 
   const byPath = new Map(existing.map((file) => [file.relativePath.toLowerCase(), file]));
   const seenIds = new Set<string>();
+  const scanTimestamp = Date.now();
 
   let added = 0;
   let updated = 0;
@@ -95,18 +102,24 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
       if (!stored.available) {
         await db.mediaFiles.update(stored.id, {
           available: true,
-          lastSeenAt: Date.now(),
+          lastSeenAt: scanTimestamp,
         });
         updated += 1;
       } else {
-        await db.mediaFiles.update(stored.id, { lastSeenAt: Date.now() });
+        // Avoid one IndexedDB write for every unchanged file. Large libraries
+        // can contain tens of thousands of videos, and source.lastScanAt already
+        // records when a successful full scan completed.
         unchanged += 1;
       }
       continue;
     }
 
     const fingerprint = discoveredFile.fingerprint
-      ?? (discoveredFile.file ? await createFingerprint(discoveredFile.file) : "");
+      ?? (discoveredFile.file
+        ? await createFingerprint(discoveredFile.file)
+        : source.nativePath
+          ? await networkFingerprint(source.nativePath, relativePath)
+          : "");
     if (!fingerprint) throw new Error(`Could not fingerprint ${relativePath}.`);
 
     if (!stored) {
@@ -133,7 +146,7 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
         lastModified,
         fingerprint,
         available: true,
-        lastSeenAt: Date.now(),
+        lastSeenAt: scanTimestamp,
       });
       seenIds.add(stored.id);
       updated += 1;
@@ -148,7 +161,7 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
         lastModified,
         fingerprint,
         available: true,
-        lastSeenAt: Date.now(),
+        lastSeenAt: scanTimestamp,
       };
       await db.mediaFiles.add(record);
       seenIds.add(record.id);
@@ -167,7 +180,7 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
   }
 
   await db.librarySources.update(source.id, {
-    lastScanAt: Date.now(),
+    lastScanAt: scanTimestamp,
   });
 
   return {

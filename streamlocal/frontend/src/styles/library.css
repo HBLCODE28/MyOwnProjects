@@ -34,6 +34,43 @@
 .media-row-actions { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
 .compact-button { min-height:30px; padding:0 8px; font-size:10px; }
 
+.library-file-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: -4px 0 14px;
+}
+
+.library-file-toolbar input {
+  width: min(520px, 52vw);
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  outline: none;
+  color: #f0f0f2;
+  background: rgba(0,0,0,.22);
+}
+
+.library-file-toolbar input:focus {
+  border-color: rgba(255,255,255,.34);
+}
+
+.library-file-page-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.library-file-page-controls > span {
+  margin-right: 4px;
+  color: #77787f;
+  font-size: 11px;
+}
+
 .library-heading-actions {
   display: flex;
   flex-wrap: wrap;
@@ -44,6 +81,19 @@
 @media (max-width: 760px) {
   .library-heading-actions {
     width: 100%;
+    justify-content: flex-start;
+  }
+
+  .library-file-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .library-file-toolbar input {
+    width: 100%;
+  }
+
+  .library-file-page-controls {
     justify-content: flex-start;
   }
 }
