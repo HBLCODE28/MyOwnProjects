@@ -407,3 +407,222 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
   .card-button.audio-btn { min-width: 34px; }
   .card-button.audio-btn span { display: none; }
 }
+
+/* Header clock + compact Israel weather strip */
+.topbar-left {
+  justify-content: flex-start;
+  direction: ltr;
+  gap: 5px;
+  overflow: hidden;
+}
+.clock {
+  flex: 0 0 auto;
+  min-width: 76px;
+  padding: 0 9px 0 1px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f5f8fc;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  direction: ltr;
+  letter-spacing: .02em;
+}
+.weather-strip {
+  min-width: 0;
+  height: 38px;
+  display: flex;
+  align-items: stretch;
+  direction: ltr;
+  border: 1px solid #263a58;
+  background: rgba(10, 20, 36, .62);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.weather-city {
+  min-width: 58px;
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  direction: rtl;
+  border-left: 1px solid #263a58;
+  white-space: nowrap;
+}
+.weather-city:first-child { border-left: 0; }
+.weather-city b {
+  color: #91a5bf;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1;
+}
+.weather-city strong {
+  color: #e9f5ff;
+  font-size: 13px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.weather-city:hover { background: rgba(42, 76, 116, .34); }
+
+/* Custom, light schedule view used by Kan 11 */
+.schedule-content { min-height: 0; overflow: hidden; background: #f4f6f9; }
+.schedule-custom,
+.schedule-frame-wrap { width: 100%; height: 100%; min-height: 0; }
+.schedule-custom[hidden],
+.schedule-frame-wrap[hidden] { display: none !important; }
+.schedule-custom {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: #f4f6f9;
+  color: #172033;
+}
+.schedule-custom-toolbar {
+  min-height: 64px;
+  padding: 11px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  background: #fff;
+  border-bottom: 1px solid #dfe5ed;
+}
+.schedule-custom-toolbar > div { display: grid; gap: 4px; }
+.schedule-custom-toolbar strong { color: #121b2c; font-size: 15px; }
+.schedule-custom-toolbar span { color: #6e7d90; font-size: 11px; }
+.schedule-refresh {
+  min-height: 36px;
+  padding: 7px 11px;
+  background: #f6f8fb;
+  border-color: #ccd6e2;
+  color: #26364b;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.schedule-refresh:hover { background: #edf2f7; color: #122033; }
+.schedule-refresh .tabler-icon { filter: none; opacity: .7; width: 17px; height: 17px; }
+.schedule-custom-body { min-height: 0; overflow: auto; padding: 12px 16px 18px; }
+.schedule-loading {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: #64748a;
+  font-size: 13px;
+}
+.schedule-loading .spinner { border-color: rgba(38, 132, 201, .18); border-top-color: #2588cf; }
+.schedule-list {
+  width: min(850px, 100%);
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #dce3eb;
+  border-radius: 11px;
+  overflow: hidden;
+  box-shadow: 0 5px 18px rgba(37, 55, 78, .06);
+}
+.schedule-row {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  align-items: center;
+  direction: ltr;
+  border-bottom: 1px solid #e7ebf0;
+  background: #fff;
+}
+.schedule-row:last-child { border-bottom: 0; }
+.schedule-row:hover { background: #f8fafc; }
+.schedule-row time {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  direction: ltr;
+  color: #52647a;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-right: 1px solid #e7ebf0;
+}
+.schedule-row-copy {
+  min-width: 0;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  direction: rtl;
+  text-align: right;
+}
+.schedule-row-copy strong { color: #1b2738; font-size: 14px; line-height: 1.35; }
+.schedule-row.is-now {
+  background: #eef7ff;
+  box-shadow: inset -4px 0 0 #268bd2;
+}
+.schedule-row.is-now time { color: #126ca9; background: #e7f4ff; }
+.schedule-now-label {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #d9eeff;
+  color: #126ca9;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.schedule-custom-error {
+  width: min(680px, 100%);
+  margin: 34px auto;
+  padding: 18px;
+  display: grid;
+  gap: 7px;
+  border: 1px solid #d8e0e9;
+  border-radius: 10px;
+  background: #fff;
+  color: #5e6d80;
+  text-align: right;
+  line-height: 1.5;
+}
+.schedule-custom-error strong { color: #233249; }
+.schedule-custom-error span { font-size: 12px; }
+
+@media (max-width: 1280px) {
+  .weather-city:nth-child(5) { display: none; }
+}
+
+@media (max-width: 1120px) {
+  .weather-city:nth-child(4),
+  .weather-city:nth-child(5) { display: none; }
+  .weather-city { min-width: 54px; padding: 0 6px; }
+  .clock { min-width: 70px; padding-right: 6px; font-size: 16px; }
+}
+
+@media (max-width: 900px) {
+  .weather-strip { display: none; }
+  .topbar-left .button-label { display: none; }
+}
+
+@media (max-width: 700px) {
+  .topbar-left { overflow: visible; }
+  .topbar-left .topbar-button { display: none; }
+  .clock { display: block; min-width: 60px; padding: 0; font-size: 14px; }
+  .schedule-custom-toolbar { padding: 9px 11px; }
+  .schedule-custom-toolbar span { display: none; }
+  .schedule-custom-body { padding: 8px; }
+  .schedule-row { grid-template-columns: 64px minmax(0, 1fr); min-height: 54px; }
+  .schedule-row-copy { padding: 9px 10px; }
+  .schedule-now-label { display: none; }
+}
+.weather-credit {
+  flex: 0 0 auto;
+  padding: 0 7px;
+  display: flex;
+  align-items: center;
+  color: #607792;
+  font-size: 8px;
+  text-decoration: none;
+  direction: ltr;
+  border-left: 1px solid #263a58;
+}
+.weather-credit:hover { color: #a7cbe5; background: rgba(42, 76, 116, .34); }

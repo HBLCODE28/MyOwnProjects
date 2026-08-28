@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MediaFile, MediaItem, Series } from "../types/library";
-import { filterMovies, filterSeries, groupMoviesByGenre, groupSeries, groupSeriesByGenre, libraryCounts } from "./browseSelectors";
+import { filterMovies, filterSeries, groupMoviesByGenre, groupSeries, groupSeriesByGenre, libraryCounts, sortMovies, sortSeries } from "./browseSelectors";
 
 function item(partial: Partial<MediaItem>): MediaItem {
   return {
@@ -207,6 +207,26 @@ describe("browse selectors", () => {
     );
 
     expect(filterSeries(grouped, "s02e03")).toHaveLength(1);
+  });
+
+
+  it("sorts movies by title and added date", () => {
+    const movies = [
+      { item: item({ id: "m1", title: "Zulu", createdAt: 10 }), file: file({ id: "f1", fingerprint: "fp-1" }) },
+      { item: item({ id: "m2", title: "Alpha", createdAt: 30 }), file: file({ id: "f2", fingerprint: "fp-2" }) },
+    ];
+
+    expect(sortMovies(movies, "name-asc").map(({ item }) => item.title)).toEqual(["Alpha", "Zulu"]);
+    expect(sortMovies(movies, "added-newest").map(({ item }) => item.title)).toEqual(["Alpha", "Zulu"]);
+  });
+
+  it("sorts series by release year", () => {
+    const cards = [
+      ...groupSeries([series({ id: "s1", title: "Older", normalizedTitle: "older", year: 2018 })], [], []),
+      ...groupSeries([series({ id: "s2", title: "Newer", normalizedTitle: "newer", year: 2024 })], [], []),
+    ];
+
+    expect(sortSeries(cards, "year-newest").map(({ series }) => series.title)).toEqual(["Newer", "Older"]);
   });
 
   it("counts library rows", () => {

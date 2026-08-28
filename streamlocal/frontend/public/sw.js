@@ -1,4 +1,4 @@
-const CACHE_NAME = "streamlocal-app-v5-home-browse";
+const CACHE_NAME = "streamlocal-app-v7-series-tv-layout";
 const APP_SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon.svg"];
 
 self.addEventListener("install", (event) => {

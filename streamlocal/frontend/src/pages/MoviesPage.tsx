@@ -5,7 +5,12 @@ import { MediaCard } from "../components/browse/MediaCard";
 import { PlayerOverlay } from "../components/player/PlayerOverlay";
 import type { MediaItem } from "../types/library";
 import { loadBrowseData, type BrowseData } from "../services/browseData";
-import { filterMovies, groupMoviesByGenre } from "../services/browseSelectors";
+import {
+  filterMovies,
+  groupMoviesByGenre,
+  sortMovies,
+  type BrowseSort,
+} from "../services/browseSelectors";
 import { PLAYBACK_HISTORY_UPDATED_EVENT } from "../services/externalPlaybackHistory";
 import "../styles/browse.css";
 import { useToast } from "../components/ui/Toast";
@@ -13,6 +18,7 @@ import { useToast } from "../components/ui/Toast";
 export function MoviesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<BrowseSort>("name-asc");
   const [playing, setPlaying] = useState<MediaItem | null>(null);
   const { showToast } = useToast();
 
@@ -28,13 +34,16 @@ export function MoviesPage() {
   }, []);
 
   const movies = useMemo(
-    () => filterMovies(data?.movies ?? [], query),
-    [data?.movies, query],
+    () => sortMovies(filterMovies(data?.movies ?? [], query), sort),
+    [data?.movies, query, sort],
   );
 
   const genreGroups = useMemo(
-    () => groupMoviesByGenre(movies),
-    [movies],
+    () => groupMoviesByGenre(movies).map((group) => ({
+      ...group,
+      cards: sortMovies(group.cards, sort),
+    })),
+    [movies, sort],
   );
 
   if (!data) {
@@ -42,21 +51,37 @@ export function MoviesPage() {
   }
 
   return (
-    <div className="page browse-page">
+    <div className="page browse-page movies-page">
       <HeroRail movies={data.movies} series={[]} onPlayMovie={setPlaying} />
 
       <section className="browse-toolbar">
-        <div>
+        <div className="browse-toolbar-heading">
           <p className="eyebrow">MOVIES</p>
           <h2>{movies.length} local movie{movies.length === 1 ? "" : "s"}</h2>
         </div>
 
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search movies, years, genres or filenames"
-          aria-label="Search movies"
-        />
+        <div className="browse-toolbar-controls">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search movies, years, genres or filenames"
+            aria-label="Search movies"
+          />
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as BrowseSort)}
+            aria-label="Sort movies"
+            title="Sort movies"
+          >
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+            <option value="added-newest">Added newest</option>
+            <option value="added-oldest">Added oldest</option>
+            <option value="year-newest">Release year newest</option>
+            <option value="year-oldest">Release year oldest</option>
+            <option value="updated-newest">Recently updated</option>
+          </select>
+        </div>
       </section>
 
       {movies.length === 0 ? (

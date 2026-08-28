@@ -63,10 +63,6 @@
   .library-heading h1, .settings-page h1, .recognition-page h1 { font-size: clamp(44px, 5vw, 64px); }
   .library-panel { padding: 20px; }
 
-  .series-hub { width: min(1000px, calc(100vw - 54px)); max-height: calc(100vh - 30px); }
-  .series-hub-copy { min-height: min(450px, 62vh); padding: 64px 42px 34px; }
-  .series-hub-logo { height: 105px; }
-  .series-hub-body { padding-right: 38px; padding-left: 38px; }
 }
 
 @media (max-width: 1100px) {
@@ -106,11 +102,6 @@
   .media-table { overflow-x: auto; }
   .media-table-header, .media-table-row { min-width: 820px; }
 
-  .series-hub { width: calc(100vw - 24px); }
-  .series-hub-copy { max-width: 58vw; padding: 70px 28px 28px; }
-  .series-hub-body { padding: 0 24px 30px; }
-  .episode-row { grid-template-columns: 36px 142px minmax(0,1fr); }
-  .episode-actions { grid-column: 2 / -1; text-align: left; }
 }
 
 @media (max-width: 760px) {
@@ -133,7 +124,9 @@
   .hero-actions-row { margin-top: 16px; }
 
   .browse-toolbar { align-items: stretch; flex-direction: column; }
+  .browse-toolbar-controls { width: 100%; margin-left: 0; }
   .browse-toolbar input { width: 100%; }
+  .browse-toolbar select { width: min(170px, 42vw); flex: 0 0 auto; }
   .rail-grid > .media-card { flex-basis: 70vw; max-width: 270px; }
   .rail-grid > .series-card { flex-basis: 78vw; max-width: 310px; }
 
@@ -142,11 +135,6 @@
   .library-stats { grid-template-columns: 1fr 1fr; }
   .panel-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
 
-  .series-hub-copy { max-width: none; min-height: 420px; }
-  .series-hub-overview { -webkit-line-clamp: 3; }
-  .series-viewing-panel { grid-template-columns: 1fr; }
-  .episode-row { grid-template-columns: 28px 112px minmax(0, 1fr); gap: 9px; }
-  .episode-copy p { -webkit-line-clamp: 1; }
 }
 
 @media (max-width: 1100px) {
@@ -176,7 +164,6 @@
   .featured-logo { height: 92px; }
   .hero-overview { -webkit-line-clamp: 2; }
   .hero-actions-row { margin-top: 15px; }
-  .series-hub-copy { min-height: 360px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -230,6 +217,12 @@
 
   .movies-page .browse-toolbar input {
     width: min(330px, 30vw);
+    min-height: 36px;
+    font-size: 12px;
+  }
+
+  .movies-page .browse-toolbar select {
+    width: min(178px, 17vw);
     min-height: 36px;
     font-size: 12px;
   }

@@ -33,7 +33,15 @@
     </div>
 
     <div class="topbar-side topbar-left">
-      <div class="clock-wrap"><span class="clock-label">עכשיו</span><div class="clock" id="clock" aria-label="שעה נוכחית">--:--:--</div></div>
+      <div class="clock" id="clock" aria-label="שעה נוכחית">--:--:--</div>
+      <div class="weather-strip" id="weatherStrip" aria-label="טמפרטורות נוכחיות בערים בישראל">
+        <span class="weather-city" data-weather-city="jerusalem"><b>ירושלים</b><strong>--°</strong></span>
+        <span class="weather-city" data-weather-city="telaviv"><b>תל אביב</b><strong>--°</strong></span>
+        <span class="weather-city" data-weather-city="haifa"><b>חיפה</b><strong>--°</strong></span>
+        <span class="weather-city" data-weather-city="beersheba"><b>באר שבע</b><strong>--°</strong></span>
+        <span class="weather-city" data-weather-city="eilat"><b>אילת</b><strong>--°</strong></span>
+        <a class="weather-credit" href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" title="Weather data by Open-Meteo.com">Open-Meteo</a>
+      </div>
       <button class="topbar-button compact" id="reloadBtn" type="button" title="רענון כל השידורים">
         <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/refresh.svg" alt=""><span class="button-label">רענון</span>
       </button>
@@ -131,13 +139,27 @@
         <div>
           <span class="modal-kicker">TV GUIDE</span>
           <h2 id="scheduleTitle">לוח שידורים</h2>
-          <p>הלוח נטען מהאתר הרשמי של הערוץ ולכן הוא נשאר עדכני גם כשהתוכניות משתנות.</p>
+          <p id="scheduleDescription">הלוח נטען מהאתר הרשמי של הערוץ ולכן הוא נשאר עדכני גם כשהתוכניות משתנות.</p>
         </div>
         <button class="close-dialog icon-only" id="scheduleCloseBtn" aria-label="סגירה" type="button"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/x.svg" alt=""></button>
       </div>
-      <div class="schedule-frame-wrap">
-        <iframe id="scheduleFrame" title="לוח שידורים" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        <div class="schedule-frame-note">אם האתר הרשמי חוסם הצגה בתוך חלון, השתמשי בכפתור "פתיחה באתר הרשמי".</div>
+      <div class="schedule-content">
+        <section class="schedule-custom" id="scheduleCustom" hidden>
+          <div class="schedule-custom-toolbar">
+            <div>
+              <strong id="scheduleCustomHeading">לוח השידורים של היום</strong>
+              <span id="scheduleCustomMeta">נטען מהאתר הרשמי</span>
+            </div>
+            <button class="secondary-button schedule-refresh" id="scheduleRefreshBtn" type="button"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/refresh.svg" alt="">רענון לוח</button>
+          </div>
+          <div class="schedule-custom-body" id="scheduleCustomBody">
+            <div class="schedule-loading"><div class="spinner"></div><span>קורא את לוח השידורים...</span></div>
+          </div>
+        </section>
+        <div class="schedule-frame-wrap" id="scheduleFrameWrap">
+          <iframe id="scheduleFrame" title="לוח שידורים" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          <div class="schedule-frame-note">אם האתר הרשמי חוסם הצגה בתוך חלון, השתמשי בכפתור "פתיחה באתר הרשמי".</div>
+        </div>
       </div>
       <div class="modal-actions">
         <a class="secondary-button link-button" id="scheduleExternal" href="#" target="_blank" rel="noopener noreferrer"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/external-link.svg" alt="">פתיחה באתר הרשמי</a>
@@ -160,7 +182,8 @@
         <p><strong>הפעלה:</strong> מומלץ להפעיל דרך Start.cmd. קשת 12 משתמש בשרת המקומי כדי לאתר בכל הפעלה את כתובות השידור שקשת מפרסמת כרגע, במקום להסתמך על כתובת ישנה.</p>
         <p><strong>מצב חסכון:</strong> מגביל כל חלון לעד 360p. זה לא "מכבה" משהו ולא מוריד ערוצים - הוא רק מונע מכל שידור לבחור איכות גבוהה כשפתוחים כמה שידורים יחד. "מאוזן" מאפשר עד 720p ו"מקסימום" מאפשר לנגן לבחור את האיכות הגבוהה ביותר.</p>
         <p><strong>קול:</strong> כל הערוצים מתחילים במצב שקט כדי לאפשר הפעלה אוטומטית. הפעלת קול בערוץ אחד משתיקה את האחרים.</p>
-        <p><strong>לוח שידורים:</strong> בערוצים שיש להם לוח רשמי מופיע כפתור לוח שנה. הלוח עצמו מגיע מהאתר הרשמי של הערוץ.</p>
+        <p><strong>לוח שידורים:</strong> בערוצים שיש להם לוח רשמי מופיע כפתור לוח שנה. בכאן 11 האתר קורא את ה-HTML הרשמי ומציג את התוכניות בעיצוב נקי משלנו; בערוצים האחרים הלוח הרשמי נפתח בתוך החלון כאשר האתר שלהם מאפשר זאת.</p>
+        <p><strong>טמפרטורות:</strong> הטמפרטורות בראש האתר מתעדכנות בערך כל 10 דקות באמצעות Open-Meteo ונשמרת גם התוצאה האחרונה למקרה של תקלה זמנית בחיבור.</p>
         <p><strong>סידור:</strong> במחשב אפשר לגרור חלון למיקום אחר. הסדר נשמר אוטומטית.</p>
         <p><strong>הגדלת ערוץ:</strong> לחיצה כפולה על הווידאו או על כפתור ההגדלה מציגה ערוץ יחיד.</p>
       </div>

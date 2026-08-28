@@ -213,10 +213,17 @@
 }
 
 .section-title-row > div,
-.browse-toolbar > div {
+.browse-toolbar-heading {
   display: flex;
   align-items: baseline;
   gap: 12px;
+}
+
+.browse-toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .section-title-row .eyebrow,
@@ -257,8 +264,8 @@
   padding-top: 4px;
 }
 
-.browse-toolbar input {
-  width: min(380px, 36vw);
+.browse-toolbar input,
+.browse-toolbar select {
   min-height: 40px;
   padding: 0 14px;
   border: 1px solid rgba(255,255,255,.2);
@@ -266,9 +273,21 @@
   outline: none;
   color: #fff;
   background: rgba(0,0,0,.58);
+  font: inherit;
 }
 
-.browse-toolbar input:focus {
+.browse-toolbar input {
+  width: min(360px, 31vw);
+}
+
+.browse-toolbar select {
+  width: min(190px, 16vw);
+  padding-right: 34px;
+  color-scheme: dark;
+}
+
+.browse-toolbar input:focus,
+.browse-toolbar select:focus {
   border-color: rgba(255,255,255,.72);
 }
 
@@ -346,10 +365,10 @@
 .series-card-art::after {
   content: "";
   position: absolute;
-  inset: 34% 0 0;
+  inset: 46% 0 0;
   pointer-events: none;
-  background: linear-gradient(0deg, rgba(9,9,10,.96), rgba(9,9,10,.48) 58%, transparent);
-  opacity: .35;
+  background: linear-gradient(0deg, rgba(9,9,10,.86), rgba(9,9,10,.3) 58%, transparent);
+  opacity: .24;
   transition: opacity 150ms ease;
 }
 
@@ -357,7 +376,7 @@
 .media-card:focus-visible .media-card-art::after,
 .series-card:hover .series-card-art::after,
 .series-card:focus-visible .series-card-art::after {
-  opacity: .95;
+  opacity: .8;
 }
 
 .media-card-art img,
@@ -369,12 +388,13 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: scale(1.025);
   transition: transform 300ms ease;
 }
 
 .media-card:hover .media-card-art img,
 .series-card:hover .series-card-art img {
-  transform: scale(1.025);
+  transform: scale(1.055);
 }
 
 .artwork-empty,
@@ -457,8 +477,8 @@
   padding: 0 10px;
   border-radius: 3px;
   color: #111;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(0,0,0,.34);
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 5px 16px rgba(0,0,0,.28);
   font-size: 10px;
   font-weight: 850;
   opacity: 0;
@@ -590,6 +610,43 @@
   border-radius: 5px 0 0 5px;
 }
 
+@media (max-width: 900px) {
+  .browse-toolbar {
+    align-items: flex-end;
+  }
+
+  .browse-toolbar-controls {
+    width: min(100%, 540px);
+  }
+
+  .browse-toolbar input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .browse-toolbar select {
+    width: 170px;
+    flex: 0 0 170px;
+  }
+}
+
+@media (max-width: 650px) {
+  .browse-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .browse-toolbar-controls {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .browse-toolbar select {
+    width: 155px;
+    flex-basis: 155px;
+  }
+}
+
 .movie-genre-rails,
 .series-genre-rails {
   position: relative;
@@ -660,18 +717,20 @@
 
 /* Home browse layout: full-width streaming rails with a compact TV-friendly hero. */
 .home-page {
-  --home-gutter: clamp(20px, 3.4vw, 64px);
-  padding-bottom: clamp(54px, 7vh, 86px);
+  --home-gutter: clamp(24px, 3.15vw, 60px);
+  padding-bottom: clamp(48px, 6vh, 72px);
 }
 
 .home-page .browse-hero,
 .home-page .browse-hero-content {
-  min-height: clamp(500px, 64vh, 690px);
+  /* 1920x1080 is the reference desktop/TV layout. Keeping the hero close to
+     half the viewport leaves room for a complete rail in the first screen. */
+  min-height: clamp(470px, 53vh, 570px);
 }
 
 .home-page .browse-hero-content {
-  width: min(620px, 44vw);
-  padding: clamp(92px, 11vh, 132px) 0 clamp(82px, 10vh, 116px) var(--home-gutter);
+  width: min(590px, 42vw);
+  padding: clamp(78px, 8.5vh, 96px) 0 clamp(58px, 6.5vh, 76px) var(--home-gutter);
 }
 
 .home-page .browse-hero::after {
@@ -681,14 +740,32 @@
 }
 
 .home-page .featured-logo {
-  width: min(470px, 82%);
-  height: clamp(92px, 12vh, 132px);
+  width: min(430px, 80%);
+  height: clamp(78px, 9.5vh, 104px);
 }
 
 .home-page .hero-overview {
-  max-width: 560px;
-  font-size: clamp(14px, 1.05vw, 17px);
+  max-width: 540px;
+  margin-top: 11px;
+  font-size: clamp(13px, .86vw, 15px);
+  line-height: 1.42;
   -webkit-line-clamp: 3;
+}
+
+.home-page .hero-meta {
+  margin-top: 10px;
+  font-size: clamp(12px, .75vw, 14px);
+}
+
+.home-page .hero-actions-row {
+  margin-top: 17px;
+}
+
+.home-page .hero-play-button,
+.home-page .hero-info-button {
+  min-height: 43px;
+  padding: 0 20px;
+  font-size: 14px;
 }
 
 .hero-info-button {
@@ -715,7 +792,7 @@
 .home-rails {
   position: relative;
   z-index: 8;
-  margin-top: clamp(-56px, -5.3vh, -34px);
+  margin-top: clamp(-46px, -4.2vh, -32px);
 }
 
 .home-page .browse-section {
@@ -724,7 +801,7 @@
 }
 
 .home-page .home-rail-section {
-  margin-top: clamp(8px, 1.15vh, 16px);
+  margin-top: clamp(5px, .8vh, 10px);
 }
 
 .home-page .home-first-rail {
@@ -732,7 +809,7 @@
 }
 
 .home-page .home-rail-section + .home-rail-section {
-  margin-top: clamp(2px, .65vh, 9px);
+  margin-top: clamp(0px, .3vh, 5px);
 }
 
 .home-page .section-title-row {
@@ -740,7 +817,7 @@
 }
 
 .home-page .section-title-row h2 {
-  font-size: clamp(18px, 1.35vw, 25px);
+  font-size: clamp(17px, 1.12vw, 22px);
   font-weight: 730;
   letter-spacing: -.02em;
 }
@@ -748,17 +825,17 @@
 .home-page .rail-grid,
 .home-page .browse-section .series-grid.compact {
   gap: clamp(5px, .42vw, 8px);
-  padding-top: clamp(9px, 1vh, 13px);
-  padding-bottom: clamp(25px, 3.4vh, 38px);
+  padding-top: clamp(7px, .7vh, 10px);
+  padding-bottom: clamp(20px, 2.5vh, 28px);
   scroll-padding-inline: 3px;
 }
 
 .home-page .home-media-rail > .media-card {
-  flex-basis: clamp(205px, 16.1vw, 292px);
+  flex-basis: clamp(198px, 14.1vw, 270px);
 }
 
 .home-page .home-series-rail > .series-card {
-  flex-basis: clamp(225px, 17.5vw, 318px);
+  flex-basis: clamp(214px, 15.5vw, 296px);
 }
 
 .home-page .media-card:hover,
@@ -769,51 +846,54 @@
 }
 
 .home-page .browse-rail-arrow {
-  top: clamp(9px, 1vh, 13px);
-  bottom: clamp(25px, 3.4vh, 38px);
+  top: clamp(7px, .7vh, 10px);
+  bottom: clamp(20px, 2.5vh, 28px);
   width: clamp(40px, 3vw, 54px);
 }
 
-@media (max-width: 1500px), (max-height: 900px) {
+/* 1920x1080 with 125%-150% Windows display scaling commonly becomes roughly
+   1536x864 or 1280x720 in CSS pixels. This profile intentionally shrinks the
+   interface instead of making the TV layout taller. */
+@media (max-width: 1700px), (max-height: 950px) {
   .home-page {
-    --home-gutter: clamp(20px, 3.2vw, 50px);
+    --home-gutter: clamp(20px, 3vw, 48px);
   }
 
   .home-page .browse-hero,
   .home-page .browse-hero-content {
-    min-height: clamp(455px, 60vh, 590px);
+    min-height: clamp(410px, 51vh, 500px);
   }
 
   .home-page .browse-hero-content {
-    width: min(560px, 50vw);
-    padding-top: 82px;
-    padding-bottom: clamp(70px, 8vh, 88px);
+    width: min(540px, 48vw);
+    padding-top: clamp(68px, 8vh, 82px);
+    padding-bottom: clamp(50px, 6vh, 62px);
   }
 
   .home-page .featured-logo {
-    width: min(410px, 80%);
-    height: clamp(82px, 10vh, 108px);
+    width: min(390px, 78%);
+    height: clamp(70px, 8.5vh, 90px);
   }
 
   .home-page .hero-meta { margin-top: 10px; font-size: 12px; }
-  .home-page .hero-overview { margin-top: 10px; font-size: clamp(12px, 1vw, 14px); line-height: 1.42; -webkit-line-clamp: 2; }
-  .home-page .hero-actions-row { margin-top: 16px; }
+  .home-page .hero-overview { margin-top: 9px; font-size: clamp(12px, .9vw, 14px); line-height: 1.4; -webkit-line-clamp: 2; }
+  .home-page .hero-actions-row { margin-top: 14px; }
   .home-page .hero-play-button,
-  .home-page .hero-info-button { min-height: 42px; padding: 0 19px; font-size: 14px; }
-  .home-rails { margin-top: clamp(-44px, -4.5vh, -28px); }
+  .home-page .hero-info-button { min-height: 40px; padding: 0 18px; font-size: 13px; }
+  .home-rails { margin-top: clamp(-38px, -4vh, -26px); }
 
-  .home-page .home-media-rail > .media-card { flex-basis: clamp(185px, 16.3vw, 246px); }
-  .home-page .home-series-rail > .series-card { flex-basis: clamp(205px, 18.3vw, 276px); }
-  .home-page .section-title-row h2 { font-size: clamp(17px, 1.45vw, 21px); }
+  .home-page .home-media-rail > .media-card { flex-basis: clamp(176px, 14.4vw, 230px); }
+  .home-page .home-series-rail > .series-card { flex-basis: clamp(194px, 16vw, 254px); }
+  .home-page .section-title-row h2 { font-size: clamp(16px, 1.22vw, 20px); }
 }
 
 @media (max-width: 1100px) {
   .home-page { --home-gutter: 22px; }
   .home-page .browse-hero,
-  .home-page .browse-hero-content { min-height: min(58vh, 540px); }
-  .home-page .browse-hero-content { width: min(600px, 66vw); padding-bottom: 68px; }
-  .home-page .home-media-rail > .media-card { flex-basis: clamp(180px, 23vw, 238px); }
-  .home-page .home-series-rail > .series-card { flex-basis: clamp(205px, 26vw, 270px); }
+  .home-page .browse-hero-content { min-height: min(53vh, 450px); }
+  .home-page .browse-hero-content { width: min(580px, 66vw); padding-bottom: 52px; }
+  .home-page .home-media-rail > .media-card { flex-basis: clamp(168px, 21vw, 220px); }
+  .home-page .home-series-rail > .series-card { flex-basis: clamp(188px, 24vw, 246px); }
 }
 
 @media (max-width: 760px) {
@@ -830,15 +910,37 @@
 @media (max-height: 700px) and (min-width: 900px) {
   .home-page .browse-hero,
   .home-page .browse-hero-content {
-    min-height: min(72vh, 500px);
+    min-height: min(52vh, 380px);
   }
 
   .home-page .browse-hero-content {
-    padding-top: 72px;
-    padding-bottom: 58px;
+    padding-top: 62px;
+    padding-bottom: 44px;
   }
 
-  .home-page .featured-logo { height: 76px; }
+  .home-page .featured-logo { height: 68px; }
   .home-page .hero-overview { -webkit-line-clamp: 2; }
-  .home-rails { margin-top: -30px; }
+  .home-rails { margin-top: -26px; }
+}
+
+/* Keep the fixed navigation visually light on a 1080p TV. */
+@media (min-width: 1101px) {
+  .app-shell:has(.home-page) .streamlocal-nav {
+    min-height: 58px;
+    gap: 26px;
+  }
+
+  .app-shell:has(.home-page) .streamlocal-brand,
+  .app-shell:has(.home-page) .streamlocal-brand-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .app-shell:has(.home-page) .streamlocal-nav-links {
+    gap: 17px;
+  }
+
+  .app-shell:has(.home-page) .streamlocal-nav-link {
+    font-size: 12px;
+  }
 }

@@ -53,6 +53,20 @@ describe("logo validation", () => {
     expect(analyzeLogoPixels(pixels(entries), 10, 4).usable).toBe(true);
   });
 
+
+  it("rejects an opaque white matte behind a logo", () => {
+    const entries: Array<[number, number, number, number]> = [];
+    for (let index = 0; index < 160; index += 1) {
+      entries.push(index < 132
+        ? [248, 248, 248, 255]
+        : [176, 18, 28, 255]);
+    }
+
+    const result = analyzeLogoPixels(pixels(entries), 20, 8);
+    expect(result.nearWhitePixelRatio).toBeGreaterThan(0.58);
+    expect(result.usable).toBe(false);
+  });
+
   it("rejects poster and frame candidates by name", () => {
     expect(isRejectedLogoCandidateName("Dune poster logo.png")).toBe(true);
     expect(isRejectedLogoCandidateName("Breaking Bad video frame.jpg")).toBe(true);

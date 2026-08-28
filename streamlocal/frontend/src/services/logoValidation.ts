@@ -26,6 +26,7 @@ export type LogoPixelAnalysis = {
   averageLuminance: number;
   darkPixelRatio: number;
   highContrastPixelRatio: number;
+  nearWhitePixelRatio: number;
   opaqueRatio: number;
   colorBinCount: number;
   strongEdgeRatio: number;
@@ -48,6 +49,7 @@ export function analyzeLogoPixels(
   let luminanceSum = 0;
   let darkPixels = 0;
   let highContrastPixels = 0;
+  let nearWhitePixels = 0;
   let opaquePixels = 0;
   let strongEdges = 0;
   let edgeComparisons = 0;
@@ -85,6 +87,7 @@ export function analyzeLogoPixels(
 
     // White/light pixels and strongly saturated colors remain readable on the dark UI.
     if (maxChannel >= 116 || chroma >= 72) highContrastPixels += 1;
+    if (minChannel >= 232 && chroma <= 18) nearWhitePixels += 1;
 
     const pixelNumber = index / 4;
     const x = pixelNumber % width;
@@ -120,6 +123,7 @@ export function analyzeLogoPixels(
   const highContrastPixelRatio = visiblePixels > 0
     ? highContrastPixels / visiblePixels
     : 0;
+  const nearWhitePixelRatio = visiblePixels > 0 ? nearWhitePixels / visiblePixels : 0;
   const opaqueRatio = visiblePixels > 0 ? opaquePixels / visiblePixels : 0;
   const colorBinCount = colorBins.size;
   const strongEdgeRatio = edgeComparisons > 0 ? strongEdges / edgeComparisons : 0;
@@ -155,6 +159,15 @@ export function analyzeLogoPixels(
     colorBinCount >= 36 &&
     strongEdgeRatio >= 0.08;
 
+  // A logo image with a large opaque white matte looks like a white rectangle on
+  // top of StreamLocal. Transparent white wordmarks are not affected because
+  // their visibleRatio is low. Reject the matte and let ArtworkImage use an
+  // alternate transparent logo or the plain title fallback instead.
+  const opaqueWhiteMatte =
+    visibleRatio >= 0.9 &&
+    opaqueRatio >= 0.96 &&
+    nearWhitePixelRatio >= 0.58;
+
   return {
     usable:
       visiblePixels > 8 &&
@@ -162,12 +175,14 @@ export function analyzeLogoPixels(
       !unreadableOnDark &&
       !portraitLike &&
       !photographicRectangle &&
-      !opaquePhotoLikeTitleCard,
+      !opaquePhotoLikeTitleCard &&
+      !opaqueWhiteMatte,
     visiblePixels,
     visibleRatio,
     averageLuminance,
     darkPixelRatio,
     highContrastPixelRatio,
+    nearWhitePixelRatio,
     opaqueRatio,
     colorBinCount,
     strongEdgeRatio,

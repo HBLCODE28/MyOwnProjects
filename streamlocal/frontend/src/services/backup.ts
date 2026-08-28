@@ -19,7 +19,7 @@ type ExportSource = {
   enabled: boolean;
   recursive: boolean;
   handle: null;
-  nativePath: null;
+  nativePath: string | null;
 };
 
 export async function exportStreamLocalBackup(): Promise<Blob> {
@@ -46,10 +46,10 @@ export async function exportStreamLocalBackup(): Promise<Blob> {
   ]);
 
   const exportedSources: ExportSource[] = sources.map(
-    ({ handle: _handle, nativePath: _nativePath, ...source }) => ({
+    ({ handle: _handle, ...source }) => ({
       ...source,
       handle: null,
-      nativePath: null,
+      nativePath: source.nativePath?.startsWith("\\\\") ? source.nativePath : null,
     }),
   );
 
@@ -147,7 +147,9 @@ export async function importStreamLocalBackup(file: File): Promise<void> {
             ...source,
             enabled: false,
             handle: null,
-            nativePath: null,
+            nativePath: typeof source.nativePath === "string" && source.nativePath.startsWith("\\\\")
+              ? source.nativePath
+              : null,
           })),
         );
       }

@@ -35,15 +35,23 @@ async function nativeFetch(path: string, init?: RequestInit): Promise<Response> 
       ...(init?.headers ?? {}),
     },
   });
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`;
-    try {
-      const body = await response.json() as { error?: string };
-      if (body.error) message = body.error;
-    } catch {
-      // Keep the HTTP status when the response is not JSON.
+    if (contentType.includes("application/json")) {
+      try {
+        const body = await response.json() as { error?: string };
+        if (body.error) message = body.error;
+      } catch {
+        // Keep the HTTP status when malformed JSON is returned.
+      }
     }
     throw new Error(message);
+  }
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      "The StreamLocal local server returned HTML instead of JSON. Restart StreamLocal from its current Portable folder.",
+    );
   }
   return response;
 }
@@ -69,7 +77,9 @@ export async function nativeDesktopAvailable(): Promise<boolean> {
     desktopAvailability = fetch(sameOriginUrl(`${NATIVE_PREFIX}/status`), {
       headers: { Accept: "application/json" },
     })
-      .then((response) => response.ok)
+      .then((response) =>
+        response.ok && (response.headers.get("content-type")?.toLowerCase().includes("application/json") ?? false),
+      )
       .catch(() => false);
   }
   return desktopAvailability;

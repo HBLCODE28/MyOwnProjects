@@ -1,5 +1,6 @@
 import { db } from "../db/streamlocalDb";
 import { getFileFromRelativePath, verifyReadPermission } from "./fileSystem";
+import { networkJoinRelative, networkMediaUrl, networkParentPath, networkReadText } from "./networkBridge";
 
 export type SupportedLocalContainer = "mp4" | "mkv";
 
@@ -44,6 +45,17 @@ export async function createPlayableMedia(mediaFileId: string): Promise<Playable
 
   const source = await db.librarySources.get(mediaFile.sourceId);
   if (!source) throw new Error("The media folder must be reconnected in Library.");
+
+  if (source.nativePath) {
+    const subtitles = await loadNetworkSubtitles(source.nativePath, mediaFile.relativePath);
+    return {
+      url: networkMediaUrl(source.nativePath, mediaFile.relativePath),
+      file: null,
+      fileName: mediaFile.fileName,
+      extension,
+      subtitles,
+    };
+  }
 
   if (!source.handle) {
     throw new Error("The media folder must be reconnected in Library.");
@@ -129,6 +141,34 @@ async function loadLocalSubtitles(
   return tracks;
 }
 
+
+async function loadNetworkSubtitles(root: string, relativePath: string): Promise<SubtitleTrack[]> {
+  const parent = networkParentPath(relativePath);
+  if (!parent) return [];
+  const fileName = relativePath.split("/").pop() ?? "";
+  const stem = fileName.replace(/\.[^.]+$/, "");
+  const names = [`${stem}.vtt`, `${stem}.srt`, `${stem}.en.vtt`, `${stem}.en.srt`, `${stem}.he.vtt`, `${stem}.he.srt`];
+  const tracks: SubtitleTrack[] = [];
+  for (const candidate of names) {
+    const relative = networkJoinRelative(parent.directory, candidate);
+    const raw = await networkReadText(root, relative);
+    if (raw === null) continue;
+    const extension = candidate.toLowerCase().endsWith(".vtt") ? "vtt" : "srt";
+    const text = subtitleTextToWebVtt(raw, extension);
+    const info = subtitleLabel(candidate);
+    tracks.push({
+      id: `network-${candidate}`,
+      label: `${info.label} · Local`,
+      language: info.language,
+      source: "local",
+      fileName: candidate,
+      text,
+      offsetSeconds: 0,
+      src: URL.createObjectURL(new Blob([text], { type: "text/vtt" })),
+    });
+  }
+  return tracks;
+}
 
 export function subtitleUrl(text: string): string {
   return URL.createObjectURL(new Blob([text], { type: "text/vtt" }));

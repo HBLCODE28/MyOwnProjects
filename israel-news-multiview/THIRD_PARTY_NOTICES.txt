@@ -23,3 +23,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+Open-Meteo weather data
+=======================
+https://open-meteo.com/
+
+Current temperature data displayed in the header is retrieved from Open-Meteo.
+API data is offered under Creative Commons Attribution 4.0 International (CC BY 4.0).
+The application displays an attribution link next to the weather locations.
+Licence information: https://open-meteo.com/en/license
+

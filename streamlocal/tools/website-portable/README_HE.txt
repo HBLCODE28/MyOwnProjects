@@ -1,23 +1,26 @@
 StreamLocal Website Portable
 ============================
 
-זוהי גרסת אתר רגילה, לא גרסת Windows App.
+הפעלה:
+1. חלצו את כל התיקייה.
+2. לחצו פעמיים על Start StreamLocal.cmd.
+3. StreamLocal ייפתח בדפדפן ב-http://127.0.0.1:17836
 
-במחשב השני:
-1. חלצו את כל התיקייה StreamLocal-Website-Portable.
-2. הפעילו את Start StreamLocal.cmd.
-3. הדפדפן ייפתח בכתובת הקבועה:
-   http://127.0.0.1:17836/
+אין צורך ב-Node.js, npm, Python או .NET במחשב הזה.
 
-אין צורך להתקין Node.js, npm, Vite, Python או .NET.
+תיקיות מקומיות:
+Library -> Add folder
+בחרו תיקייה דרך חלון Chrome/Edge.
 
-חשוב:
-- אל תפתחו app\index.html ישירות עם file://.
-- אל תמחקו את התיקייה app.
-- שמרו את כל תיקיית ה-Portable ביחד.
-- כדי להעביר Library/Watched/Resume, השתמשו ב-Settings -> Export Library
-  במחשב הישן וב-Settings -> Import Library במחשב החדש.
-- לאחר Import צריך לחבר מחדש את תיקיות המדיה, כי הרשאות File System Access
-  אינן עוברות ממחשב למחשב.
-- הכתובת נשארת תמיד 127.0.0.1:17836 כדי ש-IndexedDB וההרשאות יישארו
-  תחת אותו origin.
+תיקיות רשת / NAS:
+Library -> Add network path
+הדביקו נתיב UNC ישיר, לדוגמה:
+\\SERVER\Movies
+\\NAS\Series
+
+אין צורך למפות את התיקייה ל-Z: ואין צורך ב-Shortcut.
+Windows חייב להיות מסוגל לפתוח את ה-share עם המשתמש הנוכחי. אם נדרשים credentials, פתחו את ה-share פעם אחת ב-File Explorer והתחברו אליו, ואז נסו שוב ב-StreamLocal.
+
+Network folders זמינים רק כאשר האתר הופעל דרך Start StreamLocal.cmd על פורט 17836. בזמן npm run dev הכפתור קיים, אבל החיבור לרשת יציג הודעה שצריך את Website Portable.
+
+האתר נשאר אתר רגיל בדפדפן. השרת המקומי הקטן משמש להגשת קבצי האתר ולקריאת תיקיות רשת בלבד.

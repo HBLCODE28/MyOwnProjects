@@ -12,6 +12,8 @@ import {
 import {
   filterSeries,
   groupSeriesByGenre,
+  sortSeries,
+  type BrowseSort,
   type SeriesCard as SeriesCardModel,
 } from "../services/browseSelectors";
 import { PLAYBACK_HISTORY_UPDATED_EVENT } from "../services/externalPlaybackHistory";
@@ -21,6 +23,7 @@ import { useToast } from "../components/ui/Toast";
 export function SeriesPage() {
   const [data, setData] = useState<BrowseData | null>(null);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<BrowseSort>("name-asc");
   const [selectedSeriesId, setSelectedSeriesId] =
     useState<string | null>(null);
   const [playing, setPlaying] = useState<MediaItem | null>(null);
@@ -38,13 +41,16 @@ export function SeriesPage() {
   }, []);
 
   const series = useMemo(
-    () => filterSeries(data?.series ?? [], query),
-    [data?.series, query],
+    () => sortSeries(filterSeries(data?.series ?? [], query), sort),
+    [data?.series, query, sort],
   );
 
   const genreGroups = useMemo(
-    () => groupSeriesByGenre(series),
-    [series],
+    () => groupSeriesByGenre(series).map((group) => ({
+      ...group,
+      cards: sortSeries(group.cards, sort),
+    })),
+    [series, sort],
   );
 
   const selectedSeries =
@@ -69,14 +75,14 @@ export function SeriesPage() {
 
   if (!data) {
     return (
-      <div className="page browse-page">
+      <div className="page browse-page series-page">
         <div className="library-empty">Loading series...</div>
       </div>
     );
   }
 
   return (
-    <div className="page browse-page">
+    <div className="page browse-page series-page">
       <HeroRail
         movies={data.movies}
         series={data.series}
@@ -84,17 +90,33 @@ export function SeriesPage() {
       />
 
       <section className="browse-toolbar">
-        <div>
+        <div className="browse-toolbar-heading">
           <p className="eyebrow">SERIES</p>
           <h2>{series.length} local series</h2>
         </div>
 
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search series, seasons, episodes or filenames"
-          aria-label="Search series"
-        />
+        <div className="browse-toolbar-controls">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search series, seasons, episodes or filenames"
+            aria-label="Search series"
+          />
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as BrowseSort)}
+            aria-label="Sort series"
+            title="Sort series"
+          >
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+            <option value="added-newest">Added newest</option>
+            <option value="added-oldest">Added oldest</option>
+            <option value="year-newest">Release year newest</option>
+            <option value="year-oldest">Release year oldest</option>
+            <option value="updated-newest">Recently updated</option>
+          </select>
+        </div>
       </section>
 
       {series.length === 0 ? (

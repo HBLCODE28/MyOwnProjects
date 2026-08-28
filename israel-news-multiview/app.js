@@ -15,11 +15,22 @@
     { id: "max", label: "מקסימום", maxHeight: Infinity, status: "מצב מקסימום: הנגן רשאי לבחור את האיכות הגבוהה ביותר - צורך יותר אינטרנט ומשאבי מחשב." }
   ];
 
+  const WEATHER_CITIES = [
+    { id: "jerusalem", name: "ירושלים", lat: 31.7683, lon: 35.2137 },
+    { id: "telaviv", name: "תל אביב", lat: 32.0853, lon: 34.7818 },
+    { id: "haifa", name: "חיפה", lat: 32.7940, lon: 34.9896 },
+    { id: "beersheba", name: "באר שבע", lat: 31.2520, lon: 34.7915 },
+    { id: "eilat", name: "אילת", lat: 29.5577, lon: 34.9519 }
+  ];
+  const WEATHER_CACHE_KEY = "israelNewsMultiview.weather.v1";
+  const WEATHER_REFRESH_MS = 10 * 60 * 1000;
+
   const els = {
     grid: document.getElementById("channelGrid"),
     empty: document.getElementById("emptyState"),
     cardTemplate: document.getElementById("channelCardTemplate"),
     clock: document.getElementById("clock"),
+    weatherStrip: document.getElementById("weatherStrip"),
     fullscreenBtn: document.getElementById("fullscreenBtn"),
     reloadBtn: document.getElementById("reloadBtn"),
     channelsBtn: document.getElementById("channelsBtn"),
@@ -47,6 +58,13 @@
     scheduleDialog: document.getElementById("scheduleDialog"),
     scheduleTitle: document.getElementById("scheduleTitle"),
     scheduleFrame: document.getElementById("scheduleFrame"),
+    scheduleFrameWrap: document.getElementById("scheduleFrameWrap"),
+    scheduleDescription: document.getElementById("scheduleDescription"),
+    scheduleCustom: document.getElementById("scheduleCustom"),
+    scheduleCustomHeading: document.getElementById("scheduleCustomHeading"),
+    scheduleCustomMeta: document.getElementById("scheduleCustomMeta"),
+    scheduleCustomBody: document.getElementById("scheduleCustomBody"),
+    scheduleRefreshBtn: document.getElementById("scheduleRefreshBtn"),
     scheduleExternal: document.getElementById("scheduleExternal"),
     scheduleCloseBtn: document.getElementById("scheduleCloseBtn"),
     scheduleDoneBtn: document.getElementById("scheduleDoneBtn")
@@ -58,6 +76,8 @@
   let currentQuality = localStorage.getItem(STORAGE.quality) || "economy";
   let maximizedId = null;
   let dragId = null;
+  let currentScheduleChannel = null;
+  let scheduleLoadToken = 0;
 
   function safeJson(key, fallback) {
     try {
@@ -118,6 +138,60 @@
       second: "2-digit",
       hour12: false
     });
+  }
+
+  function weatherCache() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || "null");
+      if (!parsed || typeof parsed !== "object" || !parsed.values) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  function renderWeather(values, updatedAt) {
+    if (!els.weatherStrip || !values) return;
+    WEATHER_CITIES.forEach(city => {
+      const item = els.weatherStrip.querySelector(`[data-weather-city="${city.id}"]`);
+      if (!item) return;
+      const temperature = Number(values[city.id]);
+      const strong = item.querySelector("strong");
+      strong.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : "--°";
+      const suffix = updatedAt ? `, עודכן ${new Date(updatedAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false })}` : "";
+      item.title = `טמפרטורה נוכחית ב${city.name}${Number.isFinite(temperature) ? `: ${Math.round(temperature)}°C` : ""}${suffix}`;
+    });
+  }
+
+  async function updateWeather() {
+    const cached = weatherCache();
+    if (cached) renderWeather(cached.values, cached.updatedAt);
+
+    const latitudes = WEATHER_CITIES.map(city => city.lat).join(",");
+    const longitudes = WEATHER_CITIES.map(city => city.lon).join(",");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitudes)}&longitude=${encodeURIComponent(longitudes)}&current=temperature_2m&forecast_days=1`;
+      const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+      if (!response.ok) throw new Error(`Weather HTTP ${response.status}`);
+      const payload = await response.json();
+      const locations = Array.isArray(payload) ? payload : [payload];
+      const values = {};
+      WEATHER_CITIES.forEach((city, index) => {
+        const temperature = Number(locations[index]?.current?.temperature_2m);
+        if (Number.isFinite(temperature)) values[city.id] = temperature;
+      });
+      if (!Object.keys(values).length) throw new Error("No temperature data");
+      const entry = { updatedAt: Date.now(), values };
+      localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(entry));
+      renderWeather(values, entry.updatedAt);
+    } catch {
+      if (cached) renderWeather(cached.values, cached.updatedAt);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   function qualityMode() {
@@ -406,16 +480,254 @@
     return channel.schedule.replace("{weekday}", weekdays[new Date().getDay()]);
   }
 
+  function cleanScheduleText(value) {
+    return String(value || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/[\t\r\n]+/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
+  function normalizeScheduleTime(value) {
+    const match = String(value || "").match(/(?:^|\D)([01]?\d|2[0-3]):([0-5]\d)(?:\D|$)/);
+    if (!match) return "";
+    return `${String(Number(match[1])).padStart(2, "0")}:${match[2]}`;
+  }
+
+  function scheduleMinutes(time) {
+    const match = String(time).match(/^(\d{2}):(\d{2})$/);
+    return match ? Number(match[1]) * 60 + Number(match[2]) : -1;
+  }
+
+  function cleanProgramTitle(text, time) {
+    let value = cleanScheduleText(text);
+    if (time) value = value.replace(new RegExp(time.replace(":", "\\:"), "g"), " ");
+    value = value
+      .replace(/\b(?:לצפייה|לשידור חי|שידור חי|לפרטים נוספים|פרטים נוספים)\b/g, " ")
+      .replace(/^(?:כאן\s*11|לוח\s*שידורים)(?:\s*[-|:]\s*)?/i, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/^[-|•·\s]+|[-|•·\s]+$/g, "")
+      .trim();
+    return value;
+  }
+
+  function addScheduleItem(target, seen, time, title, source) {
+    const normalizedTime = normalizeScheduleTime(time);
+    const normalizedTitle = cleanProgramTitle(title, normalizedTime);
+    if (!normalizedTime || normalizedTitle.length < 2 || normalizedTitle.length > 180) return;
+    if (/^(?:כאן|kan|tv guide|לוח שידורים)$/i.test(normalizedTitle)) return;
+    const key = `${normalizedTime}|${normalizedTitle.toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    target.push({ time: normalizedTime, title: normalizedTitle, source });
+  }
+
+  function extractScheduleFromJson(doc, items, seen) {
+    const scripts = Array.from(doc.querySelectorAll('script[type="application/json"], script[type="application/ld+json"], script#__NEXT_DATA__'));
+    let visited = 0;
+    const titleKeys = ["title", "name", "programName", "programTitle", "programmeName", "episodeTitle", "description"];
+    const timeKeys = ["time", "startTime", "start_time", "startDate", "start", "broadcastTime", "broadcast_time"];
+
+    const visit = value => {
+      if (visited++ > 12000 || value == null) return;
+      if (Array.isArray(value)) {
+        value.forEach(visit);
+        return;
+      }
+      if (typeof value !== "object") return;
+
+      let time = "";
+      for (const key of timeKeys) {
+        if (key in value) {
+          time = normalizeScheduleTime(value[key]);
+          if (time) break;
+        }
+      }
+      if (!time) {
+        for (const [key, candidate] of Object.entries(value)) {
+          if (/time|start/i.test(key) && typeof candidate === "string") {
+            time = normalizeScheduleTime(candidate);
+            if (time) break;
+          }
+        }
+      }
+
+      if (time) {
+        let title = "";
+        for (const key of titleKeys) {
+          if (typeof value[key] === "string" && cleanScheduleText(value[key]).length >= 2) {
+            title = value[key];
+            break;
+          }
+        }
+        if (title) addScheduleItem(items, seen, time, title, "json");
+      }
+      Object.values(value).forEach(visit);
+    };
+
+    scripts.forEach(script => {
+      const text = script.textContent.trim();
+      if (!text || text.length > 5_000_000) return;
+      try { visit(JSON.parse(text)); } catch { }
+    });
+  }
+
+  function extractScheduleFromDom(doc, items, seen) {
+    doc.querySelectorAll("script,style,noscript,svg,header,footer,nav").forEach(node => node.remove());
+    const nodes = Array.from(doc.querySelectorAll("body *"));
+    const timeNodes = nodes.filter(node => {
+      const text = cleanScheduleText(node.textContent);
+      if (text.length > 28) return false;
+      return /(?:^|\D)(?:[01]?\d|2[0-3]):[0-5]\d(?:\D|$)/.test(text);
+    });
+
+    for (const timeNode of timeNodes) {
+      const time = normalizeScheduleTime(timeNode.textContent);
+      if (!time) continue;
+      let host = timeNode;
+      let title = "";
+
+      for (let depth = 0; depth < 5 && host?.parentElement; depth += 1) {
+        host = host.parentElement;
+        const text = cleanScheduleText(host.textContent);
+        const times = text.match(/(?:[01]?\d|2[0-3]):[0-5]\d/g) || [];
+        const candidate = cleanProgramTitle(text, time);
+        if (times.length === 1 && candidate.length >= 2 && candidate.length <= 180) {
+          title = candidate;
+          break;
+        }
+      }
+
+      if (!title && timeNode.parentElement) {
+        const siblings = Array.from(timeNode.parentElement.children)
+          .filter(node => node !== timeNode)
+          .map(node => cleanScheduleText(node.textContent))
+          .filter(text => text.length >= 2 && text.length <= 180 && !normalizeScheduleTime(text));
+        title = siblings.join(" ");
+      }
+
+      if (title) addScheduleItem(items, seen, time, title, "html");
+    }
+  }
+
+  function parseKanSchedule(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const items = [];
+    const seen = new Set();
+    extractScheduleFromJson(doc, items, seen);
+    extractScheduleFromDom(doc, items, seen);
+
+    const dedupByTimeAndLooseTitle = new Map();
+    items.forEach(item => {
+      const looseTitle = item.title.replace(/[\W_]+/g, "").slice(0, 45);
+      const key = `${item.time}|${looseTitle}`;
+      if (!dedupByTimeAndLooseTitle.has(key)) dedupByTimeAndLooseTitle.set(key, item);
+    });
+
+    return Array.from(dedupByTimeAndLooseTitle.values())
+      .sort((a, b) => scheduleMinutes(a.time) - scheduleMinutes(b.time))
+      .slice(0, 80);
+  }
+
+  function renderKanSchedule(items) {
+    els.scheduleCustomBody.textContent = "";
+    if (!items.length) {
+      const error = document.createElement("div");
+      error.className = "schedule-custom-error";
+      error.innerHTML = '<strong>לא הצלחתי לקרוא את התוכניות מהעמוד של כאן.</strong><span>מבנה האתר הרשמי כנראה השתנה או שהתוכן נטען שם רק אחרי JavaScript. אפשר עדיין לפתוח את הלוח הרשמי מהכפתור למטה.</span>';
+      els.scheduleCustomBody.appendChild(error);
+      return;
+    }
+
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    let currentIndex = -1;
+    items.forEach((item, index) => {
+      if (scheduleMinutes(item.time) <= nowMinutes) currentIndex = index;
+    });
+
+    const list = document.createElement("div");
+    list.className = "schedule-list";
+    items.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "schedule-row";
+      if (index === currentIndex) row.classList.add("is-now");
+
+      const time = document.createElement("time");
+      time.textContent = item.time;
+      time.dateTime = item.time;
+
+      const copy = document.createElement("div");
+      copy.className = "schedule-row-copy";
+      const title = document.createElement("strong");
+      title.textContent = item.title;
+      copy.appendChild(title);
+      if (index === currentIndex) {
+        const live = document.createElement("span");
+        live.className = "schedule-now-label";
+        live.textContent = "משודר עכשיו";
+        copy.appendChild(live);
+      }
+      row.append(time, copy);
+      list.appendChild(row);
+    });
+    els.scheduleCustomBody.appendChild(list);
+  }
+
+  async function loadKanSchedule(channel) {
+    const token = ++scheduleLoadToken;
+    els.scheduleCustomBody.innerHTML = '<div class="schedule-loading"><div class="spinner"></div><span>קורא את לוח השידורים מאתר כאן...</span></div>';
+    els.scheduleCustomMeta.textContent = "קורא את ה-HTML הרשמי...";
+
+    if (location.protocol === "file:") {
+      els.scheduleCustomBody.innerHTML = '<div class="schedule-custom-error"><strong>לוח כאן דורש הפעלה דרך Start.cmd.</strong><span>השרת המקומי קורא את עמוד כאן ומעביר רק את ה-HTML לאתר המקומי כדי שנוכל לעצב אותו מחדש.</span></div>';
+      els.scheduleCustomMeta.textContent = "נדרש Start.cmd";
+      return;
+    }
+
+    try {
+      const response = await fetch(`/kan/guide?ts=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const html = await response.text();
+      if (token !== scheduleLoadToken || currentScheduleChannel?.id !== channel.id) return;
+      const items = parseKanSchedule(html);
+      renderKanSchedule(items);
+      els.scheduleCustomMeta.textContent = items.length ? `${items.length} תוכניות נמצאו מהעמוד הרשמי` : "לא נמצאו תוכניות לקריאה אוטומטית";
+    } catch (error) {
+      if (token !== scheduleLoadToken) return;
+      els.scheduleCustomBody.innerHTML = `<div class="schedule-custom-error"><strong>לא ניתן לטעון כרגע את לוח כאן.</strong><span>${cleanScheduleText(error.message)}. אפשר להשתמש בכפתור "פתיחה באתר הרשמי".</span></div>`;
+      els.scheduleCustomMeta.textContent = "טעינת הלוח נכשלה";
+    }
+  }
+
   function openSchedule(channel) {
     const scheduleUrl = scheduleUrlFor(channel);
     if (!scheduleUrl) return;
+    currentScheduleChannel = channel;
     els.scheduleTitle.textContent = `לוח שידורים - ${channel.name}`;
     els.scheduleExternal.href = scheduleUrl;
+
+    if (channel.scheduleMode === "kan-html") {
+      els.scheduleDescription.textContent = "האתר קורא את עמוד לוח השידורים הרשמי של כאן ומציג את התוכניות בעיצוב נקי ובהיר משלנו.";
+      els.scheduleFrameWrap.hidden = true;
+      els.scheduleCustom.hidden = false;
+      els.scheduleCustomHeading.textContent = "לוח כאן 11 - היום";
+      els.scheduleFrame.src = "about:blank";
+      els.scheduleDialog.showModal();
+      loadKanSchedule(channel);
+      return;
+    }
+
+    els.scheduleDescription.textContent = "הלוח נטען מהאתר הרשמי של הערוץ ולכן הוא נשאר עדכני גם כשהתוכניות משתנות.";
+    els.scheduleCustom.hidden = true;
+    els.scheduleFrameWrap.hidden = false;
     els.scheduleFrame.src = scheduleUrl;
     els.scheduleDialog.showModal();
   }
 
   function closeSchedule() {
+    scheduleLoadToken += 1;
+    currentScheduleChannel = null;
     if (els.scheduleDialog.open) els.scheduleDialog.close();
     els.scheduleFrame.src = "about:blank";
   }
@@ -640,6 +952,9 @@
     els.qualityPopover.hidden = false;
     els.qualityBtn.setAttribute("aria-expanded", "true");
   });
+  els.scheduleRefreshBtn.addEventListener("click", () => {
+    if (currentScheduleChannel?.scheduleMode === "kan-html") loadKanSchedule(currentScheduleChannel);
+  });
   els.scheduleCloseBtn.addEventListener("click", closeSchedule);
   els.scheduleDoneBtn.addEventListener("click", closeSchedule);
   els.scheduleDialog.addEventListener("cancel", event => {
@@ -675,5 +990,7 @@
   }
   updateClock();
   setInterval(updateClock, 1000);
+  updateWeather();
+  setInterval(updateWeather, WEATHER_REFRESH_MS);
   render();
 })();

@@ -106,6 +106,55 @@ export function filterMovies(movies: MovieCard[], query: string): MovieCard[] {
   });
 }
 
+
+export type BrowseSort =
+  | "name-asc"
+  | "name-desc"
+  | "added-newest"
+  | "added-oldest"
+  | "year-newest"
+  | "year-oldest"
+  | "updated-newest";
+
+function compareText(left: string, right: string): number {
+  return left.localeCompare(right, undefined, { sensitivity: "base", numeric: true });
+}
+
+function compareNullableYear(
+  left: number | null,
+  right: number | null,
+  direction: "asc" | "desc",
+): number {
+  if (left == null && right == null) return 0;
+  if (left == null) return 1;
+  if (right == null) return -1;
+  return direction === "asc" ? left - right : right - left;
+}
+
+export function sortMovies(movieCards: MovieCard[], sort: BrowseSort): MovieCard[] {
+  return [...movieCards].sort((left, right) => {
+    const leftItem = left.item;
+    const rightItem = right.item;
+    switch (sort) {
+      case "name-desc":
+        return compareText(rightItem.title, leftItem.title);
+      case "added-newest":
+        return rightItem.createdAt - leftItem.createdAt || compareText(leftItem.title, rightItem.title);
+      case "added-oldest":
+        return leftItem.createdAt - rightItem.createdAt || compareText(leftItem.title, rightItem.title);
+      case "year-newest":
+        return compareNullableYear(leftItem.year, rightItem.year, "desc") || compareText(leftItem.title, rightItem.title);
+      case "year-oldest":
+        return compareNullableYear(leftItem.year, rightItem.year, "asc") || compareText(leftItem.title, rightItem.title);
+      case "updated-newest":
+        return rightItem.updatedAt - leftItem.updatedAt || compareText(leftItem.title, rightItem.title);
+      case "name-asc":
+      default:
+        return compareText(leftItem.title, rightItem.title);
+    }
+  });
+}
+
 export function groupSeries(
   seriesRows: Series[],
   episodeItems: MediaItem[],
@@ -245,6 +294,31 @@ export function filterSeries(seriesCards: SeriesCard[], query: string): SeriesCa
     ].join(" "));
 
     return haystack.includes(normalizedQuery);
+  });
+}
+
+
+export function sortSeries(seriesCards: SeriesCard[], sort: BrowseSort): SeriesCard[] {
+  return [...seriesCards].sort((left, right) => {
+    const leftSeries = left.series;
+    const rightSeries = right.series;
+    switch (sort) {
+      case "name-desc":
+        return compareText(rightSeries.title, leftSeries.title);
+      case "added-newest":
+        return rightSeries.createdAt - leftSeries.createdAt || compareText(leftSeries.title, rightSeries.title);
+      case "added-oldest":
+        return leftSeries.createdAt - rightSeries.createdAt || compareText(leftSeries.title, rightSeries.title);
+      case "year-newest":
+        return compareNullableYear(leftSeries.year, rightSeries.year, "desc") || compareText(leftSeries.title, rightSeries.title);
+      case "year-oldest":
+        return compareNullableYear(leftSeries.year, rightSeries.year, "asc") || compareText(leftSeries.title, rightSeries.title);
+      case "updated-newest":
+        return rightSeries.updatedAt - leftSeries.updatedAt || compareText(leftSeries.title, rightSeries.title);
+      case "name-asc":
+      default:
+        return compareText(leftSeries.title, rightSeries.title);
+    }
   });
 }
 

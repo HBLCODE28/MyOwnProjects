@@ -15,6 +15,7 @@ window.NEWS_CHANNELS = [
     ],
     official: "https://www.kan.org.il/live/?stationId=4482",
     schedule: "https://www.kan.org.il/tv-guide/?channelId=4444",
+    scheduleMode: "kan-html",
     accent: "#1f9bd1",
     primary: true
   },

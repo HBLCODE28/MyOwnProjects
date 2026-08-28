@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $N12ResolverUrl = "https://www.n12.co.il/AjaxPage?consumer=web_html5&encryption=no&galleryChannelId=1e2258089b67f510VgnVCM2000002a0c10acRCRD&isGallery=false&jspName=playlist.jsp&vcmid=1e2258089b67f510VgnVCM2000002a0c10acRCRD&videoChannelId=31750a2610f26110VgnVCM1000005201000aRCRD"
+$KanGuideUrl = "https://www.kan.org.il/tv-guide/?channelId=4444"
 $Mime = @{
     ".html" = "text/html; charset=utf-8"
     ".css"  = "text/css; charset=utf-8"
@@ -127,6 +128,10 @@ function Get-RemoteContent {
     } elseif ($Profile -eq "mako12") {
         $request.Referer = "https://www.mako.co.il/"
         $request.Headers["Origin"] = "https://www.mako.co.il"
+        $request.Headers["Accept-Language"] = "he-IL,he;q=0.9,en;q=0.7"
+    } elseif ($Profile -eq "kan") {
+        $request.Referer = "https://www.kan.org.il/"
+        $request.Accept = "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8"
         $request.Headers["Accept-Language"] = "he-IL,he;q=0.9,en;q=0.7"
     }
 
@@ -259,6 +264,20 @@ try {
             $question = $requestTarget.IndexOf("?")
             $rawPath = if ($question -ge 0) { $requestTarget.Substring(0, $question) } else { $requestTarget }
             $rawQuery = if ($question -ge 0) { $requestTarget.Substring($question + 1) } else { "" }
+
+            if ($rawPath -eq "/kan/guide") {
+                try {
+                    $remote = Get-RemoteContent $KanGuideUrl "kan" @{}
+                    if ($remote.Status -lt 200 -or $remote.Status -ge 300) {
+                        throw "Kan guide returned HTTP $($remote.Status)."
+                    }
+                    Write-HttpResponse $stream 200 "OK" "text/html; charset=utf-8" $remote.Body @{ "Access-Control-Allow-Origin" = "*" }
+                } catch {
+                    $body = [Text.Encoding]::UTF8.GetBytes("Kan Guide Error: " + $_.Exception.Message)
+                    Write-HttpResponse $stream 502 "Bad Gateway" "text/plain; charset=utf-8" $body @{ "Access-Control-Allow-Origin" = "*" }
+                }
+                continue
+            }
 
             if ($rawPath -eq "/n12/live.m3u8") {
                 try {
