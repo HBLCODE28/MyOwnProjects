@@ -1,11 +1,12 @@
 import { db } from "../db/streamlocalDb";
 import { getFileFromRelativePath, verifyReadPermission } from "./fileSystem";
+import { nativeJoinRelative, nativeMediaUrl, nativeParentPath, nativeReadText } from "./nativeDesktop";
 
 export type SupportedLocalContainer = "mp4" | "mkv";
 
 export type PlayableMedia = {
   url: string;
-  file: File;
+  file: File | null;
   fileName: string;
   extension: SupportedLocalContainer;
   subtitles: SubtitleTrack[];
@@ -43,7 +44,20 @@ export async function createPlayableMedia(mediaFileId: string): Promise<Playable
   }
 
   const source = await db.librarySources.get(mediaFile.sourceId);
-  if (!source?.handle) {
+  if (!source) throw new Error("The media folder must be reconnected in Library.");
+
+  if (source.nativePath) {
+    const subtitles = await loadNativeSubtitles(source.nativePath, mediaFile.relativePath);
+    return {
+      url: nativeMediaUrl(source.nativePath, mediaFile.relativePath),
+      file: null,
+      fileName: mediaFile.fileName,
+      extension,
+      subtitles,
+    };
+  }
+
+  if (!source.handle) {
     throw new Error("The media folder must be reconnected in Library.");
   }
 
@@ -68,7 +82,7 @@ export async function createPlayableMedia(mediaFileId: string): Promise<Playable
 }
 
 export function releasePlayableMedia(media: PlayableMedia | null): void {
-  if (media?.url) URL.revokeObjectURL(media.url);
+  if (media?.url?.startsWith("blob:")) URL.revokeObjectURL(media.url);
   for (const subtitle of media?.subtitles ?? []) URL.revokeObjectURL(subtitle.src);
 }
 
@@ -123,6 +137,35 @@ async function loadLocalSubtitles(
     } catch {
       // A sidecar subtitle is optional.
     }
+  }
+  return tracks;
+}
+
+
+async function loadNativeSubtitles(root: string, relativePath: string): Promise<SubtitleTrack[]> {
+  const parent = nativeParentPath(relativePath);
+  if (!parent) return [];
+  const fileName = relativePath.split("/").pop() ?? "";
+  const stem = fileName.replace(/\.[^.]+$/, "");
+  const names = [`${stem}.vtt`, `${stem}.srt`, `${stem}.en.vtt`, `${stem}.en.srt`, `${stem}.he.vtt`, `${stem}.he.srt`];
+  const tracks: SubtitleTrack[] = [];
+  for (const candidate of names) {
+    const relative = nativeJoinRelative(parent.directory, candidate);
+    const raw = await nativeReadText(root, relative);
+    if (raw === null) continue;
+    const extension = candidate.toLowerCase().endsWith(".vtt") ? "vtt" : "srt";
+    const text = subtitleTextToWebVtt(raw, extension);
+    const info = subtitleLabel(candidate);
+    tracks.push({
+      id: `native-${candidate}`,
+      label: `${info.label} · Local`,
+      language: info.language,
+      source: "local",
+      fileName: candidate,
+      text,
+      offsetSeconds: 0,
+      src: URL.createObjectURL(new Blob([text], { type: "text/vtt" })),
+    });
   }
   return tracks;
 }

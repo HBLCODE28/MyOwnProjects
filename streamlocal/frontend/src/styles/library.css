@@ -33,3 +33,17 @@
 .file-status.offline { color:#ffb8b8; background:rgba(220,70,70,.08); }
 .media-row-actions { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
 .compact-button { min-height:30px; padding:0 8px; font-size:10px; }
+
+.library-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+@media (max-width: 760px) {
+  .library-heading-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

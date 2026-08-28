@@ -3,13 +3,19 @@ import type { LibrarySource, MediaFile } from "../types/library";
 import { createId } from "../utils/id";
 import { createFingerprint } from "./fingerprint";
 import { verifyReadPermission } from "./fileSystem";
+import { nativeFingerprint, scanNativeFolder } from "./nativeDesktop";
 import { clearTimelinePreviews } from "./timelinePreview";
 
 const VIDEO_EXTENSIONS = new Set(["mp4", "mkv"]);
 
 type DiscoveredFile = {
-  file: File;
   relativePath: string;
+  fileName: string;
+  extension: string;
+  size: number;
+  lastModified: number;
+  fingerprint?: string;
+  file?: File;
 };
 
 async function walkDirectory(
@@ -26,7 +32,14 @@ async function walkDirectory(
       const extension = name.includes(".") ? name.split(".").pop()!.toLowerCase() : "";
       if (VIDEO_EXTENSIONS.has(extension)) {
         const file = await (entry as FileSystemFileHandle).getFile();
-        files.push({ file, relativePath });
+        files.push({
+          file,
+          relativePath,
+          fileName: file.name,
+          extension,
+          size: file.size,
+          lastModified: file.lastModified,
+        });
       }
     } else if (recursive) {
       files.push(
@@ -38,6 +51,23 @@ async function walkDirectory(
   return files;
 }
 
+async function discoverSource(source: LibrarySource): Promise<DiscoveredFile[]> {
+  if (source.nativePath) {
+    const result = await scanNativeFolder(source.nativePath, source.recursive);
+    return result.files.map((file) => ({ ...file }));
+  }
+
+  if (!source.handle) {
+    throw new Error("This folder is not connected on this computer.");
+  }
+
+  if (!(await verifyReadPermission(source.handle))) {
+    throw new Error("Folder permission was not granted.");
+  }
+
+  return walkDirectory(source.handle, "", source.recursive);
+}
+
 export type ScanSummary = {
   scanned: number;
   added: number;
@@ -47,15 +77,7 @@ export type ScanSummary = {
 };
 
 export async function scanLibrarySource(source: LibrarySource): Promise<ScanSummary> {
-  if (!source.handle) {
-    throw new Error("This folder is not connected on this computer.");
-  }
-
-  if (!(await verifyReadPermission(source.handle))) {
-    throw new Error("Folder permission was not granted.");
-  }
-
-  const discovered = await walkDirectory(source.handle, "", source.recursive);
+  const discovered = await discoverSource(source);
   const existing = await db.mediaFiles.where("sourceId").equals(source.id).toArray();
 
   const byPath = new Map(existing.map((file) => [file.relativePath.toLowerCase(), file]));
@@ -66,14 +88,14 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
   let unchanged = 0;
 
   for (const discoveredFile of discovered) {
-    const { file, relativePath } = discoveredFile;
+    const { relativePath, fileName, extension, size, lastModified } = discoveredFile;
     const pathKey = relativePath.toLowerCase();
     let stored = byPath.get(pathKey);
 
     if (
       stored &&
-      stored.size === file.size &&
-      stored.lastModified === file.lastModified
+      stored.size === size &&
+      stored.lastModified === lastModified
     ) {
       seenIds.add(stored.id);
       if (!stored.available) {
@@ -89,7 +111,13 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
       continue;
     }
 
-    const fingerprint = await createFingerprint(file);
+    const fingerprint = discoveredFile.fingerprint
+      ?? (discoveredFile.file
+        ? await createFingerprint(discoveredFile.file)
+        : source.nativePath
+          ? await nativeFingerprint(source.nativePath, relativePath)
+          : "");
+    if (!fingerprint) throw new Error(`Could not fingerprint ${relativePath}.`);
 
     if (!stored) {
       const fingerprintMatches = await db.mediaFiles
@@ -104,19 +132,15 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
         );
     }
 
-    const extension = file.name.includes(".")
-      ? file.name.split(".").pop()!.toLowerCase()
-      : "";
-
     if (stored) {
       await clearTimelinePreviews(stored.id);
       await db.mediaFiles.update(stored.id, {
         sourceId: source.id,
         relativePath,
-        fileName: file.name,
+        fileName,
         extension,
-        size: file.size,
-        lastModified: file.lastModified,
+        size,
+        lastModified,
         fingerprint,
         available: true,
         lastSeenAt: Date.now(),
@@ -128,10 +152,10 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
         id: createId("file"),
         sourceId: source.id,
         relativePath,
-        fileName: file.name,
+        fileName,
         extension,
-        size: file.size,
-        lastModified: file.lastModified,
+        size,
+        lastModified,
         fingerprint,
         available: true,
         lastSeenAt: Date.now(),

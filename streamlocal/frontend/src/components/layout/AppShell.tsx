@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import "../../styles/appShell.css";
 import "../../styles/stage8BrowseAdditions.css";
 import { ToastProvider } from "../ui/Toast";
+import { startNativeDesktopHeartbeat } from "../../services/nativeDesktop";
 import { syncConnectedExternalHistories } from "../../services/externalPlaybackHistory";
 
 type Props = {
@@ -19,6 +20,8 @@ const links = [
 ];
 
 export function AppShell({ children }: Props) {
+  useEffect(() => startNativeDesktopHeartbeat(), []);
+
   useEffect(() => {
     let active = true;
     const sync = () => {

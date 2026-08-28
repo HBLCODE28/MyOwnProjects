@@ -2,8 +2,8 @@ import { db } from "../db/streamlocalDb";
 import type { MediaFile, MediaItem, Series } from "../types/library";
 import { createId } from "../utils/id";
 import { parseMediaName } from "./filenameParser";
-import { readLocalMetadata } from "./localMetadata";
-import { detectAndAttachLocalArtwork } from "./localArtwork";
+import { readLocalMetadata, readNativeLocalMetadata } from "./localMetadata";
+import { detectAndAttachLocalArtwork, detectAndAttachNativeArtwork } from "./localArtwork";
 
 function normalizeSeriesTitle(value: string): string {
   return value
@@ -43,11 +43,8 @@ async function getOrCreateSeries(
   return series;
 }
 
-async function sourceHandleFor(
-  file: MediaFile,
-): Promise<FileSystemDirectoryHandle | null> {
-  const source = await db.librarySources.get(file.sourceId);
-  return source?.handle ?? null;
+async function sourceFor(file: MediaFile) {
+  return db.librarySources.get(file.sourceId);
 }
 
 export type RecognitionSummary = {
@@ -67,10 +64,13 @@ export async function recognizeFile(file: MediaFile): Promise<MediaItem> {
   if (existing?.manuallyEdited) return existing;
 
   const parsed = parseMediaName(file.fileName, file.relativePath);
-  const rootHandle = await sourceHandleFor(file);
-  const sidecar = rootHandle
-    ? await readLocalMetadata(rootHandle, file.relativePath)
-    : null;
+  const source = await sourceFor(file);
+  const rootHandle = source?.handle ?? null;
+  const sidecar = source?.nativePath
+    ? await readNativeLocalMetadata(source.nativePath, file.relativePath)
+    : rootHandle
+      ? await readLocalMetadata(rootHandle, file.relativePath)
+      : null;
 
   const type = sidecar?.type ?? parsed.type;
   const seriesTitle = sidecar?.seriesTitle ?? parsed.title;
@@ -147,7 +147,10 @@ export async function recognizeFile(file: MediaFile): Promise<MediaItem> {
     await db.mediaItems.add(item);
   }
 
-  if (rootHandle) {
+  if (source?.nativePath) {
+    await detectAndAttachNativeArtwork(item.id, source.nativePath, file.relativePath);
+    item = (await db.mediaItems.get(item.id)) ?? item;
+  } else if (rootHandle) {
     await detectAndAttachLocalArtwork(
       item.id,
       rootHandle,

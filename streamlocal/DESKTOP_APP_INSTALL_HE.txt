@@ -1,0 +1,43 @@
+StreamLocal - גרסת Windows App
+===============================
+
+מה השתנה
+--------
+1. StreamLocal נפתח בחלון App נפרד ולא בטאב רגיל של הדפדפן.
+2. המחשב שמתקינים עליו לא צריך להתקין .NET, Node.js, npm, Python או Go.
+3. נעשה שימוש ב-Microsoft Edge שמגיע עם Windows 10/11.
+4. תיקיות רשת נתמכות דרך שכבת Windows המקומית:
+   Z:\Movies
+   \\NAS\Series
+   \\SERVER\Media\Movies
+5. הווידאו מוזרם מהדיסק/רשת עם תמיכה ב-seek. הקובץ המקורי לא מועלה ולא משתנה.
+6. הממשק מתאים את עצמו לגודל החלון, לרזולוציית הטלוויזיה ול-Windows display scaling.
+
+איך ליצור את המתקין
+-------------------
+אחרי שמחלצים את חבילת התיקון ישירות לתיקיית streamlocal עם Replace / Merge:
+
+1. לחצי פעמיים על:
+   Make-StreamLocal-Release.cmd
+
+2. בגלל שהקוד השתנה, הסקריפט יריץ npm run build במחשב הפיתוח אם צריך.
+   זה קורה רק במחשב שבו מפתחים את StreamLocal.
+
+3. בסוף ייווצרו:
+   release\StreamLocal-Setup.exe
+   release\StreamLocal-Portable.zip
+
+4. למחשב השני מעבירים רק את StreamLocal-Setup.exe.
+
+המחשב השני
+----------
+מפעילים StreamLocal-Setup.exe ומתקינים.
+אין צורך להתקין npm, Node, .NET, Python או Go.
+
+תיקיית רשת
+----------
+ב-Library אפשר להשתמש ב-Add folder, או ב-Add network path ולהדביק לדוגמה:
+\\NAS\Movies
+
+הגישה היא בהרשאות Windows של המשתמש שמפעיל את StreamLocal.
+אם Windows עצמו לא יכול לפתוח את ה-share, גם StreamLocal לא יוכל לקרוא אותו.

@@ -10,7 +10,7 @@
 html { background: #0f0f10; }
 body {
   margin: 0;
-  min-width: 1100px;
+  min-width: 0;
   min-height: 100vh;
   color: #f5f5f5;
   background: #0f0f10;

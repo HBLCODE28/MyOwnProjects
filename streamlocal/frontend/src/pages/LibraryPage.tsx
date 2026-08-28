@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { db, requestPersistentStorage } from "../db/streamlocalDb";
 import type { LibrarySource, MediaFile, MediaItem, PlaybackProgress } from "../types/library";
-import { chooseDirectory } from "../services/fileSystem";
+import { chooseLibraryLocation } from "../services/fileSystem";
 import { scanLibrarySource, type ScanSummary } from "../services/libraryScanner";
 import { identifyLibrary } from "../services/recognition";
 import { removeUnavailableEntries } from "../services/libraryCleanup";
@@ -11,6 +11,7 @@ import { removeMediaFileFromLibrary, setWatchedState } from "../services/library
 import "../styles/library.css";
 import { useToast } from "../components/ui/Toast";
 import { importStreamLocalBackup } from "../services/backup";
+import { nativeDesktopAvailable, validateNativeFolder } from "../services/nativeDesktop";
 
 export function LibraryPage() {
   const [sources, setSources] = useState<LibrarySource[]>([]);
@@ -21,6 +22,7 @@ export function LibraryPage() {
   const [summary, setSummary] = useState<ScanSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [desktopMode, setDesktopMode] = useState(false);
   const { showToast } = useToast();
 
   async function importBackup(file: File | undefined) {
@@ -53,38 +55,47 @@ export function LibraryPage() {
   useEffect(() => {
     void requestPersistentStorage();
     void refresh();
+    void nativeDesktopAvailable().then(setDesktopMode);
   }, []);
 
   async function addFolder() {
     setError(null);
     try {
-      const handle = await chooseDirectory();
-      const existing = sources.find((source) => source.name === handle.name);
+      const location = await chooseLibraryLocation();
+      const pathKey = location.nativePath?.toLowerCase() ?? null;
+      const existing = sources.find((source) =>
+        pathKey
+          ? source.nativePath?.toLowerCase() === pathKey
+          : source.name === location.name && !source.nativePath,
+      );
 
-      if (existing && !existing.handle) {
+      if (existing && (!existing.handle || Boolean(location.nativePath))) {
         await db.librarySources.update(existing.id, {
-          handle,
+          handle: location.handle,
+          nativePath: location.nativePath,
+          name: location.name,
           enabled: true,
         });
         const updated = await db.librarySources.get(existing.id);
         if (updated) await scan(updated);
-        showToast(`Reconnected ${handle.name}.`, "success");
+        showToast(`Reconnected ${location.name}.`, "success");
         return;
       }
 
       const source: LibrarySource = {
         id: createId("source"),
-        name: handle.name,
+        name: location.name,
         createdAt: Date.now(),
         lastScanAt: null,
         enabled: true,
         recursive: true,
-        handle,
+        handle: location.handle,
+        nativePath: location.nativePath,
       };
       await db.librarySources.add(source);
       await refresh();
       await scan(source);
-      showToast(`Added and scanned ${handle.name}.`, "success");
+      showToast(`Added and scanned ${location.name}.`, "success");
     } catch (value) {
       if (value instanceof DOMException && value.name === "AbortError") return;
       setError(value instanceof Error ? value.message : "Could not add folder.");
@@ -92,18 +103,54 @@ export function LibraryPage() {
     }
   }
 
+  async function addNetworkPath() {
+    const entered = window.prompt("Enter a Windows folder, mapped drive, or network share path.", "\\SERVER\Share\Movies");
+    if (!entered?.trim()) return;
+    setError(null);
+    try {
+      const selected = await validateNativeFolder(entered.trim());
+      const existing = sources.find((source) => source.nativePath?.toLowerCase() === selected.path.toLowerCase());
+      if (existing) {
+        await db.librarySources.update(existing.id, { enabled: true, nativePath: selected.path, name: selected.name, handle: null });
+        const updated = await db.librarySources.get(existing.id);
+        if (updated) await scan(updated);
+        showToast(`Reconnected ${selected.name}.`, "success");
+        return;
+      }
+      const source: LibrarySource = {
+        id: createId("source"),
+        name: selected.name,
+        createdAt: Date.now(),
+        lastScanAt: null,
+        enabled: true,
+        recursive: true,
+        handle: null,
+        nativePath: selected.path,
+      };
+      await db.librarySources.add(source);
+      await refresh();
+      await scan(source);
+      showToast(`Added and scanned ${selected.name}.`, "success");
+    } catch (value) {
+      const message = value instanceof Error ? value.message : "Could not open network folder.";
+      setError(message);
+      showToast(message, "error");
+    }
+  }
+
   async function reconnect(source: LibrarySource) {
     setError(null);
     try {
-      const handle = await chooseDirectory();
+      const location = await chooseLibraryLocation();
       await db.librarySources.update(source.id, {
-        handle,
-        name: handle.name,
+        handle: location.handle,
+        nativePath: location.nativePath,
+        name: location.name,
         enabled: true,
       });
       const updated = await db.librarySources.get(source.id);
       if (updated) await scan(updated);
-      showToast(`Reconnected ${handle.name}.`, "success");
+      showToast(`Reconnected ${location.name}.`, "success");
     } catch (value) {
       if (value instanceof DOMException && value.name === "AbortError") return;
       setError(value instanceof Error ? value.message : "Could not reconnect folder.");
@@ -193,16 +240,23 @@ export function LibraryPage() {
     <div className="page library-page">
       <section className="library-heading">
         <div>
-          <p className="eyebrow">BROWSER-ONLY LIBRARY</p>
+          <p className="eyebrow">LOCAL LIBRARY</p>
           <h1>Library</h1>
           <p>
-            Your library lives in this browser. StreamLocal receives read-only access
-            only to folders you explicitly choose.
+            StreamLocal reads only folders you explicitly choose. The Windows app also supports
+            mapped drives and network shares such as Z:\Movies or \\NAS\Series.
           </p>
         </div>
-        <button type="button" className="primary-button" onClick={addFolder}>
-          Add folder
-        </button>
+        <div className="library-heading-actions">
+          {desktopMode && (
+            <button type="button" className="secondary-button" onClick={() => void addNetworkPath()}>
+              Add network path
+            </button>
+          )}
+          <button type="button" className="primary-button" onClick={addFolder}>
+            Add folder
+          </button>
+        </div>
       </section>
 
       <section className="library-stats">
@@ -242,17 +296,18 @@ export function LibraryPage() {
                 <div className="source-main">
                   <strong>{source.name}</strong>
                   <span>
-                    {source.handle ? "Connected" : "Needs reconnect"}
+                    {source.enabled && (source.handle || source.nativePath) ? "Connected" : "Needs reconnect"}
+                    {source.nativePath ? ` · ${source.nativePath}` : ""}
                     {source.lastScanAt ? ` · ${new Date(source.lastScanAt).toLocaleString()}` : ""}
                   </span>
                 </div>
                 <div className="source-actions">
-                  {!source.handle && (
+                  {(!source.enabled || (!source.handle && !source.nativePath)) && (
                     <button className="secondary-button" onClick={() => reconnect(source)}>
                       Reconnect folder
                     </button>
                   )}
-                  {source.handle && (
+                  {source.enabled && (source.handle || source.nativePath) && (
                     <button
                       className="secondary-button"
                       disabled={busy === source.id}

@@ -6,6 +6,7 @@ import { MoviesPage } from "./pages/MoviesPage";
 import { RecognitionPage } from "./pages/RecognitionPage";
 import { SeriesPage } from "./pages/SeriesPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import "./styles/responsive.css";
 
 export default function App() {
   return (

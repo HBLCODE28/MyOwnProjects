@@ -10,6 +10,7 @@ export type LibrarySource = {
   enabled: boolean;
   recursive: boolean;
   handle: FileSystemDirectoryHandle | null;
+  nativePath?: string | null;
 };
 
 export type MediaFile = {

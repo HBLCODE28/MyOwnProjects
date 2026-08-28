@@ -19,6 +19,7 @@ type ExportSource = {
   enabled: boolean;
   recursive: boolean;
   handle: null;
+  nativePath?: string | null;
 };
 
 export async function exportStreamLocalBackup(): Promise<Blob> {

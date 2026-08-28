@@ -869,6 +869,8 @@ export function PlayerOverlay({
       return { url: null, positionSeconds, leftPercent };
     });
 
+    if (!media.file) return;
+
     try {
       const url = await getOrCreateTimelinePreview(
         item.mediaFileId,
