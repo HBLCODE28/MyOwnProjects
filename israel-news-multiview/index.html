@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#1976d2">
+  <title>חדשות ישראל - מסך מפוצל</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <div class="topbar-side topbar-right">
+      <button class="topbar-button" id="fullscreenBtn" type="button" title="מסך מלא">
+        <span class="icon" aria-hidden="true">⛶</span><span class="button-label">הגדלה</span>
+      </button>
+      <button class="topbar-button" id="layoutBtn" type="button" title="בחירת פריסה">
+        <span class="grid-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="button-label">פריסה</span>
+      </button>
+      <button class="topbar-button" id="channelsBtn" type="button" title="בחירת ערוצים">
+        <span class="icon" aria-hidden="true">▦</span><span class="button-label">ערוצים</span>
+      </button>
+      <button class="topbar-button" id="qualityBtn" type="button" title="הגבלת איכות לחיסכון במשאבים">
+        <span class="icon" aria-hidden="true">HD</span><span class="button-label" id="qualityLabel">חסכון</span>
+      </button>
+    </div>
+
+    <div class="brand" title="חדשות ישראל - מסך מפוצל">
+      <span class="brand-title">חדשות ישראל</span>
+      <span class="brand-subtitle">מסך מפוצל</span>
+    </div>
+
+    <div class="topbar-side topbar-left">
+      <div class="clock" id="clock" aria-label="שעה נוכחית">--:--:--</div>
+      <button class="topbar-button compact" id="reloadBtn" type="button" title="רענון כל השידורים">
+        <span class="icon big" aria-hidden="true">↻</span><span class="button-label">רענון</span>
+      </button>
+      <button class="topbar-button compact" id="helpBtn" type="button" title="עזרה">
+        <span class="help-icon" aria-hidden="true">?</span><span class="button-label">עזרה</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <section class="channel-grid" id="channelGrid" aria-live="polite"></section>
+    <div class="empty-state" id="emptyState" hidden>
+      <h1>לא נבחרו ערוצים</h1>
+      <p>לחצי על "ערוצים" ובחרי את השידורים שתרצי לראות.</p>
+      <button class="primary-button" type="button" id="emptyChannelsBtn">בחירת ערוצים</button>
+    </div>
+  </main>
+
+  <div class="popover" id="layoutPopover" hidden>
+    <button type="button" data-layout="auto">אוטומטי</button>
+    <button type="button" data-layout="1">1 ערוץ</button>
+    <button type="button" data-layout="2">2 ערוצים</button>
+    <button type="button" data-layout="4">4 ערוצים (2x2)</button>
+    <button type="button" data-layout="6">6 ערוצים (3x2)</button>
+    <button type="button" data-layout="9">9 ערוצים (3x3)</button>
+  </div>
+
+  <dialog class="modal" id="channelsDialog">
+    <form method="dialog" class="modal-card" id="channelsForm">
+      <div class="modal-header">
+        <div>
+          <h2>בחירת ערוצים</h2>
+          <p>אפשר לבחור כמה שידורים ולהציג אותם יחד.</p>
+        </div>
+        <button class="close-dialog" value="cancel" aria-label="סגירה" type="submit">×</button>
+      </div>
+      <div class="channel-picker" id="channelPicker"></div>
+      <details class="custom-stream-panel">
+        <summary>הוספת שידור HLS מותאם אישית</summary>
+        <div class="custom-stream-fields">
+          <label>שם הערוץ<input id="customName" type="text" autocomplete="off" placeholder="לדוגמה: ערוץ מקומי"></label>
+          <label>כתובת m3u8<input id="customUrl" type="url" autocomplete="off" placeholder="https://example.com/live.m3u8" dir="ltr"></label>
+          <label>אתר רשמי - אופציונלי<input id="customOfficial" type="url" autocomplete="off" placeholder="https://example.com" dir="ltr"></label>
+          <button class="secondary-button" id="addCustomBtn" type="button">הוספה לרשימה</button>
+        </div>
+      </details>
+      <div class="modal-actions">
+        <button class="secondary-button" id="selectPrimaryBtn" type="button">בחירת ערוצי החדשות המרכזיים</button>
+        <button class="secondary-button" id="clearSelectionBtn" type="button">ניקוי</button>
+        <button class="primary-button" id="applyChannelsBtn" value="default" type="submit">הצגה</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="helpDialog">
+    <form method="dialog" class="modal-card help-card">
+      <div class="modal-header">
+        <div>
+          <h2>עזרה</h2>
+          <p>האתר רץ מקומית. השידורים עצמם מגיעים מהאינטרנט.</p>
+        </div>
+        <button class="close-dialog" value="cancel" aria-label="סגירה" type="submit">×</button>
+      </div>
+      <div class="help-content">
+        <p><strong>קול:</strong> כל הערוצים מתחילים במצב שקט כדי לאפשר הפעלה אוטומטית. לחיצה על כפתור הרמקול מפעילה קול בערוץ אחד ומשתיקה את האחרים.</p>
+        <p><strong>משאבים:</strong> מצב "חסכון" מגביל את איכות כל חלון לפי גודלו ומקטין שימוש ברשת ובמעבד. אפשר לעבור ל"מאוזן" או "מקסימום" מהכפתור העליון.</p>
+        <p><strong>סידור:</strong> במחשב אפשר לגרור חלון מערוץ אחד למקום אחר. הסדר נשמר אוטומטית.</p>
+        <p><strong>הגדלת ערוץ:</strong> לחיצה כפולה על הווידאו או על כפתור ההגדלה בחלון מציגה ערוץ יחיד. לחיצה נוספת מחזירה למסך המפוצל.</p>
+        <p><strong>שידור שלא נטען:</strong> ספקי טלוויזיה יכולים להחליף כתובות או לחסום ניגון מחוץ לאתר הרשמי. במקרה כזה יופיע כפתור לפתיחת האתר הרשמי. אפשר גם לעדכן כתובת HLS דרך "ערוצים".</p>
+      </div>
+      <div class="modal-actions"><button class="primary-button" value="default" type="submit">סגירה</button></div>
+    </form>
+  </dialog>
+
+  <template id="channelCardTemplate">
+    <article class="channel-card" draggable="true">
+      <div class="channel-card-header">
+        <div class="channel-title-wrap">
+          <span class="live-dot" title="שידור חי"></span>
+          <strong class="channel-title"></strong>
+        </div>
+        <div class="channel-actions">
+          <button class="card-button audio-btn" type="button" title="הפעלת קול" aria-label="הפעלת קול">שקט</button>
+          <button class="card-button maximize-btn" type="button" title="הגדלת הערוץ" aria-label="הגדלת הערוץ">□</button>
+          <button class="card-button restart-btn" type="button" title="טעינה מחדש" aria-label="טעינה מחדש">↻</button>
+          <button class="card-button close-btn" type="button" title="סגירת הערוץ" aria-label="סגירת הערוץ">×</button>
+        </div>
+      </div>
+      <div class="player-shell">
+        <video class="channel-video" playsinline autoplay muted></video>
+        <div class="player-overlay loading-overlay">
+          <div class="spinner"></div>
+          <span>טוען שידור...</span>
+        </div>
+        <div class="player-overlay error-overlay" hidden>
+          <strong>לא ניתן לטעון את השידור</strong>
+          <span class="error-text">ייתכן שהכתובת השתנתה או שהספק חוסם ניגון חיצוני.</span>
+          <div class="error-actions">
+            <button class="retry-stream" type="button">נסה שוב</button>
+            <a class="official-link" href="#" target="_blank" rel="noopener noreferrer">פתיחת האתר הרשמי</a>
+          </div>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.13/hls.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="streams.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
