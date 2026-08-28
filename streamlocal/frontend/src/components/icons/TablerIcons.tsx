@@ -109,3 +109,19 @@ export function TablerDotsIcon(props: Props) {
     </TablerIcon>
   );
 }
+export function TablerChevronLeftIcon(props: Props) {
+  return (
+    <TablerIcon {...props}>
+      <path d="M15 6l-6 6l6 6" />
+    </TablerIcon>
+  );
+}
+
+export function TablerChevronRightIcon(props: Props) {
+  return (
+    <TablerIcon {...props}>
+      <path d="M9 6l6 6l-6 6" />
+    </TablerIcon>
+  );
+}
+

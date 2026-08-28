@@ -10,6 +10,70 @@ export type EpisodeCard = {
   file: MediaFile | undefined;
 };
 
+export type GenreMovieGroup = {
+  genre: string;
+  cards: MovieCard[];
+};
+
+const MOVIE_GENRE_PRIORITY = [
+  "Drama",
+  "Comedy",
+  "Action",
+  "Thriller",
+  "Crime",
+  "Science-Fiction",
+  "Adventure",
+  "Fantasy",
+  "Horror",
+  "Mystery",
+  "Romance",
+  "Animation",
+  "Family",
+  "Documentary",
+];
+
+export function groupMoviesByGenre(movieCards: MovieCard[]): GenreMovieGroup[] {
+  const groups = new Map<string, GenreMovieGroup>();
+
+  for (const card of movieCards) {
+    const genres = Array.from(
+      new Map(
+        card.item.genres
+          .map((genre) => genre.trim())
+          .filter(Boolean)
+          .map((genre) => [genre.toLowerCase(), genre] as const),
+      ).values(),
+    );
+
+    const effectiveGenres = genres.length > 0 ? genres : ["Other"];
+    for (const genre of effectiveGenres) {
+      const key = genre.toLowerCase();
+      const existing = groups.get(key);
+      if (existing) existing.cards.push(card);
+      else groups.set(key, { genre, cards: [card] });
+    }
+  }
+
+  const priority = new Map(
+    MOVIE_GENRE_PRIORITY.map((genre, index) => [genre.toLowerCase(), index]),
+  );
+
+  return Array.from(groups.values())
+    .map((group) => ({
+      ...group,
+      cards: [...group.cards].sort((a, b) => a.item.title.localeCompare(b.item.title)),
+    }))
+    .sort((a, b) => {
+      if (a.genre === "Other") return 1;
+      if (b.genre === "Other") return -1;
+      const aPriority = priority.get(a.genre.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+      const bPriority = priority.get(b.genre.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      return a.genre.localeCompare(b.genre);
+    });
+}
+
+
 export type SeasonGroup = {
   seasonNumber: number;
   episodes: EpisodeCard[];

@@ -539,3 +539,121 @@
   .browse-hero-content { width: min(650px, 58vw); }
   .poster-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
 }
+
+/* Horizontal browse rails use explicit navigation controls so long genre rows
+   remain usable on TVs and desktop layouts where the scrollbar is hidden. */
+.browse-rail-shell {
+  position: relative;
+  min-width: 0;
+}
+
+.browse-rail-arrow {
+  position: absolute;
+  z-index: 35;
+  top: 8px;
+  bottom: 30px;
+  display: grid;
+  width: clamp(40px, 3.6vw, 58px);
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: #fff;
+  background: rgba(7, 7, 8, .72);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .28);
+  opacity: .9;
+  transition: background 140ms ease, opacity 140ms ease;
+}
+
+.browse-rail-arrow:hover,
+.browse-rail-arrow:focus-visible {
+  background: rgba(7, 7, 8, .92);
+  opacity: 1;
+}
+
+.browse-rail-arrow svg {
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .55));
+  transition: transform 140ms ease;
+}
+
+.browse-rail-arrow:hover svg,
+.browse-rail-arrow:focus-visible svg {
+  transform: scale(1.16);
+}
+
+.browse-rail-arrow-back {
+  left: 0;
+  border-radius: 0 5px 5px 0;
+}
+
+.browse-rail-arrow-forward {
+  right: 0;
+  border-radius: 5px 0 0 5px;
+}
+
+.movie-genre-rails,
+.series-genre-rails {
+  position: relative;
+}
+
+.movie-genre-section,
+.series-genre-rails .browse-section {
+  margin-top: 20px;
+}
+
+.movie-genre-section + .movie-genre-section,
+.series-genre-rails .browse-section + .browse-section {
+  margin-top: 8px;
+}
+
+.movie-rail-grid > .media-card {
+  flex-basis: clamp(230px, 19vw, 330px);
+}
+
+.movies-search-section {
+  margin-top: 20px;
+}
+
+.movies-search-section .poster-grid {
+  margin-right: 0;
+  margin-left: 0;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.movies-empty {
+  margin-top: 34px;
+}
+
+@media (max-width: 1100px) {
+  .browse-rail-arrow {
+    width: 42px;
+  }
+
+  .movie-rail-grid > .media-card {
+    flex-basis: clamp(190px, 28vw, 270px);
+  }
+
+  .movies-search-section .poster-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .browse-rail-arrow {
+    width: 38px;
+  }
+
+  .browse-rail-arrow svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .movie-rail-grid > .media-card {
+    flex-basis: 72vw;
+    max-width: 285px;
+  }
+
+  .movies-search-section .poster-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}

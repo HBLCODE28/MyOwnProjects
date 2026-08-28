@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { HeroRail } from "../components/browse/HeroRail";
+import { BrowseRail } from "../components/browse/BrowseRail";
 import { SeriesCard } from "../components/browse/SeriesCard";
 import { SeriesHubOverlay } from "../components/browse/SeriesHubOverlay";
 import { PlayerOverlay } from "../components/player/PlayerOverlay";
@@ -111,7 +112,10 @@ export function SeriesPage() {
                 </div>
               </div>
 
-              <div className="series-grid compact">
+              <BrowseRail
+                trackClassName="series-grid compact"
+                ariaLabel={`${genre} series`}
+              >
                 {cards.map((card) => (
                   <SeriesCard
                     key={`${genre}-${card.series.id}`}
@@ -119,7 +123,7 @@ export function SeriesPage() {
                     onOpen={openSeries}
                   />
                 ))}
-              </div>
+              </BrowseRail>
             </section>
           ))}
         </div>
