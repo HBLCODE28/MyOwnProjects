@@ -11,8 +11,8 @@
 <body>
   <header class="topbar" id="topbar">
     <div class="topbar-side topbar-right">
-      <button class="topbar-button" id="fullscreenBtn" type="button" title="מסך מלא">
-        <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/maximize.svg" alt=""><span class="button-label">מסך מלא</span>
+      <button class="topbar-button" id="fullscreenBtn" type="button" title="מסך מלא" aria-pressed="false">
+        <img class="tabler-icon" id="fullscreenIcon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/arrows-maximize.svg" alt=""><span class="button-label" id="fullscreenLabel">מסך מלא</span>
       </button>
       <button class="topbar-button" id="layoutBtn" type="button" title="בחירת פריסה">
         <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/layout-grid.svg" alt=""><span class="button-label">פריסה</span>
@@ -34,12 +34,14 @@
 
     <div class="topbar-side topbar-left">
       <div class="clock" id="clock" aria-label="שעה נוכחית">--:--:--</div>
-      <div class="weather-strip" id="weatherStrip" aria-label="טמפרטורות נוכחיות בערים בישראל">
-        <span class="weather-city" data-weather-city="jerusalem"><b>ירושלים</b><strong>--°</strong></span>
-        <span class="weather-city" data-weather-city="telaviv"><b>תל אביב</b><strong>--°</strong></span>
-        <span class="weather-city" data-weather-city="haifa"><b>חיפה</b><strong>--°</strong></span>
-        <span class="weather-city" data-weather-city="beersheba"><b>באר שבע</b><strong>--°</strong></span>
-        <span class="weather-city" data-weather-city="eilat"><b>אילת</b><strong>--°</strong></span>
+      <div class="weather-rotator" id="weatherRotator" aria-live="polite" aria-label="מזג אוויר נוכחי בערים בישראל">
+        <div class="weather-rotator-content" id="weatherRotatorContent">
+          <img class="weather-icon" id="weatherIcon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/sun.svg" alt="">
+          <div class="weather-copy">
+            <span class="weather-city-name" id="weatherCityName">ירושלים</span>
+            <strong class="weather-temperature" id="weatherTemperature">--°</strong>
+          </div>
+        </div>
         <a class="weather-credit" href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" title="Weather data by Open-Meteo.com">Open-Meteo</a>
       </div>
       <button class="topbar-button compact" id="reloadBtn" type="button" title="רענון כל השידורים">
@@ -182,8 +184,9 @@
         <p><strong>הפעלה:</strong> מומלץ להפעיל דרך Start.cmd. קשת 12 משתמש בשרת המקומי כדי לאתר בכל הפעלה את כתובות השידור שקשת מפרסמת כרגע, במקום להסתמך על כתובת ישנה.</p>
         <p><strong>מצב חסכון:</strong> מגביל כל חלון לעד 360p. זה לא "מכבה" משהו ולא מוריד ערוצים - הוא רק מונע מכל שידור לבחור איכות גבוהה כשפתוחים כמה שידורים יחד. "מאוזן" מאפשר עד 720p ו"מקסימום" מאפשר לנגן לבחור את האיכות הגבוהה ביותר.</p>
         <p><strong>קול:</strong> כל הערוצים מתחילים במצב שקט כדי לאפשר הפעלה אוטומטית. הפעלת קול בערוץ אחד משתיקה את האחרים.</p>
-        <p><strong>לוח שידורים:</strong> בערוצים שיש להם לוח רשמי מופיע כפתור לוח שנה. בכאן 11 האתר קורא את ה-HTML הרשמי ומציג את התוכניות בעיצוב נקי משלנו; בערוצים האחרים הלוח הרשמי נפתח בתוך החלון כאשר האתר שלהם מאפשר זאת.</p>
-        <p><strong>טמפרטורות:</strong> הטמפרטורות בראש האתר מתעדכנות בערך כל 10 דקות באמצעות Open-Meteo ונשמרת גם התוצאה האחרונה למקרה של תקלה זמנית בחיבור.</p>
+        <p><strong>לוח שידורים:</strong> בערוצים שיש להם לוח שידורים מופיע כפתור לוח שנה. בכאן 11 האתר קורא HTML של מקור EPG חיצוני ומציג רק את שעות ושמות התוכניות בעיצוב נקי משלנו. אם המקור החיצוני לא זמין, השרת מנסה גם את עמוד כאן הרשמי.</p>
+        <p><strong>מזג אוויר:</strong> ליד השעון מוצגת עיר אחת בכל פעם עם אייקון מזג אוויר מ-Tabler Icons והטמפרטורה. העיר מתחלפת כל 10 שניות באנימציית טשטוש. נתוני מזג האוויר מתרעננים בערך כל 10 דקות באמצעות Open-Meteo.</p>
+        <p><strong>מסך מלא:</strong> הכפתור משתמש במצב Fullscreen של הדפדפן ומבקש להסתיר גם את ממשק הניווט כאשר הדפדפן תומך בכך. במצב זה האתר מנצל את כל שטח המסך.</p>
         <p><strong>סידור:</strong> במחשב אפשר לגרור חלון למיקום אחר. הסדר נשמר אוטומטית.</p>
         <p><strong>הגדלת ערוץ:</strong> לחיצה כפולה על הווידאו או על כפתור ההגדלה מציגה ערוץ יחיד.</p>
       </div>

@@ -22,16 +22,24 @@
     { id: "beersheba", name: "באר שבע", lat: 31.2520, lon: 34.7915 },
     { id: "eilat", name: "אילת", lat: 29.5577, lon: 34.9519 }
   ];
-  const WEATHER_CACHE_KEY = "israelNewsMultiview.weather.v1";
+  const WEATHER_CACHE_KEY = "israelNewsMultiview.weather.v2";
   const WEATHER_REFRESH_MS = 10 * 60 * 1000;
+  const WEATHER_ROTATE_MS = 10 * 1000;
+  const TABLER_ICON_BASE = "https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/";
 
   const els = {
     grid: document.getElementById("channelGrid"),
     empty: document.getElementById("emptyState"),
     cardTemplate: document.getElementById("channelCardTemplate"),
     clock: document.getElementById("clock"),
-    weatherStrip: document.getElementById("weatherStrip"),
+    weatherRotator: document.getElementById("weatherRotator"),
+    weatherRotatorContent: document.getElementById("weatherRotatorContent"),
+    weatherIcon: document.getElementById("weatherIcon"),
+    weatherCityName: document.getElementById("weatherCityName"),
+    weatherTemperature: document.getElementById("weatherTemperature"),
     fullscreenBtn: document.getElementById("fullscreenBtn"),
+    fullscreenIcon: document.getElementById("fullscreenIcon"),
+    fullscreenLabel: document.getElementById("fullscreenLabel"),
     reloadBtn: document.getElementById("reloadBtn"),
     channelsBtn: document.getElementById("channelsBtn"),
     emptyChannelsBtn: document.getElementById("emptyChannelsBtn"),
@@ -78,6 +86,10 @@
   let dragId = null;
   let currentScheduleChannel = null;
   let scheduleLoadToken = 0;
+  let weatherValues = {};
+  let weatherUpdatedAt = 0;
+  let weatherIndex = 0;
+  let weatherSwitchTimer = null;
 
   function safeJson(key, fallback) {
     try {
@@ -150,17 +162,72 @@
     }
   }
 
+  function weatherIconName(code) {
+    const value = Number(code);
+    if (!Number.isFinite(value)) return "cloud.svg";
+    if (value === 0) return "sun.svg";
+    if ([1, 2, 3].includes(value)) return "cloud.svg";
+    if ([45, 48].includes(value)) return "cloud-fog.svg";
+    if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(value)) return "cloud-rain.svg";
+    if ([71, 73, 75, 77, 85, 86].includes(value)) return "snowflake.svg";
+    if ([95, 96, 99].includes(value)) return "cloud-storm.svg";
+    return "cloud.svg";
+  }
+
+  function weatherDescription(code) {
+    const value = Number(code);
+    if (value === 0) return "בהיר";
+    if ([1, 2].includes(value)) return "מעונן חלקית";
+    if (value === 3) return "מעונן";
+    if ([45, 48].includes(value)) return "ערפל";
+    if ([51, 53, 55, 56, 57].includes(value)) return "טפטוף";
+    if ([61, 63, 65, 66, 67, 80, 81, 82].includes(value)) return "גשם";
+    if ([71, 73, 75, 77, 85, 86].includes(value)) return "שלג";
+    if ([95, 96, 99].includes(value)) return "סופת רעמים";
+    return "מזג אוויר נוכחי";
+  }
+
+  function paintWeatherCity(city, animate = false) {
+    if (!els.weatherRotatorContent || !city) return;
+    const value = weatherValues[city.id] || {};
+    const temperature = Number(value.temperature);
+    const code = Number(value.weatherCode);
+
+    const apply = () => {
+      els.weatherCityName.textContent = city.name;
+      els.weatherTemperature.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : "--°";
+      els.weatherIcon.src = `${TABLER_ICON_BASE}${weatherIconName(code)}`;
+      const details = Number.isFinite(temperature) ? `${Math.round(temperature)}°C, ${weatherDescription(code)}` : weatherDescription(code);
+      const updated = weatherUpdatedAt ? `, עודכן ${new Date(weatherUpdatedAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false })}` : "";
+      els.weatherRotator.title = `${city.name}: ${details}${updated}`;
+      els.weatherIcon.alt = weatherDescription(code);
+    };
+
+    if (!animate) {
+      apply();
+      return;
+    }
+
+    els.weatherRotatorContent.classList.remove("weather-enter");
+    els.weatherRotatorContent.classList.add("weather-leave");
+    window.setTimeout(() => {
+      apply();
+      els.weatherRotatorContent.classList.remove("weather-leave");
+      els.weatherRotatorContent.classList.add("weather-enter");
+      window.setTimeout(() => els.weatherRotatorContent.classList.remove("weather-enter"), 430);
+    }, 320);
+  }
+
   function renderWeather(values, updatedAt) {
-    if (!els.weatherStrip || !values) return;
-    WEATHER_CITIES.forEach(city => {
-      const item = els.weatherStrip.querySelector(`[data-weather-city="${city.id}"]`);
-      if (!item) return;
-      const temperature = Number(values[city.id]);
-      const strong = item.querySelector("strong");
-      strong.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : "--°";
-      const suffix = updatedAt ? `, עודכן ${new Date(updatedAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false })}` : "";
-      item.title = `טמפרטורה נוכחית ב${city.name}${Number.isFinite(temperature) ? `: ${Math.round(temperature)}°C` : ""}${suffix}`;
-    });
+    weatherValues = values || {};
+    weatherUpdatedAt = Number(updatedAt || 0);
+    const city = WEATHER_CITIES[weatherIndex % WEATHER_CITIES.length];
+    paintWeatherCity(city, false);
+  }
+
+  function rotateWeatherCity() {
+    weatherIndex = (weatherIndex + 1) % WEATHER_CITIES.length;
+    paintWeatherCity(WEATHER_CITIES[weatherIndex], true);
   }
 
   async function updateWeather() {
@@ -173,7 +240,7 @@
     const timeout = setTimeout(() => controller.abort(), 8000);
 
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitudes)}&longitude=${encodeURIComponent(longitudes)}&current=temperature_2m&forecast_days=1`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitudes)}&longitude=${encodeURIComponent(longitudes)}&current=temperature_2m,weather_code&forecast_days=1`;
       const response = await fetch(url, { cache: "no-store", signal: controller.signal });
       if (!response.ok) throw new Error(`Weather HTTP ${response.status}`);
       const payload = await response.json();
@@ -181,9 +248,15 @@
       const values = {};
       WEATHER_CITIES.forEach((city, index) => {
         const temperature = Number(locations[index]?.current?.temperature_2m);
-        if (Number.isFinite(temperature)) values[city.id] = temperature;
+        const weatherCode = Number(locations[index]?.current?.weather_code);
+        if (Number.isFinite(temperature)) {
+          values[city.id] = {
+            temperature,
+            weatherCode: Number.isFinite(weatherCode) ? weatherCode : null
+          };
+        }
       });
-      if (!Object.keys(values).length) throw new Error("No temperature data");
+      if (!Object.keys(values).length) throw new Error("No weather data");
       const entry = { updatedAt: Date.now(), values };
       localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(entry));
       renderWeather(values, entry.updatedAt);
@@ -522,6 +595,18 @@
     target.push({ time: normalizedTime, title: normalizedTitle, source });
   }
 
+  function extractScheduleFromTables(doc, items, seen) {
+    const rows = Array.from(doc.querySelectorAll("table tr"));
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll("td,th"));
+      if (cells.length < 2) continue;
+      const time = normalizeScheduleTime(cells[0].textContent);
+      if (!time) continue;
+      const title = cleanScheduleText(cells[1].textContent);
+      if (title) addScheduleItem(items, seen, time, title, "table");
+    }
+  }
+
   function extractScheduleFromJson(doc, items, seen) {
     const scripts = Array.from(doc.querySelectorAll('script[type="application/json"], script[type="application/ld+json"], script#__NEXT_DATA__'));
     let visited = 0;
@@ -614,6 +699,7 @@
     const doc = new DOMParser().parseFromString(html, "text/html");
     const items = [];
     const seen = new Set();
+    extractScheduleFromTables(doc, items, seen);
     extractScheduleFromJson(doc, items, seen);
     extractScheduleFromDom(doc, items, seen);
 
@@ -676,11 +762,11 @@
 
   async function loadKanSchedule(channel) {
     const token = ++scheduleLoadToken;
-    els.scheduleCustomBody.innerHTML = '<div class="schedule-loading"><div class="spinner"></div><span>קורא את לוח השידורים מאתר כאן...</span></div>';
-    els.scheduleCustomMeta.textContent = "קורא את ה-HTML הרשמי...";
+    els.scheduleCustomBody.innerHTML = '<div class="schedule-loading"><div class="spinner"></div><span>טוען את לוח השידורים...</span></div>';
+    els.scheduleCustomMeta.textContent = "קורא נתוני HTML ומעצב אותם מחדש...";
 
     if (location.protocol === "file:") {
-      els.scheduleCustomBody.innerHTML = '<div class="schedule-custom-error"><strong>לוח כאן דורש הפעלה דרך Start.cmd.</strong><span>השרת המקומי קורא את עמוד כאן ומעביר רק את ה-HTML לאתר המקומי כדי שנוכל לעצב אותו מחדש.</span></div>';
+      els.scheduleCustomBody.innerHTML = '<div class="schedule-custom-error"><strong>לוח כאן דורש הפעלה דרך Start.cmd.</strong><span>השרת המקומי קורא את עמוד לוח השידורים ומעביר את ה-HTML לאתר המקומי כדי שנוכל להציג אותו בעיצוב משלנו.</span></div>';
       els.scheduleCustomMeta.textContent = "נדרש Start.cmd";
       return;
     }
@@ -692,7 +778,14 @@
       if (token !== scheduleLoadToken || currentScheduleChannel?.id !== channel.id) return;
       const items = parseKanSchedule(html);
       renderKanSchedule(items);
-      els.scheduleCustomMeta.textContent = items.length ? `${items.length} תוכניות נמצאו מהעמוד הרשמי` : "לא נמצאו תוכניות לקריאה אוטומטית";
+      const source = response.headers.get("X-Schedule-Source") || (html.includes("LOCAL_SCHEDULE_SOURCE:isramedia") ? "isramedia" : "kan");
+      if (items.length) {
+        els.scheduleCustomMeta.textContent = source === "isramedia"
+          ? `${items.length} תוכניות - מקור EPG חלופי: ישראמדיה`
+          : `${items.length} תוכניות - מקור: כאן`;
+      } else {
+        els.scheduleCustomMeta.textContent = "לא נמצאו תוכניות לקריאה אוטומטית";
+      }
     } catch (error) {
       if (token !== scheduleLoadToken) return;
       els.scheduleCustomBody.innerHTML = `<div class="schedule-custom-error"><strong>לא ניתן לטעון כרגע את לוח כאן.</strong><span>${cleanScheduleText(error.message)}. אפשר להשתמש בכפתור "פתיחה באתר הרשמי".</span></div>`;
@@ -708,7 +801,7 @@
     els.scheduleExternal.href = scheduleUrl;
 
     if (channel.scheduleMode === "kan-html") {
-      els.scheduleDescription.textContent = "האתר קורא את עמוד לוח השידורים הרשמי של כאן ומציג את התוכניות בעיצוב נקי ובהיר משלנו.";
+      els.scheduleDescription.textContent = "האתר קורא את לוח ערוץ 11 כ-HTML ומציג רק את שעות ושמות התוכניות בעיצוב נקי משלנו. מקור EPG חיצוני משמש כברירת מחדל כדי להימנע מחסימות של עמוד כאן הרשמי.";
       els.scheduleFrameWrap.hidden = true;
       els.scheduleCustom.hidden = false;
       els.scheduleCustomHeading.textContent = "לוח כאן 11 - היום";
@@ -894,11 +987,45 @@
     els.layoutPopover.hidden = !els.layoutPopover.hidden;
   }
 
+  function fullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+
+  function updateFullscreenUi() {
+    const active = Boolean(fullscreenElement());
+    document.documentElement.classList.toggle("fullscreen-active", active);
+    els.fullscreenBtn?.setAttribute("aria-pressed", active ? "true" : "false");
+    if (els.fullscreenLabel) els.fullscreenLabel.textContent = active ? "יציאה ממסך מלא" : "מסך מלא";
+    if (els.fullscreenBtn) els.fullscreenBtn.title = active ? "יציאה ממסך מלא" : "מסך מלא";
+    if (els.fullscreenIcon) {
+      els.fullscreenIcon.src = `${TABLER_ICON_BASE}${active ? "arrows-minimize.svg" : "arrows-maximize.svg"}`;
+    }
+    updateGridGeometry();
+  }
+
   async function toggleFullscreen() {
     try {
-      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
-      else await document.exitFullscreen();
-    } catch { }
+      if (!fullscreenElement()) {
+        const target = document.documentElement;
+        if (target.requestFullscreen) {
+          try {
+            await target.requestFullscreen({ navigationUI: "hide" });
+          } catch {
+            await target.requestFullscreen();
+          }
+        } else if (target.webkitRequestFullscreen) {
+          target.webkitRequestFullscreen();
+        } else {
+          throw new Error("Fullscreen API is not supported");
+        }
+      } else if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } catch {
+      alert('הדפדפן חסם מעבר למסך מלא. נסי ללחוץ שוב על הכפתור, או להשתמש ב-F11 במקלדת.');
+    }
   }
 
   els.channelsBtn.addEventListener("click", openChannels);
@@ -918,6 +1045,8 @@
   els.addCustomBtn.addEventListener("click", addCustomChannel);
   els.reloadBtn.addEventListener("click", render);
   els.fullscreenBtn.addEventListener("click", toggleFullscreen);
+  document.addEventListener("fullscreenchange", updateFullscreenUi);
+  document.addEventListener("webkitfullscreenchange", updateFullscreenUi);
   els.qualityBtn.addEventListener("click", event => {
     event.stopPropagation();
     toggleQualityPopover();
@@ -992,5 +1121,7 @@
   setInterval(updateClock, 1000);
   updateWeather();
   setInterval(updateWeather, WEATHER_REFRESH_MS);
+  weatherSwitchTimer = setInterval(rotateWeatherCity, WEATHER_ROTATE_MS);
+  updateFullscreenUi();
   render();
 })();

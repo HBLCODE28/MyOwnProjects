@@ -9,6 +9,7 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $N12ResolverUrl = "https://www.n12.co.il/AjaxPage?consumer=web_html5&encryption=no&galleryChannelId=1e2258089b67f510VgnVCM2000002a0c10acRCRD&isGallery=false&jspName=playlist.jsp&vcmid=1e2258089b67f510VgnVCM2000002a0c10acRCRD&videoChannelId=31750a2610f26110VgnVCM1000005201000aRCRD"
 $KanGuideUrl = "https://www.kan.org.il/tv-guide/?channelId=4444"
+$KanGuideFallbackUrl = "https://www.isramedia.net/%D7%9C%D7%95%D7%97-%D7%A9%D7%99%D7%93%D7%95%D7%A8%D7%99%D7%9D/1/%D7%9B%D7%90%D7%9F-11-%D7%9B%D7%90%D7%9F-%D7%A9%D7%99%D7%93%D7%95%D7%A8-%D7%97%D7%99?channelid=1&days=0&days=1"
 $Mime = @{
     ".html" = "text/html; charset=utf-8"
     ".css"  = "text/css; charset=utf-8"
@@ -132,6 +133,10 @@ function Get-RemoteContent {
     } elseif ($Profile -eq "kan") {
         $request.Referer = "https://www.kan.org.il/"
         $request.Accept = "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8"
+        $request.Headers["Accept-Language"] = "he-IL,he;q=0.9,en;q=0.7"
+    } elseif ($Profile -eq "isramedia") {
+        $request.Referer = "https://www.isramedia.net/"
+        $request.Accept = "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8"
         $request.Headers["Accept-Language"] = "he-IL,he;q=0.9,en;q=0.7"
     }
 
@@ -266,14 +271,34 @@ try {
             $rawQuery = if ($question -ge 0) { $requestTarget.Substring($question + 1) } else { "" }
 
             if ($rawPath -eq "/kan/guide") {
-                try {
-                    $remote = Get-RemoteContent $KanGuideUrl "kan" @{}
-                    if ($remote.Status -lt 200 -or $remote.Status -ge 300) {
-                        throw "Kan guide returned HTTP $($remote.Status)."
+                $lastGuideError = ""
+                $guideSources = @(
+                    @{ Url = $KanGuideFallbackUrl; Profile = "isramedia"; Marker = "isramedia" },
+                    @{ Url = $KanGuideUrl; Profile = "kan"; Marker = "kan" }
+                )
+
+                $guideSent = $false
+                foreach ($source in $guideSources) {
+                    try {
+                        $remote = Get-RemoteContent $source.Url $source.Profile @{}
+                        if ($remote.Status -lt 200 -or $remote.Status -ge 300) {
+                            throw "HTTP $($remote.Status)"
+                        }
+
+                        $marker = [Text.Encoding]::UTF8.GetBytes("<!-- LOCAL_SCHEDULE_SOURCE:$($source.Marker) -->`n")
+                        $body = New-Object byte[] ($marker.Length + $remote.Body.Length)
+                        [Array]::Copy($marker, 0, $body, 0, $marker.Length)
+                        [Array]::Copy($remote.Body, 0, $body, $marker.Length, $remote.Body.Length)
+                        Write-HttpResponse $stream 200 "OK" "text/html; charset=utf-8" $body @{ "Access-Control-Allow-Origin" = "*"; "X-Schedule-Source" = $source.Marker }
+                        $guideSent = $true
+                        break
+                    } catch {
+                        $lastGuideError = "$($source.Profile): $($_.Exception.Message)"
                     }
-                    Write-HttpResponse $stream 200 "OK" "text/html; charset=utf-8" $remote.Body @{ "Access-Control-Allow-Origin" = "*" }
-                } catch {
-                    $body = [Text.Encoding]::UTF8.GetBytes("Kan Guide Error: " + $_.Exception.Message)
+                }
+
+                if (-not $guideSent) {
+                    $body = [Text.Encoding]::UTF8.GetBytes("Kan Guide Error: " + $lastGuideError)
                     Write-HttpResponse $stream 502 "Bad Gateway" "text/plain; charset=utf-8" $body @{ "Access-Control-Allow-Origin" = "*" }
                 }
                 continue
