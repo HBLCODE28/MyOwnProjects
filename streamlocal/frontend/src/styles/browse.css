@@ -657,3 +657,188 @@
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
+
+/* Home browse layout: full-width streaming rails with a compact TV-friendly hero. */
+.home-page {
+  --home-gutter: clamp(20px, 3.4vw, 64px);
+  padding-bottom: clamp(54px, 7vh, 86px);
+}
+
+.home-page .browse-hero,
+.home-page .browse-hero-content {
+  min-height: clamp(500px, 64vh, 690px);
+}
+
+.home-page .browse-hero-content {
+  width: min(620px, 44vw);
+  padding: clamp(92px, 11vh, 132px) 0 clamp(82px, 10vh, 116px) var(--home-gutter);
+}
+
+.home-page .browse-hero::after {
+  background:
+    linear-gradient(90deg, rgba(7,7,8,.98) 0%, rgba(7,7,8,.78) 28%, rgba(7,7,8,.3) 54%, rgba(7,7,8,.04) 76%),
+    linear-gradient(0deg, #0f0f10 0%, rgba(15,15,16,.92) 5%, rgba(15,15,16,.44) 17%, rgba(15,15,16,.05) 48%);
+}
+
+.home-page .featured-logo {
+  width: min(470px, 82%);
+  height: clamp(92px, 12vh, 132px);
+}
+
+.home-page .hero-overview {
+  max-width: 560px;
+  font-size: clamp(14px, 1.05vw, 17px);
+  -webkit-line-clamp: 3;
+}
+
+.hero-info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  background: rgba(109, 109, 110, .72);
+  font-size: 16px;
+  font-weight: 760;
+  transition: background 130ms ease, transform 130ms ease;
+}
+
+.hero-info-button:hover,
+.hero-info-button:focus-visible {
+  background: rgba(109, 109, 110, .9);
+  transform: translateY(-1px);
+}
+
+.home-rails {
+  position: relative;
+  z-index: 8;
+  margin-top: clamp(-56px, -5.3vh, -34px);
+}
+
+.home-page .browse-section {
+  margin-right: var(--home-gutter);
+  margin-left: var(--home-gutter);
+}
+
+.home-page .home-rail-section {
+  margin-top: clamp(8px, 1.15vh, 16px);
+}
+
+.home-page .home-first-rail {
+  margin-top: 0;
+}
+
+.home-page .home-rail-section + .home-rail-section {
+  margin-top: clamp(2px, .65vh, 9px);
+}
+
+.home-page .section-title-row {
+  margin-bottom: 3px;
+}
+
+.home-page .section-title-row h2 {
+  font-size: clamp(18px, 1.35vw, 25px);
+  font-weight: 730;
+  letter-spacing: -.02em;
+}
+
+.home-page .rail-grid,
+.home-page .browse-section .series-grid.compact {
+  gap: clamp(5px, .42vw, 8px);
+  padding-top: clamp(9px, 1vh, 13px);
+  padding-bottom: clamp(25px, 3.4vh, 38px);
+  scroll-padding-inline: 3px;
+}
+
+.home-page .home-media-rail > .media-card {
+  flex-basis: clamp(205px, 16.1vw, 292px);
+}
+
+.home-page .home-series-rail > .series-card {
+  flex-basis: clamp(225px, 17.5vw, 318px);
+}
+
+.home-page .media-card:hover,
+.home-page .media-card:focus-visible,
+.home-page .series-card:hover,
+.home-page .series-card:focus-visible {
+  transform: scale(1.055);
+}
+
+.home-page .browse-rail-arrow {
+  top: clamp(9px, 1vh, 13px);
+  bottom: clamp(25px, 3.4vh, 38px);
+  width: clamp(40px, 3vw, 54px);
+}
+
+@media (max-width: 1500px), (max-height: 900px) {
+  .home-page {
+    --home-gutter: clamp(20px, 3.2vw, 50px);
+  }
+
+  .home-page .browse-hero,
+  .home-page .browse-hero-content {
+    min-height: clamp(455px, 60vh, 590px);
+  }
+
+  .home-page .browse-hero-content {
+    width: min(560px, 50vw);
+    padding-top: 82px;
+    padding-bottom: clamp(70px, 8vh, 88px);
+  }
+
+  .home-page .featured-logo {
+    width: min(410px, 80%);
+    height: clamp(82px, 10vh, 108px);
+  }
+
+  .home-page .hero-meta { margin-top: 10px; font-size: 12px; }
+  .home-page .hero-overview { margin-top: 10px; font-size: clamp(12px, 1vw, 14px); line-height: 1.42; -webkit-line-clamp: 2; }
+  .home-page .hero-actions-row { margin-top: 16px; }
+  .home-page .hero-play-button,
+  .home-page .hero-info-button { min-height: 42px; padding: 0 19px; font-size: 14px; }
+  .home-rails { margin-top: clamp(-44px, -4.5vh, -28px); }
+
+  .home-page .home-media-rail > .media-card { flex-basis: clamp(185px, 16.3vw, 246px); }
+  .home-page .home-series-rail > .series-card { flex-basis: clamp(205px, 18.3vw, 276px); }
+  .home-page .section-title-row h2 { font-size: clamp(17px, 1.45vw, 21px); }
+}
+
+@media (max-width: 1100px) {
+  .home-page { --home-gutter: 22px; }
+  .home-page .browse-hero,
+  .home-page .browse-hero-content { min-height: min(58vh, 540px); }
+  .home-page .browse-hero-content { width: min(600px, 66vw); padding-bottom: 68px; }
+  .home-page .home-media-rail > .media-card { flex-basis: clamp(180px, 23vw, 238px); }
+  .home-page .home-series-rail > .series-card { flex-basis: clamp(205px, 26vw, 270px); }
+}
+
+@media (max-width: 760px) {
+  .home-page { --home-gutter: 18px; }
+  .home-page .browse-hero,
+  .home-page .browse-hero-content { min-height: min(64vh, 510px); }
+  .home-page .browse-hero-content { width: 86vw; padding: 84px 18px 64px; }
+  .home-page .featured-logo { width: min(320px, 92%); height: 82px; }
+  .home-page .home-media-rail > .media-card { flex-basis: 68vw; max-width: 260px; }
+  .home-page .home-series-rail > .series-card { flex-basis: 74vw; max-width: 290px; }
+  .home-page .section-title-row .secondary-button { display: none; }
+}
+
+@media (max-height: 700px) and (min-width: 900px) {
+  .home-page .browse-hero,
+  .home-page .browse-hero-content {
+    min-height: min(72vh, 500px);
+  }
+
+  .home-page .browse-hero-content {
+    padding-top: 72px;
+    padding-bottom: 58px;
+  }
+
+  .home-page .featured-logo { height: 76px; }
+  .home-page .hero-overview { -webkit-line-clamp: 2; }
+  .home-rails { margin-top: -30px; }
+}

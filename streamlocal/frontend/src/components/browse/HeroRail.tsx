@@ -8,6 +8,7 @@ type Props = {
   movies: MovieCard[];
   series: SeriesCard[];
   onOpenSeries?: (series: SeriesCard) => void;
+  onPlaySeries?: (item: MediaItem) => void;
   onPlayMovie?: (item: MediaItem) => void;
 };
 
@@ -44,7 +45,19 @@ function chooseFeatured(
   return null;
 }
 
-export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
+function firstPlayableEpisode(card: SeriesCard): MediaItem | null {
+  for (const season of card.seasons) {
+    for (const episode of season.episodes) {
+      const extension = episode.file?.extension.toLowerCase();
+      if (episode.file?.available && (extension === "mp4" || extension === "mkv")) {
+        return episode.item;
+      }
+    }
+  }
+  return null;
+}
+
+export function HeroRail({ movies, series, onOpenSeries, onPlaySeries, onPlayMovie }: Props) {
   const [featuredSeriesIndex, setFeaturedSeriesIndex] = useState(0);
   const seriesPoolLength = useMemo(() => {
     const available = series.filter((card) => card.availableEpisodeCount > 0);
@@ -85,6 +98,7 @@ export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
   if (featured.kind === "series") {
     const card = featured.series;
     const firstEpisode = card.seasons[0]?.episodes[0]?.item;
+    const playableEpisode = firstPlayableEpisode(card);
     const localBackdrop =
       card.series.backdropArtworkId ??
       firstEpisode?.backdropArtworkId ??
@@ -127,12 +141,19 @@ export function HeroRail({ movies, series, onOpenSeries, onPlayMovie }: Props) {
             {card.series.genres.slice(0, 2).map((genre) => <span key={genre}>{genre}</span>)}
           </div>
           {card.series.overview && <p className="hero-overview">{card.series.overview}</p>}
-          {onOpenSeries && (
+          {(playableEpisode && onPlaySeries || onOpenSeries) && (
             <div className="hero-actions-row">
-              <button className="hero-play-button" onClick={() => onOpenSeries(card)}>
-                <TablerPlayerPlayIcon className="play-glyph" size={22} />
-                View series
-              </button>
+              {playableEpisode && onPlaySeries && (
+                <button className="hero-play-button" onClick={() => onPlaySeries(playableEpisode)}>
+                  <TablerPlayerPlayIcon className="play-glyph" size={22} />
+                  Play
+                </button>
+              )}
+              {onOpenSeries && (
+                <button className="hero-info-button" onClick={() => onOpenSeries(card)}>
+                  More info
+                </button>
+              )}
             </div>
           )}
         </div>
