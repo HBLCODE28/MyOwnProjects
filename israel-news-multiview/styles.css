@@ -438,16 +438,16 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
   overflow: hidden;
 }
 .weather-rotator-content {
-  min-width: 104px;
+  min-width: 96px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 3px;
   transform: translateZ(0);
   will-change: filter, opacity, transform;
 }
 .weather-copy {
-  min-width: 54px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -479,7 +479,28 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
   object-fit: contain;
   filter: brightness(0) saturate(100%) invert(79%) sepia(21%) saturate(1195%) hue-rotate(170deg) brightness(105%) contrast(101%);
   opacity: .96;
+  margin-top: 9px;
 }
+
+.channel-card:fullscreen,
+.channel-card:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  grid-template-rows: var(--card-header-h) minmax(0, 1fr);
+  background: #000;
+}
+.channel-card:fullscreen .player-shell,
+.channel-card:-webkit-full-screen .player-shell { min-height: 0; }
+.channel-card:fullscreen .channel-video,
+.channel-card:-webkit-full-screen .channel-video { object-fit: contain; }
+.channel-card:fullscreen .channel-card-header,
+.channel-card:-webkit-full-screen .channel-card-header { background: #101a29; }
 .weather-rotator-content.weather-leave {
   animation: weatherBlurOut .32s ease forwards;
 }

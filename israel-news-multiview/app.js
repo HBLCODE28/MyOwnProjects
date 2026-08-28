@@ -22,7 +22,7 @@
     { id: "beersheba", name: "באר שבע", lat: 31.2520, lon: 34.7915 },
     { id: "eilat", name: "אילת", lat: 29.5577, lon: 34.9519 }
   ];
-  const WEATHER_CACHE_KEY = "israelNewsMultiview.weather.v2";
+  const WEATHER_CACHE_KEY = "israelNewsMultiview.weather.v3";
   const WEATHER_REFRESH_MS = 10 * 60 * 1000;
   const WEATHER_ROTATE_MS = 10 * 1000;
   const TABLER_ICON_BASE = "https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/";
@@ -162,10 +162,11 @@
     }
   }
 
-  function weatherIconName(code) {
+  function weatherIconName(code, isDay = true) {
     const value = Number(code);
-    if (!Number.isFinite(value)) return "cloud.svg";
-    if (value === 0) return "sun.svg";
+    const daytime = Number(isDay) !== 0;
+    if (!Number.isFinite(value)) return daytime ? "cloud.svg" : "moon.svg";
+    if (value === 0) return daytime ? "sun.svg" : "moon.svg";
     if ([1, 2, 3].includes(value)) return "cloud.svg";
     if ([45, 48].includes(value)) return "cloud-fog.svg";
     if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(value)) return "cloud-rain.svg";
@@ -192,15 +193,19 @@
     const value = weatherValues[city.id] || {};
     const temperature = Number(value.temperature);
     const code = Number(value.weatherCode);
+    const localHour = new Date().getHours();
+    const fallbackIsDay = localHour >= 6 && localHour < 18 ? 1 : 0;
+    const isDay = value.isDay === undefined || value.isDay === null ? fallbackIsDay : Number(value.isDay);
 
     const apply = () => {
       els.weatherCityName.textContent = city.name;
       els.weatherTemperature.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : "--°";
-      els.weatherIcon.src = `${TABLER_ICON_BASE}${weatherIconName(code)}`;
-      const details = Number.isFinite(temperature) ? `${Math.round(temperature)}°C, ${weatherDescription(code)}` : weatherDescription(code);
+      els.weatherIcon.src = `${TABLER_ICON_BASE}${weatherIconName(code, isDay)}`;
+      const condition = code === 0 && isDay === 0 ? "בהיר בלילה" : weatherDescription(code);
+      const details = Number.isFinite(temperature) ? `${Math.round(temperature)}°C, ${condition}` : condition;
       const updated = weatherUpdatedAt ? `, עודכן ${new Date(weatherUpdatedAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false })}` : "";
       els.weatherRotator.title = `${city.name}: ${details}${updated}`;
-      els.weatherIcon.alt = weatherDescription(code);
+      els.weatherIcon.alt = code === 0 && isDay === 0 ? "לילה בהיר" : weatherDescription(code);
     };
 
     if (!animate) {
@@ -240,7 +245,7 @@
     const timeout = setTimeout(() => controller.abort(), 8000);
 
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitudes)}&longitude=${encodeURIComponent(longitudes)}&current=temperature_2m,weather_code&forecast_days=1`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitudes)}&longitude=${encodeURIComponent(longitudes)}&current=temperature_2m,weather_code,is_day&forecast_days=1`;
       const response = await fetch(url, { cache: "no-store", signal: controller.signal });
       if (!response.ok) throw new Error(`Weather HTTP ${response.status}`);
       const payload = await response.json();
@@ -249,10 +254,12 @@
       WEATHER_CITIES.forEach((city, index) => {
         const temperature = Number(locations[index]?.current?.temperature_2m);
         const weatherCode = Number(locations[index]?.current?.weather_code);
+        const isDay = Number(locations[index]?.current?.is_day);
         if (Number.isFinite(temperature)) {
           values[city.id] = {
             temperature,
-            weatherCode: Number.isFinite(weatherCode) ? weatherCode : null
+            weatherCode: Number.isFinite(weatherCode) ? weatherCode : null,
+            isDay: Number.isFinite(isDay) ? isDay : 1
           };
         }
       });
@@ -848,7 +855,7 @@
     } else {
       scheduleBtn.hidden = true;
     }
-    card.querySelector(".maximize-btn").addEventListener("click", () => toggleMaximize(card));
+    card.querySelector(".maximize-btn").addEventListener("click", () => toggleChannelFullscreen(card));
     card.querySelector(".restart-btn").addEventListener("click", () => startPlayer(card, channel, 0));
     card.querySelector(".close-btn").addEventListener("click", () => {
       activeIds = activeIds.filter(id => id !== channel.id);
@@ -860,7 +867,7 @@
       render();
     });
     card.querySelector(".retry-stream").addEventListener("click", () => startPlayer(card, channel, 0));
-    card.querySelector("video").addEventListener("dblclick", () => toggleMaximize(card));
+    card.querySelector("video").addEventListener("dblclick", () => toggleChannelFullscreen(card));
 
     card.addEventListener("dragstart", event => {
       dragId = channel.id;
@@ -991,8 +998,28 @@
     return document.fullscreenElement || document.webkitFullscreenElement || null;
   }
 
+  function isSiteFullscreen() {
+    return fullscreenElement() === document.documentElement;
+  }
+
+  function updateChannelFullscreenUi() {
+    const active = fullscreenElement();
+    els.grid.querySelectorAll(".channel-card").forEach(card => {
+      const button = card.querySelector(".maximize-btn");
+      const icon = button?.querySelector("img");
+      const isActive = active === card;
+      card.classList.toggle("is-browser-fullscreen", isActive);
+      if (button) {
+        button.title = isActive ? "יציאה ממסך מלא" : "מסך מלא לערוץ";
+        button.setAttribute("aria-label", isActive ? "יציאה ממסך מלא" : "מסך מלא לערוץ");
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      }
+      if (icon) icon.src = `${TABLER_ICON_BASE}${isActive ? "arrows-minimize.svg" : "arrows-maximize.svg"}`;
+    });
+  }
+
   function updateFullscreenUi() {
-    const active = Boolean(fullscreenElement());
+    const active = isSiteFullscreen();
     document.documentElement.classList.toggle("fullscreen-active", active);
     els.fullscreenBtn?.setAttribute("aria-pressed", active ? "true" : "false");
     if (els.fullscreenLabel) els.fullscreenLabel.textContent = active ? "יציאה ממסך מלא" : "מסך מלא";
@@ -1000,31 +1027,64 @@
     if (els.fullscreenIcon) {
       els.fullscreenIcon.src = `${TABLER_ICON_BASE}${active ? "arrows-minimize.svg" : "arrows-maximize.svg"}`;
     }
+    updateChannelFullscreenUi();
     updateGridGeometry();
+  }
+
+  async function requestFullscreenFor(element) {
+    if (element.requestFullscreen) {
+      await element.requestFullscreen({ navigationUI: "hide" });
+      return true;
+    }
+    if (element.webkitRequestFullscreen) {
+      element.webkitRequestFullscreen();
+      return true;
+    }
+    return false;
+  }
+
+  async function exitFullscreenMode() {
+    if (document.exitFullscreen) {
+      await document.exitFullscreen();
+      return true;
+    }
+    if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+      return true;
+    }
+    return false;
+  }
+
+  async function toggleChannelFullscreen(card) {
+    try {
+      const current = fullscreenElement();
+      if (current === card) {
+        await exitFullscreenMode();
+        return;
+      }
+
+      if (current) await exitFullscreenMode();
+      const supported = await requestFullscreenFor(card);
+      if (!supported) toggleMaximize(card);
+    } catch (error) {
+      console.warn("Channel fullscreen was blocked; using in-page maximize instead.", error);
+      toggleMaximize(card);
+    }
   }
 
   async function toggleFullscreen() {
     try {
-      if (!fullscreenElement()) {
-        const target = document.documentElement;
-        if (target.requestFullscreen) {
-          try {
-            await target.requestFullscreen({ navigationUI: "hide" });
-          } catch {
-            await target.requestFullscreen();
-          }
-        } else if (target.webkitRequestFullscreen) {
-          target.webkitRequestFullscreen();
-        } else {
-          throw new Error("Fullscreen API is not supported");
-        }
-      } else if (document.exitFullscreen) {
-        await document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
+      if (isSiteFullscreen()) {
+        await exitFullscreenMode();
+        return;
       }
-    } catch {
-      alert('הדפדפן חסם מעבר למסך מלא. נסי ללחוץ שוב על הכפתור, או להשתמש ב-F11 במקלדת.');
+
+      if (fullscreenElement()) await exitFullscreenMode();
+      const supported = await requestFullscreenFor(document.documentElement);
+      if (!supported) throw new Error("Fullscreen API is unavailable");
+    } catch (error) {
+      console.warn("Fullscreen request failed", error);
+      window.alert("הדפדפן לא אפשר מעבר אוטומטי למסך מלא. אפשר להשתמש גם ב-F11.");
     }
   }
 

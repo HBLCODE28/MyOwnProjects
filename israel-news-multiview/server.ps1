@@ -60,6 +60,60 @@ function Parse-QueryString {
     return $result
 }
 
+
+function Get-TextEncodingForHtml {
+    param(
+        [byte[]]$Bytes,
+        [string]$ContentType
+    )
+
+    $charset = $null
+    if (-not [string]::IsNullOrWhiteSpace($ContentType) -and $ContentType -match '(?i)charset\s*=\s*["'']?\s*([a-z0-9._-]+)') {
+        $charset = $Matches[1]
+    }
+
+    if ([string]::IsNullOrWhiteSpace($charset) -and $null -ne $Bytes -and $Bytes.Length -gt 0) {
+        $sampleLength = [Math]::Min($Bytes.Length, 8192)
+        $sample = [Text.Encoding]::ASCII.GetString($Bytes, 0, $sampleLength)
+        if ($sample -match '(?i)<meta[^>]+charset\s*=\s*["'']?\s*([a-z0-9._-]+)') {
+            $charset = $Matches[1]
+        } elseif ($sample -match '(?i)<meta[^>]+content\s*=\s*["''][^"'']*charset\s*=\s*([a-z0-9._-]+)') {
+            $charset = $Matches[1]
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($charset)) {
+        try { return [Text.Encoding]::GetEncoding($charset) } catch { }
+    }
+
+    if ($null -ne $Bytes -and $Bytes.Length -ge 3 -and $Bytes[0] -eq 0xEF -and $Bytes[1] -eq 0xBB -and $Bytes[2] -eq 0xBF) {
+        return [Text.Encoding]::UTF8
+    }
+
+    try {
+        $strictUtf8 = New-Object Text.UTF8Encoding($false, $true)
+        [void]$strictUtf8.GetString($Bytes)
+        return [Text.Encoding]::UTF8
+    } catch {
+        # Isramedia has historically served Hebrew HTML using a legacy Hebrew code page.
+        foreach ($fallback in @('windows-1255', 'iso-8859-8')) {
+            try { return [Text.Encoding]::GetEncoding($fallback) } catch { }
+        }
+        return [Text.Encoding]::Default
+    }
+}
+
+function Convert-HtmlBytesToUtf8Text {
+    param(
+        [byte[]]$Bytes,
+        [string]$ContentType
+    )
+
+    if ($null -eq $Bytes -or $Bytes.Length -eq 0) { return "" }
+    $encoding = Get-TextEncodingForHtml $Bytes $ContentType
+    return $encoding.GetString($Bytes)
+}
+
 function Convert-ToProxyUrl {
     param([Uri]$BaseUri, [string]$Value, [string]$Profile)
     if ([string]::IsNullOrWhiteSpace($Value)) { return $Value }
@@ -285,10 +339,9 @@ try {
                             throw "HTTP $($remote.Status)"
                         }
 
-                        $marker = [Text.Encoding]::UTF8.GetBytes("<!-- LOCAL_SCHEDULE_SOURCE:$($source.Marker) -->`n")
-                        $body = New-Object byte[] ($marker.Length + $remote.Body.Length)
-                        [Array]::Copy($marker, 0, $body, 0, $marker.Length)
-                        [Array]::Copy($remote.Body, 0, $body, $marker.Length, $remote.Body.Length)
+                        $guideHtml = Convert-HtmlBytesToUtf8Text $remote.Body $remote.ContentType
+                        $payload = "<!-- LOCAL_SCHEDULE_SOURCE:$($source.Marker) -->`n" + $guideHtml
+                        $body = [Text.Encoding]::UTF8.GetBytes($payload)
                         Write-HttpResponse $stream 200 "OK" "text/html; charset=utf-8" $body @{ "Access-Control-Allow-Origin" = "*"; "X-Schedule-Source" = $source.Marker }
                         $guideSent = $true
                         break
