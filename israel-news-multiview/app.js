@@ -2,11 +2,11 @@
   "use strict";
 
   const STORAGE = {
-    active: "israelNewsMultiview.active.v1",
-    order: "israelNewsMultiview.order.v1",
-    layout: "israelNewsMultiview.layout.v1",
-    quality: "israelNewsMultiview.quality.v1",
-    custom: "israelNewsMultiview.custom.v1"
+    active: "israelNewsMultiview.active.v2",
+    order: "israelNewsMultiview.order.v2",
+    layout: "israelNewsMultiview.layout.v2",
+    quality: "israelNewsMultiview.quality.v2",
+    custom: "israelNewsMultiview.custom.v2"
   };
 
   const QUALITY_MODES = [
@@ -66,24 +66,29 @@
     const base = Array.isArray(window.NEWS_CHANNELS) ? window.NEWS_CHANNELS : [];
     const custom = getCustomChannels();
     const seen = new Set();
-    return [...base, ...custom].filter(ch => {
-      if (!ch || !ch.id || seen.has(ch.id)) return false;
-      seen.add(ch.id);
+    return [...base, ...custom].filter(channel => {
+      if (!channel || !channel.id || seen.has(channel.id)) return false;
+      seen.add(channel.id);
       return true;
     });
   }
 
   function byId(id) {
-    return getAllChannels().find(ch => ch.id === id);
+    return getAllChannels().find(channel => channel.id === id);
+  }
+
+  function channelUrls(channel) {
+    if (Array.isArray(channel.urls) && channel.urls.length) return channel.urls.filter(Boolean);
+    return channel.url ? [channel.url] : [];
   }
 
   function defaultActiveIds() {
-    return getAllChannels().filter(ch => ch.primary).map(ch => ch.id).slice(0, 6);
+    return getAllChannels().filter(channel => channel.primary).map(channel => channel.id).slice(0, 6);
   }
 
   function loadActiveIds() {
     const saved = safeJson(STORAGE.active, null);
-    const validIds = new Set(getAllChannels().map(ch => ch.id));
+    const validIds = new Set(getAllChannels().map(channel => channel.id));
     if (!Array.isArray(saved)) return defaultActiveIds();
     const filtered = saved.filter(id => validIds.has(id));
     return filtered.length || saved.length === 0 ? filtered : defaultActiveIds();
@@ -115,16 +120,18 @@
       hls.autoLevelCapping = -1;
       return;
     }
+
     let selected = -1;
     hls.levels.forEach((level, index) => {
-      const h = Number(level.height || 0);
-      if (h && h <= maxHeight) selected = index;
+      const height = Number(level.height || 0);
+      if (height && height <= maxHeight) selected = index;
     });
+
     if (selected < 0) {
-      selected = hls.levels.reduce((best, level, index, arr) => {
-        const h = Number(level.height || Number.MAX_SAFE_INTEGER);
-        const bestH = Number(arr[best]?.height || Number.MAX_SAFE_INTEGER);
-        return h < bestH ? index : best;
+      selected = hls.levels.reduce((best, level, index, list) => {
+        const height = Number(level.height || Number.MAX_SAFE_INTEGER);
+        const bestHeight = Number(list[best]?.height || Number.MAX_SAFE_INTEGER);
+        return height < bestHeight ? index : best;
       }, 0);
     }
     hls.autoLevelCapping = selected;
@@ -139,7 +146,7 @@
   }
 
   function computeGrid(count, layout) {
-    if (window.innerWidth <= 640) return { cols: 1, rows: Math.max(1, count) };
+    if (window.innerWidth <= 700) return { cols: 1, rows: Math.max(1, count) };
 
     const fixed = Number(layout);
     const target = Number.isFinite(fixed) && fixed > 0 ? fixed : count;
@@ -153,8 +160,7 @@
   }
 
   function updateGridGeometry() {
-    const count = activeIds.length;
-    const { cols, rows } = computeGrid(count, currentLayout);
+    const { cols, rows } = computeGrid(activeIds.length, currentLayout);
     els.grid.style.setProperty("--cols", String(cols));
     els.grid.style.setProperty("--rows", String(rows));
   }
@@ -162,7 +168,7 @@
   function destroyPlayer(id) {
     const hls = hlsInstances.get(id);
     if (hls) {
-      try { hls.destroy(); } catch { /* no-op */ }
+      try { hls.destroy(); } catch { }
       hlsInstances.delete(id);
     }
   }
@@ -172,9 +178,8 @@
   }
 
   function showError(card, message) {
-    const loading = card.querySelector(".loading-overlay");
+    card.querySelector(".loading-overlay").hidden = true;
     const error = card.querySelector(".error-overlay");
-    loading.hidden = true;
     error.hidden = false;
     const text = error.querySelector(".error-text");
     if (message) text.textContent = message;
@@ -185,28 +190,71 @@
     card.querySelector(".error-overlay").hidden = true;
   }
 
-  function startPlayer(card, channel) {
+  function streamUrlFor(channel, sourceUrl) {
+    if (!channel.proxyProfile || location.protocol === "file:") return sourceUrl;
+    return `/proxy?p=${encodeURIComponent(channel.proxyProfile)}&url=${encodeURIComponent(sourceUrl)}`;
+  }
+
+  function startPlayer(card, channel, sourceIndex = 0) {
     destroyPlayer(channel.id);
 
+    const urls = channelUrls(channel);
     const video = card.querySelector("video");
     const loading = card.querySelector(".loading-overlay");
+    const loadingText = card.querySelector(".loading-text");
     const error = card.querySelector(".error-overlay");
+
+    const attemptToken = `${Date.now()}-${Math.random()}`;
+    card.dataset.attemptToken = attemptToken;
+    card.dataset.sourceIndex = String(sourceIndex);
+
     loading.hidden = false;
     error.hidden = true;
+    loadingText.textContent = urls.length > 1 ? `מתחבר לשידור - מקור ${sourceIndex + 1} מתוך ${urls.length}` : "מתחבר לשידור...";
     video.muted = true;
     video.controls = false;
     video.removeAttribute("src");
     video.load();
 
-    const streamUrl = channel.url;
-    if (!streamUrl) {
+    if (!urls.length) {
       showError(card, "לא הוגדרה כתובת שידור לערוץ הזה.");
       return;
     }
 
+    if (sourceIndex >= urls.length) {
+      const proxyHint = channel.proxyProfile && location.protocol === "file:"
+        ? " הפעילי את האתר דרך Start.cmd כדי לאפשר את החיבור המקומי הנדרש לערוץ הזה."
+        : "";
+      showError(card, `כל מקורות השידור הזמינים נכשלו.${proxyHint}`);
+      return;
+    }
+
+    const sourceUrl = urls[sourceIndex];
+    const streamUrl = streamUrlFor(channel, sourceUrl);
+    let hasStarted = false;
+
+    const isCurrentAttempt = () => card.isConnected && card.dataset.attemptToken === attemptToken;
+
+    const tryNextSource = (message) => {
+      if (!isCurrentAttempt()) return;
+      destroyPlayer(channel.id);
+      if (sourceIndex + 1 < urls.length) {
+        setTimeout(() => {
+          if (isCurrentAttempt()) startPlayer(card, channel, sourceIndex + 1);
+        }, 250);
+        return;
+      }
+      const proxyHint = channel.proxyProfile && location.protocol === "file:"
+        ? " הפעילי דרך Start.cmd ולא דרך Open-Direct.cmd."
+        : "";
+      showError(card, `${message || "השידור לא זמין כרגע."}${proxyHint}`);
+    };
+
     const onCanPlay = () => {
+      if (!isCurrentAttempt()) return;
+      hasStarted = true;
       showPlaying(card);
-      video.play().catch(() => { /* autoplay may require interaction */ });
+      video.play().catch(() => { });
     };
     video.addEventListener("canplay", onCanPlay, { once: true });
 
@@ -224,39 +272,45 @@
         levelLoadingTimeOut: 12000,
         fragLoadingTimeOut: 15000
       });
+
       hlsInstances.set(channel.id, hls);
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
+
       hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+        if (!isCurrentAttempt()) return;
         applyQualityToHls(hls);
-        video.play().catch(() => { /* muted autoplay */ });
+        video.play().catch(() => { });
       });
+
       hls.on(window.Hls.Events.ERROR, (_event, data) => {
-        if (!data.fatal) return;
-        if (data.type === window.Hls.ErrorTypes.NETWORK_ERROR) {
-          try { hls.startLoad(); } catch { showError(card); }
-          setTimeout(() => {
-            if (video.readyState < 2) showError(card);
-          }, 4500);
-        } else if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
-          try { hls.recoverMediaError(); } catch { showError(card); }
-        } else {
-          showError(card);
-          destroyPlayer(channel.id);
+        if (!data.fatal || !isCurrentAttempt()) return;
+
+        if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR && hasStarted) {
+          try {
+            hls.recoverMediaError();
+            return;
+          } catch { }
         }
+
+        const message = data.type === window.Hls.ErrorTypes.NETWORK_ERROR
+          ? "לא ניתן להתחבר למקור השידור."
+          : "נגן הווידאו לא הצליח לפענח את השידור.";
+        tryNextSource(message);
       });
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = streamUrl;
-      video.addEventListener("error", () => showError(card), { once: true });
-      video.play().catch(() => { /* muted autoplay */ });
+      video.addEventListener("error", () => tryNextSource("לא ניתן להתחבר למקור השידור."), { once: true });
+      video.play().catch(() => { });
     } else {
-      showError(card, "הדפדפן לא תומך ב-HLS והספרייה hls.js לא נטענה. בדקי חיבור לאינטרנט או נסי Chrome/Edge מעודכן.");
+      showError(card, "הדפדפן לא תומך ב-HLS והספרייה hls.js לא נטענה. נסי Chrome או Edge מעודכן.");
+      return;
     }
 
     setTimeout(() => {
-      if (video.readyState < 2 && !error.hidden) return;
-      if (video.readyState < 2) showError(card);
-    }, 15000);
+      if (!isCurrentAttempt() || hasStarted) return;
+      tryNextSource("החיבור לשידור ארך יותר מדי זמן.");
+    }, 18000);
   }
 
   function muteAllExcept(id) {
@@ -274,12 +328,12 @@
     const video = card.querySelector("video");
     if (video.muted) {
       muteAllExcept(card.dataset.id);
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     } else {
       video.muted = true;
-      const btn = card.querySelector(".audio-btn");
-      btn.textContent = "שקט";
-      btn.title = "הפעלת קול";
+      const button = card.querySelector(".audio-btn");
+      button.textContent = "שקט";
+      button.title = "הפעלת קול";
     }
   }
 
@@ -292,11 +346,13 @@
       card.querySelector(".maximize-btn").textContent = "□";
       return;
     }
+
     const previous = els.grid.querySelector(".channel-card.is-maximized");
     if (previous) {
       previous.classList.remove("is-maximized");
       previous.querySelector(".maximize-btn").textContent = "□";
     }
+
     maximizedId = id;
     card.classList.add("is-maximized");
     document.body.classList.add("card-maximized");
@@ -306,7 +362,9 @@
   function buildCard(channel) {
     const card = els.cardTemplate.content.firstElementChild.cloneNode(true);
     card.dataset.id = channel.id;
+    card.style.setProperty("--channel-accent", channel.accent || "#3196dc");
     card.querySelector(".channel-title").textContent = channel.name;
+    card.querySelector(".channel-badge-card").textContent = channel.short || channel.name.slice(0, 3);
 
     const official = card.querySelector(".official-link");
     if (channel.official) {
@@ -318,7 +376,7 @@
 
     card.querySelector(".audio-btn").addEventListener("click", () => toggleAudio(card));
     card.querySelector(".maximize-btn").addEventListener("click", () => toggleMaximize(card));
-    card.querySelector(".restart-btn").addEventListener("click", () => startPlayer(card, channel));
+    card.querySelector(".restart-btn").addEventListener("click", () => startPlayer(card, channel, 0));
     card.querySelector(".close-btn").addEventListener("click", () => {
       activeIds = activeIds.filter(id => id !== channel.id);
       saveActiveIds();
@@ -328,7 +386,7 @@
       }
       render();
     });
-    card.querySelector(".retry-stream").addEventListener("click", () => startPlayer(card, channel));
+    card.querySelector(".retry-stream").addEventListener("click", () => startPlayer(card, channel, 0));
     card.querySelector("video").addEventListener("dblclick", () => toggleMaximize(card));
 
     card.addEventListener("dragstart", event => {
@@ -340,7 +398,7 @@
     card.addEventListener("dragend", () => {
       dragId = null;
       card.classList.remove("dragging");
-      els.grid.querySelectorAll(".drag-over").forEach(el => el.classList.remove("drag-over"));
+      els.grid.querySelectorAll(".drag-over").forEach(element => element.classList.remove("drag-over"));
     });
     card.addEventListener("dragover", event => {
       if (!dragId || dragId === channel.id) return;
@@ -379,7 +437,7 @@
       if (!channel) return;
       const card = buildCard(channel);
       els.grid.appendChild(card);
-      startPlayer(card, channel);
+      startPlayer(card, channel, 0);
     });
   }
 
@@ -389,15 +447,20 @@
     getAllChannels().forEach(channel => {
       const label = document.createElement("label");
       label.className = "channel-option";
+
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.value = channel.id;
       checkbox.checked = selected.has(channel.id);
+
       const badge = document.createElement("span");
       badge.className = "channel-badge";
       badge.textContent = channel.short || channel.name.slice(0, 3);
+      badge.style.setProperty("--picker-accent", channel.accent || "#284b69");
+
       const name = document.createElement("span");
       name.textContent = channel.name;
+
       label.append(checkbox, badge, name);
       els.channelPicker.appendChild(label);
     });
@@ -409,7 +472,7 @@
   }
 
   function applyPickerSelection() {
-    const checked = Array.from(els.channelPicker.querySelectorAll('input[type="checkbox"]:checked')).map(el => el.value);
+    const checked = Array.from(els.channelPicker.querySelectorAll('input[type="checkbox"]:checked')).map(element => element.value);
     const oldOrder = activeIds.filter(id => checked.includes(id));
     const newOnes = checked.filter(id => !oldOrder.includes(id));
     activeIds = [...oldOrder, ...newOnes];
@@ -425,9 +488,19 @@
       alert("יש להזין שם וכתובת HTTP/HTTPS שמפנה לקובץ m3u8.");
       return;
     }
+
     const custom = getCustomChannels();
     const id = `custom-${Date.now().toString(36)}`;
-    custom.push({ id, name, short: "LIVE", type: "hls", url, official, primary: false });
+    custom.push({
+      id,
+      name,
+      short: "LIVE",
+      type: "hls",
+      urls: [url],
+      official,
+      accent: "#3f8fc5",
+      primary: false
+    });
     localStorage.setItem(STORAGE.custom, JSON.stringify(custom));
     activeIds.push(id);
     saveActiveIds();
@@ -445,20 +518,22 @@
     try {
       if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
       else await document.exitFullscreen();
-    } catch {
-      /* Browser may block fullscreen without permission. */
-    }
+    } catch { }
   }
 
   els.channelsBtn.addEventListener("click", openChannels);
   els.emptyChannelsBtn.addEventListener("click", openChannels);
   els.applyChannelsBtn.addEventListener("click", applyPickerSelection);
   els.selectPrimaryBtn.addEventListener("click", () => {
-    const primary = new Set(getAllChannels().filter(ch => ch.primary).map(ch => ch.id));
-    els.channelPicker.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = primary.has(cb.value));
+    const primary = new Set(getAllChannels().filter(channel => channel.primary).map(channel => channel.id));
+    els.channelPicker.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.checked = primary.has(checkbox.value);
+    });
   });
   els.clearSelectionBtn.addEventListener("click", () => {
-    els.channelPicker.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    els.channelPicker.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
   });
   els.addCustomBtn.addEventListener("click", addCustomChannel);
   els.reloadBtn.addEventListener("click", render);
@@ -478,7 +553,7 @@
     updateGridGeometry();
   });
   document.addEventListener("click", event => {
-    if (!els.layoutPopover.hidden && !els.layoutPopover.contains(event.target) && event.target !== els.layoutBtn) {
+    if (!els.layoutPopover.hidden && !els.layoutPopover.contains(event.target) && !els.layoutBtn.contains(event.target)) {
       els.layoutPopover.hidden = true;
     }
   });
@@ -491,7 +566,7 @@
   window.addEventListener("resize", updateGridGeometry);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
-      els.grid.querySelectorAll("video").forEach(video => video.play().catch(() => {}));
+      els.grid.querySelectorAll("video").forEach(video => video.play().catch(() => { }));
     }
   });
 
