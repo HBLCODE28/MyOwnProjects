@@ -11,7 +11,6 @@ import { removeMediaFileFromLibrary, setWatchedState } from "../services/library
 import "../styles/library.css";
 import { useToast } from "../components/ui/Toast";
 import { importStreamLocalBackup } from "../services/backup";
-import { nativeDesktopAvailable, validateNativeFolder } from "../services/nativeDesktop";
 
 export function LibraryPage() {
   const [sources, setSources] = useState<LibrarySource[]>([]);
@@ -22,7 +21,6 @@ export function LibraryPage() {
   const [summary, setSummary] = useState<ScanSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [desktopMode, setDesktopMode] = useState(false);
   const { showToast } = useToast();
 
   async function importBackup(file: File | undefined) {
@@ -55,24 +53,18 @@ export function LibraryPage() {
   useEffect(() => {
     void requestPersistentStorage();
     void refresh();
-    void nativeDesktopAvailable().then(setDesktopMode);
   }, []);
 
   async function addFolder() {
     setError(null);
     try {
       const location = await chooseLibraryLocation();
-      const pathKey = location.nativePath?.toLowerCase() ?? null;
-      const existing = sources.find((source) =>
-        pathKey
-          ? source.nativePath?.toLowerCase() === pathKey
-          : source.name === location.name && !source.nativePath,
-      );
+      const existing = sources.find((source) => source.name === location.name);
 
-      if (existing && (!existing.handle || Boolean(location.nativePath))) {
+      if (existing && !existing.handle) {
         await db.librarySources.update(existing.id, {
           handle: location.handle,
-          nativePath: location.nativePath,
+          nativePath: null,
           name: location.name,
           enabled: true,
         });
@@ -90,7 +82,7 @@ export function LibraryPage() {
         enabled: true,
         recursive: true,
         handle: location.handle,
-        nativePath: location.nativePath,
+        nativePath: null,
       };
       await db.librarySources.add(source);
       await refresh();
@@ -103,48 +95,13 @@ export function LibraryPage() {
     }
   }
 
-  async function addNetworkPath() {
-    const entered = window.prompt("Enter a Windows folder, mapped drive, or network share path.", "\\SERVER\Share\Movies");
-    if (!entered?.trim()) return;
-    setError(null);
-    try {
-      const selected = await validateNativeFolder(entered.trim());
-      const existing = sources.find((source) => source.nativePath?.toLowerCase() === selected.path.toLowerCase());
-      if (existing) {
-        await db.librarySources.update(existing.id, { enabled: true, nativePath: selected.path, name: selected.name, handle: null });
-        const updated = await db.librarySources.get(existing.id);
-        if (updated) await scan(updated);
-        showToast(`Reconnected ${selected.name}.`, "success");
-        return;
-      }
-      const source: LibrarySource = {
-        id: createId("source"),
-        name: selected.name,
-        createdAt: Date.now(),
-        lastScanAt: null,
-        enabled: true,
-        recursive: true,
-        handle: null,
-        nativePath: selected.path,
-      };
-      await db.librarySources.add(source);
-      await refresh();
-      await scan(source);
-      showToast(`Added and scanned ${selected.name}.`, "success");
-    } catch (value) {
-      const message = value instanceof Error ? value.message : "Could not open network folder.";
-      setError(message);
-      showToast(message, "error");
-    }
-  }
-
   async function reconnect(source: LibrarySource) {
     setError(null);
     try {
       const location = await chooseLibraryLocation();
       await db.librarySources.update(source.id, {
         handle: location.handle,
-        nativePath: location.nativePath,
+        nativePath: null,
         name: location.name,
         enabled: true,
       });
@@ -185,6 +142,7 @@ export function LibraryPage() {
     await db.librarySources.update(source.id, {
       enabled: false,
       handle: null,
+      nativePath: null,
     });
     await refresh();
   }
@@ -243,16 +201,11 @@ export function LibraryPage() {
           <p className="eyebrow">LOCAL LIBRARY</p>
           <h1>Library</h1>
           <p>
-            StreamLocal reads only folders you explicitly choose. The Windows app also supports
-            mapped drives and network shares such as Z:\Movies or \\NAS\Series.
+            StreamLocal reads only folders you explicitly choose in Chrome or Edge. For a network share,
+            map it to a Windows drive letter first, then choose that mapped folder with Add folder.
           </p>
         </div>
         <div className="library-heading-actions">
-          {desktopMode && (
-            <button type="button" className="secondary-button" onClick={() => void addNetworkPath()}>
-              Add network path
-            </button>
-          )}
           <button type="button" className="primary-button" onClick={addFolder}>
             Add folder
           </button>
@@ -296,18 +249,17 @@ export function LibraryPage() {
                 <div className="source-main">
                   <strong>{source.name}</strong>
                   <span>
-                    {source.enabled && (source.handle || source.nativePath) ? "Connected" : "Needs reconnect"}
-                    {source.nativePath ? ` · ${source.nativePath}` : ""}
+                    {source.enabled && source.handle ? "Connected" : "Needs reconnect"}
                     {source.lastScanAt ? ` · ${new Date(source.lastScanAt).toLocaleString()}` : ""}
                   </span>
                 </div>
                 <div className="source-actions">
-                  {(!source.enabled || (!source.handle && !source.nativePath)) && (
+                  {(!source.enabled || !source.handle) && (
                     <button className="secondary-button" onClick={() => reconnect(source)}>
                       Reconnect folder
                     </button>
                   )}
-                  {source.enabled && (source.handle || source.nativePath) && (
+                  {source.enabled && source.handle && (
                     <button
                       className="secondary-button"
                       disabled={busy === source.id}

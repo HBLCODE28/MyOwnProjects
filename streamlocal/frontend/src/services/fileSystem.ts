@@ -1,5 +1,3 @@
-import { nativeDesktopAvailable, pickNativeFolder } from "./nativeDesktop";
-
 declare global {
   interface Window {
     showDirectoryPicker?: (options?: {
@@ -12,39 +10,34 @@ declare global {
 
 export type ChosenLibraryLocation = {
   name: string;
-  handle: FileSystemDirectoryHandle | null;
-  nativePath: string | null;
+  handle: FileSystemDirectoryHandle;
+  nativePath: null;
 };
 
+/**
+ * Browser-only folder selection.
+ *
+ * StreamLocal intentionally uses the File System Access API here instead of
+ * depending on the retired Windows/native bridge. This keeps Library buttons
+ * working in normal Chrome/Edge and preserves the browser-only architecture.
+ */
 export async function chooseLibraryLocation(): Promise<ChosenLibraryLocation> {
-  if (await nativeDesktopAvailable()) {
-    const selected = await pickNativeFolder();
-    return {
-      name: selected.name,
-      handle: null,
-      nativePath: selected.path,
-    };
-  }
-
   if (!window.showDirectoryPicker) {
     throw new Error(
-      "Folder access is unavailable in this browser. Use StreamLocal for Windows, or current Microsoft Edge / Google Chrome."
+      "Folder access is unavailable in this browser. Open StreamLocal in a current Google Chrome or Microsoft Edge window over http://127.0.0.1 or HTTPS.",
     );
   }
 
   const handle = await window.showDirectoryPicker({
     mode: "read",
-    id: "streamlocal-library"
+    id: "streamlocal-library",
   });
+
   return { name: handle.name, handle, nativePath: null };
 }
 
 export async function chooseDirectory(): Promise<FileSystemDirectoryHandle> {
-  const selected = await chooseLibraryLocation();
-  if (!selected.handle) {
-    throw new Error("This folder is connected through the StreamLocal Windows app, not the browser File System Access API.");
-  }
-  return selected.handle;
+  return (await chooseLibraryLocation()).handle;
 }
 
 export async function verifyReadPermission(handle: FileSystemDirectoryHandle): Promise<boolean> {
@@ -57,7 +50,7 @@ export async function verifyReadPermission(handle: FileSystemDirectoryHandle): P
 
 export async function getFileFromRelativePath(
   root: FileSystemDirectoryHandle,
-  relativePath: string
+  relativePath: string,
 ): Promise<File | null> {
   const parts = relativePath.split("/").filter(Boolean);
   if (!parts.length) return null;

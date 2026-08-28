@@ -2,8 +2,8 @@ import { db } from "../db/streamlocalDb";
 import type { MediaFile, MediaItem, Series } from "../types/library";
 import { createId } from "../utils/id";
 import { parseMediaName } from "./filenameParser";
-import { readLocalMetadata, readNativeLocalMetadata } from "./localMetadata";
-import { detectAndAttachLocalArtwork, detectAndAttachNativeArtwork } from "./localArtwork";
+import { readLocalMetadata } from "./localMetadata";
+import { detectAndAttachLocalArtwork } from "./localArtwork";
 
 function normalizeSeriesTitle(value: string): string {
   return value
@@ -66,11 +66,9 @@ export async function recognizeFile(file: MediaFile): Promise<MediaItem> {
   const parsed = parseMediaName(file.fileName, file.relativePath);
   const source = await sourceFor(file);
   const rootHandle = source?.handle ?? null;
-  const sidecar = source?.nativePath
-    ? await readNativeLocalMetadata(source.nativePath, file.relativePath)
-    : rootHandle
-      ? await readLocalMetadata(rootHandle, file.relativePath)
-      : null;
+  const sidecar = rootHandle
+    ? await readLocalMetadata(rootHandle, file.relativePath)
+    : null;
 
   const type = sidecar?.type ?? parsed.type;
   const seriesTitle = sidecar?.seriesTitle ?? parsed.title;
@@ -147,10 +145,7 @@ export async function recognizeFile(file: MediaFile): Promise<MediaItem> {
     await db.mediaItems.add(item);
   }
 
-  if (source?.nativePath) {
-    await detectAndAttachNativeArtwork(item.id, source.nativePath, file.relativePath);
-    item = (await db.mediaItems.get(item.id)) ?? item;
-  } else if (rootHandle) {
+  if (rootHandle) {
     await detectAndAttachLocalArtwork(
       item.id,
       rootHandle,

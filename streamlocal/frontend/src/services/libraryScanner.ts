@@ -3,7 +3,6 @@ import type { LibrarySource, MediaFile } from "../types/library";
 import { createId } from "../utils/id";
 import { createFingerprint } from "./fingerprint";
 import { verifyReadPermission } from "./fileSystem";
-import { nativeFingerprint, scanNativeFolder } from "./nativeDesktop";
 import { clearTimelinePreviews } from "./timelinePreview";
 
 const VIDEO_EXTENSIONS = new Set(["mp4", "mkv"]);
@@ -52,11 +51,6 @@ async function walkDirectory(
 }
 
 async function discoverSource(source: LibrarySource): Promise<DiscoveredFile[]> {
-  if (source.nativePath) {
-    const result = await scanNativeFolder(source.nativePath, source.recursive);
-    return result.files.map((file) => ({ ...file }));
-  }
-
   if (!source.handle) {
     throw new Error("This folder is not connected on this computer.");
   }
@@ -112,11 +106,7 @@ export async function scanLibrarySource(source: LibrarySource): Promise<ScanSumm
     }
 
     const fingerprint = discoveredFile.fingerprint
-      ?? (discoveredFile.file
-        ? await createFingerprint(discoveredFile.file)
-        : source.nativePath
-          ? await nativeFingerprint(source.nativePath, relativePath)
-          : "");
+      ?? (discoveredFile.file ? await createFingerprint(discoveredFile.file) : "");
     if (!fingerprint) throw new Error(`Could not fingerprint ${relativePath}.`);
 
     if (!stored) {

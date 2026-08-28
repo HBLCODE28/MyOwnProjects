@@ -131,34 +131,3 @@ export async function readLocalMetadata(
 
   return null;
 }
-
-import { nativeJoinRelative, nativeParentPath, nativeReadText } from "./nativeDesktop";
-
-export async function readNativeLocalMetadata(
-  rootPath: string,
-  relativePath: string,
-): Promise<LocalMetadata | null> {
-  const parent = nativeParentPath(relativePath);
-  if (!parent) return null;
-
-  const jsonCandidates = [`${parent.stem}.json`, "movie.json", "episode.json"];
-  for (const name of jsonCandidates) {
-    const text = await nativeReadText(rootPath, nativeJoinRelative(parent.directory, name));
-    if (!text) continue;
-    try {
-      return normalizeJson(JSON.parse(text) as Record<string, unknown>);
-    } catch {
-      // Continue to other sidecars.
-    }
-  }
-
-  const nfoCandidates = [`${parent.stem}.nfo`, "movie.nfo", "tvshow.nfo"];
-  for (const name of nfoCandidates) {
-    const text = await nativeReadText(rootPath, nativeJoinRelative(parent.directory, name));
-    if (!text) continue;
-    const parsed = parseNfo(text);
-    if (parsed) return parsed;
-  }
-
-  return null;
-}
