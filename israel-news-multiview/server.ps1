@@ -6,6 +6,8 @@ $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [Net.ServicePointManager]::DefaultConnectionLimit = 16
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+$N12ResolverUrl = "https://www.n12.co.il/AjaxPage?consumer=web_html5&encryption=no&galleryChannelId=1e2258089b67f510VgnVCM2000002a0c10acRCRD&isGallery=false&jspName=playlist.jsp&vcmid=1e2258089b67f510VgnVCM2000002a0c10acRCRD&videoChannelId=31750a2610f26110VgnVCM1000005201000aRCRD"
 $Mime = @{
     ".html" = "text/html; charset=utf-8"
     ".css"  = "text/css; charset=utf-8"
@@ -122,6 +124,10 @@ function Get-RemoteContent {
         $request.Referer = "https://www.n12.co.il/"
         $request.Headers["Origin"] = "https://www.n12.co.il"
         $request.Headers["Accept-Language"] = "he-IL,he;q=0.9,en;q=0.7"
+    } elseif ($Profile -eq "mako12") {
+        $request.Referer = "https://www.mako.co.il/"
+        $request.Headers["Origin"] = "https://www.mako.co.il"
+        $request.Headers["Accept-Language"] = "he-IL,he;q=0.9,en;q=0.7"
     }
 
     if ($IncomingHeaders.ContainsKey("Range") -and -not [string]::IsNullOrWhiteSpace($IncomingHeaders["Range"])) {
@@ -170,6 +176,47 @@ function Get-RemoteContent {
     }
 }
 
+function Get-N12LiveContent {
+    param([hashtable]$IncomingHeaders)
+
+    $meta = Get-RemoteContent $N12ResolverUrl "n12" @{}
+    if ($meta.Status -lt 200 -or $meta.Status -ge 300) {
+        throw "N12 resolver returned HTTP $($meta.Status)."
+    }
+
+    $jsonText = [Text.Encoding]::UTF8.GetString($meta.Body)
+    $data = $jsonText | ConvertFrom-Json
+    $urls = @()
+    if ($null -ne $data.media) {
+        foreach ($item in $data.media) {
+            if ($null -ne $item.url -and -not [string]::IsNullOrWhiteSpace([string]$item.url)) {
+                $urls += [string]$item.url
+            }
+        }
+    }
+
+    if ($urls.Count -eq 0) {
+        throw "N12 did not publish any live HLS source."
+    }
+
+    $lastError = $null
+    foreach ($url in $urls) {
+        foreach ($profile in @("n12", "mako12")) {
+            try {
+                $remote = Get-RemoteContent $url $profile $IncomingHeaders
+                if ($remote.Status -ge 200 -and $remote.Status -lt 300) {
+                    return $remote
+                }
+                $lastError = "$profile HTTP $($remote.Status)"
+            } catch {
+                $lastError = "${profile}: $($_.Exception.Message)"
+            }
+        }
+    }
+
+    throw "All N12 live sources failed. Last error: $lastError"
+}
+
 $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
 $listener.Start()
 Write-Host ""
@@ -212,6 +259,17 @@ try {
             $question = $requestTarget.IndexOf("?")
             $rawPath = if ($question -ge 0) { $requestTarget.Substring(0, $question) } else { $requestTarget }
             $rawQuery = if ($question -ge 0) { $requestTarget.Substring($question + 1) } else { "" }
+
+            if ($rawPath -eq "/n12/live.m3u8") {
+                try {
+                    $remote = Get-N12LiveContent $requestHeaders
+                    Write-HttpResponse $stream $remote.Status $remote.StatusText $remote.ContentType $remote.Body @{ "Access-Control-Allow-Origin" = "*" }
+                } catch {
+                    $body = [Text.Encoding]::UTF8.GetBytes("N12 Resolver Error: " + $_.Exception.Message)
+                    Write-HttpResponse $stream 502 "Bad Gateway" "text/plain; charset=utf-8" $body @{ "Access-Control-Allow-Origin" = "*" }
+                }
+                continue
+            }
 
             if ($rawPath -eq "/proxy") {
                 $query = Parse-QueryString $rawQuery

@@ -10,9 +10,9 @@
   };
 
   const QUALITY_MODES = [
-    { id: "economy", label: "חסכון", maxHeight: 360 },
-    { id: "balanced", label: "מאוזן", maxHeight: 720 },
-    { id: "max", label: "מקסימום", maxHeight: Infinity }
+    { id: "economy", label: "חסכון", maxHeight: 360, status: "מצב חסכון: עד 360p לכל ערוץ - מפחית עומס כשצופים בכמה שידורים יחד." },
+    { id: "balanced", label: "מאוזן", maxHeight: 720, status: "מצב מאוזן: עד 720p לכל ערוץ - תמונה חדה יותר עם צריכת משאבים בינונית." },
+    { id: "max", label: "מקסימום", maxHeight: Infinity, status: "מצב מקסימום: הנגן רשאי לבחור את האיכות הגבוהה ביותר - צורך יותר אינטרנט ומשאבי מחשב." }
   ];
 
   const els = {
@@ -38,7 +38,18 @@
     qualityBtn: document.getElementById("qualityBtn"),
     qualityLabel: document.getElementById("qualityLabel"),
     helpBtn: document.getElementById("helpBtn"),
-    helpDialog: document.getElementById("helpDialog")
+    helpDialog: document.getElementById("helpDialog"),
+    qualityPopover: document.getElementById("qualityPopover"),
+    qualityStatus: document.getElementById("qualityStatus"),
+    qualityIntro: document.getElementById("qualityIntro"),
+    qualityIntroDismiss: document.getElementById("qualityIntroDismiss"),
+    qualityIntroChange: document.getElementById("qualityIntroChange"),
+    scheduleDialog: document.getElementById("scheduleDialog"),
+    scheduleTitle: document.getElementById("scheduleTitle"),
+    scheduleFrame: document.getElementById("scheduleFrame"),
+    scheduleExternal: document.getElementById("scheduleExternal"),
+    scheduleCloseBtn: document.getElementById("scheduleCloseBtn"),
+    scheduleDoneBtn: document.getElementById("scheduleDoneBtn")
   };
 
   const hlsInstances = new Map();
@@ -137,12 +148,32 @@
     hls.autoLevelCapping = selected;
   }
 
-  function cycleQuality() {
-    const index = QUALITY_MODES.findIndex(mode => mode.id === currentQuality);
-    currentQuality = QUALITY_MODES[(index + 1) % QUALITY_MODES.length].id;
+  function updateQualityUi() {
+    const mode = qualityMode();
+    els.qualityLabel.textContent = mode.label;
+    if (els.qualityStatus) els.qualityStatus.textContent = mode.status;
+    if (els.qualityPopover) {
+      els.qualityPopover.querySelectorAll("[data-quality]").forEach(button => {
+        button.classList.toggle("is-active", button.dataset.quality === mode.id);
+      });
+    }
+  }
+
+  function setQuality(id) {
+    if (!QUALITY_MODES.some(mode => mode.id === id)) return;
+    currentQuality = id;
     localStorage.setItem(STORAGE.quality, currentQuality);
-    els.qualityLabel.textContent = qualityMode().label;
+    updateQualityUi();
     hlsInstances.forEach(applyQualityToHls);
+    if (els.qualityPopover) els.qualityPopover.hidden = true;
+    els.qualityBtn.setAttribute("aria-expanded", "false");
+  }
+
+  function toggleQualityPopover() {
+    const willOpen = els.qualityPopover.hidden;
+    els.qualityPopover.hidden = !willOpen;
+    els.qualityBtn.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) els.layoutPopover.hidden = true;
   }
 
   function computeGrid(count, layout) {
@@ -191,6 +222,7 @@
   }
 
   function streamUrlFor(channel, sourceUrl) {
+    if (sourceUrl.startsWith("/")) return sourceUrl;
     if (!channel.proxyProfile || location.protocol === "file:") return sourceUrl;
     return `/proxy?p=${encodeURIComponent(channel.proxyProfile)}&url=${encodeURIComponent(sourceUrl)}`;
   }
@@ -203,6 +235,11 @@
     const loading = card.querySelector(".loading-overlay");
     const loadingText = card.querySelector(".loading-text");
     const error = card.querySelector(".error-overlay");
+
+    if (channel.requiresLocalServer && location.protocol === "file:") {
+      showError(card, "הערוץ הזה דורש הפעלה דרך Start.cmd כדי לאתר ולתווך את כתובת השידור העדכנית.");
+      return;
+    }
 
     const attemptToken = `${Date.now()}-${Math.random()}`;
     card.dataset.attemptToken = attemptToken;
@@ -313,14 +350,24 @@
     }, 18000);
   }
 
+  const TABLER_RAW = "https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/";
+
+  function setAudioButton(button, muted) {
+    const img = button.querySelector("img");
+    const label = button.querySelector("span");
+    if (img) img.src = `${TABLER_RAW}${muted ? "volume-off" : "volume"}.svg`;
+    if (label) label.textContent = muted ? "שקט" : "קול";
+    button.title = muted ? "הפעלת קול" : "השתקת הערוץ";
+    button.setAttribute("aria-label", button.title);
+  }
+
   function muteAllExcept(id) {
     els.grid.querySelectorAll(".channel-card").forEach(card => {
       const video = card.querySelector("video");
       const button = card.querySelector(".audio-btn");
       const isTarget = card.dataset.id === id;
       video.muted = !isTarget;
-      button.textContent = isTarget ? "קול" : "שקט";
-      button.title = isTarget ? "השתקת הערוץ" : "הפעלת קול";
+      setAudioButton(button, !isTarget);
     });
   }
 
@@ -331,9 +378,7 @@
       video.play().catch(() => { });
     } else {
       video.muted = true;
-      const button = card.querySelector(".audio-btn");
-      button.textContent = "שקט";
-      button.title = "הפעלת קול";
+      setAudioButton(card.querySelector(".audio-btn"), true);
     }
   }
 
@@ -343,20 +388,36 @@
       card.classList.remove("is-maximized");
       document.body.classList.remove("card-maximized");
       maximizedId = null;
-      card.querySelector(".maximize-btn").textContent = "□";
       return;
     }
 
     const previous = els.grid.querySelector(".channel-card.is-maximized");
-    if (previous) {
-      previous.classList.remove("is-maximized");
-      previous.querySelector(".maximize-btn").textContent = "□";
-    }
+    if (previous) previous.classList.remove("is-maximized");
 
     maximizedId = id;
     card.classList.add("is-maximized");
     document.body.classList.add("card-maximized");
-    card.querySelector(".maximize-btn").textContent = "▣";
+  }
+
+  function scheduleUrlFor(channel) {
+    if (!channel.schedule) return "";
+    if (!channel.schedule.includes("{weekday}")) return channel.schedule;
+    const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    return channel.schedule.replace("{weekday}", weekdays[new Date().getDay()]);
+  }
+
+  function openSchedule(channel) {
+    const scheduleUrl = scheduleUrlFor(channel);
+    if (!scheduleUrl) return;
+    els.scheduleTitle.textContent = `לוח שידורים - ${channel.name}`;
+    els.scheduleExternal.href = scheduleUrl;
+    els.scheduleFrame.src = scheduleUrl;
+    els.scheduleDialog.showModal();
+  }
+
+  function closeSchedule() {
+    if (els.scheduleDialog.open) els.scheduleDialog.close();
+    els.scheduleFrame.src = "about:blank";
   }
 
   function buildCard(channel) {
@@ -375,6 +436,13 @@
     }
 
     card.querySelector(".audio-btn").addEventListener("click", () => toggleAudio(card));
+    const scheduleBtn = card.querySelector(".schedule-btn");
+    if (channel.schedule) {
+      scheduleBtn.hidden = false;
+      scheduleBtn.addEventListener("click", () => openSchedule(channel));
+    } else {
+      scheduleBtn.hidden = true;
+    }
     card.querySelector(".maximize-btn").addEventListener("click", () => toggleMaximize(card));
     card.querySelector(".restart-btn").addEventListener("click", () => startPlayer(card, channel, 0));
     card.querySelector(".close-btn").addEventListener("click", () => {
@@ -538,10 +606,15 @@
   els.addCustomBtn.addEventListener("click", addCustomChannel);
   els.reloadBtn.addEventListener("click", render);
   els.fullscreenBtn.addEventListener("click", toggleFullscreen);
-  els.qualityBtn.addEventListener("click", cycleQuality);
+  els.qualityBtn.addEventListener("click", event => {
+    event.stopPropagation();
+    toggleQualityPopover();
+  });
   els.helpBtn.addEventListener("click", () => els.helpDialog.showModal());
   els.layoutBtn.addEventListener("click", event => {
     event.stopPropagation();
+    els.qualityPopover.hidden = true;
+    els.qualityBtn.setAttribute("aria-expanded", "false");
     toggleLayoutPopover();
   });
   els.layoutPopover.addEventListener("click", event => {
@@ -552,9 +625,34 @@
     els.layoutPopover.hidden = true;
     updateGridGeometry();
   });
+  els.qualityPopover.addEventListener("click", event => {
+    const button = event.target.closest("button[data-quality]");
+    if (!button) return;
+    setQuality(button.dataset.quality);
+  });
+  els.qualityIntroDismiss.addEventListener("click", () => {
+    localStorage.setItem("israelNewsMultiview.qualityIntroSeen.v1", "1");
+    els.qualityIntro.hidden = true;
+  });
+  els.qualityIntroChange.addEventListener("click", () => {
+    els.qualityIntro.hidden = true;
+    localStorage.setItem("israelNewsMultiview.qualityIntroSeen.v1", "1");
+    els.qualityPopover.hidden = false;
+    els.qualityBtn.setAttribute("aria-expanded", "true");
+  });
+  els.scheduleCloseBtn.addEventListener("click", closeSchedule);
+  els.scheduleDoneBtn.addEventListener("click", closeSchedule);
+  els.scheduleDialog.addEventListener("cancel", event => {
+    event.preventDefault();
+    closeSchedule();
+  });
   document.addEventListener("click", event => {
     if (!els.layoutPopover.hidden && !els.layoutPopover.contains(event.target) && !els.layoutBtn.contains(event.target)) {
       els.layoutPopover.hidden = true;
+    }
+    if (!els.qualityPopover.hidden && !els.qualityPopover.contains(event.target) && !els.qualityBtn.contains(event.target)) {
+      els.qualityPopover.hidden = true;
+      els.qualityBtn.setAttribute("aria-expanded", "false");
     }
   });
   document.addEventListener("keydown", event => {
@@ -571,7 +669,10 @@
   });
 
   activeIds = loadActiveIds();
-  els.qualityLabel.textContent = qualityMode().label;
+  updateQualityUi();
+  if (!localStorage.getItem("israelNewsMultiview.qualityIntroSeen.v1")) {
+    els.qualityIntro.hidden = false;
+  }
   updateClock();
   setInterval(updateClock, 1000);
   render();

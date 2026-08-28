@@ -12,16 +12,18 @@
   <header class="topbar" id="topbar">
     <div class="topbar-side topbar-right">
       <button class="topbar-button" id="fullscreenBtn" type="button" title="מסך מלא">
-        <span class="tool-icon fullscreen-icon" aria-hidden="true"></span><span class="button-label">מסך מלא</span>
+        <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/maximize.svg" alt=""><span class="button-label">מסך מלא</span>
       </button>
       <button class="topbar-button" id="layoutBtn" type="button" title="בחירת פריסה">
-        <span class="grid-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="button-label">פריסה</span>
+        <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/layout-grid.svg" alt=""><span class="button-label">פריסה</span>
       </button>
       <button class="topbar-button" id="channelsBtn" type="button" title="בחירת ערוצים">
-        <span class="channels-icon" aria-hidden="true"><i></i><i></i><i></i></span><span class="button-label">ערוצים</span>
+        <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/device-tv.svg" alt=""><span class="button-label">ערוצים</span>
       </button>
-      <button class="topbar-button" id="qualityBtn" type="button" title="הגבלת איכות לחיסכון במשאבים">
-        <span class="quality-icon" aria-hidden="true">Q</span><span class="button-label" id="qualityLabel">חסכון</span>
+      <button class="topbar-button quality-button" id="qualityBtn" type="button" title="איכות וצריכת משאבים" aria-expanded="false">
+        <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/gauge.svg" alt="">
+        <span class="quality-button-copy"><span class="button-label">איכות</span><strong id="qualityLabel">חסכון</strong></span>
+        <img class="tabler-icon tabler-icon-small" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/chevron-down.svg" alt="">
       </button>
     </div>
 
@@ -33,23 +35,23 @@
     <div class="topbar-side topbar-left">
       <div class="clock-wrap"><span class="clock-label">עכשיו</span><div class="clock" id="clock" aria-label="שעה נוכחית">--:--:--</div></div>
       <button class="topbar-button compact" id="reloadBtn" type="button" title="רענון כל השידורים">
-        <span class="reload-icon" aria-hidden="true">↻</span><span class="button-label">רענון</span>
+        <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/refresh.svg" alt=""><span class="button-label">רענון</span>
       </button>
       <button class="topbar-button compact" id="helpBtn" type="button" title="עזרה">
-        <span class="help-icon" aria-hidden="true">?</span><span class="button-label">עזרה</span>
+        <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/help-circle.svg" alt=""><span class="button-label">עזרה</span>
       </button>
     </div>
   </header>
 
   <div class="statusbar">
     <div class="status-item"><span class="status-dot"></span><span>שידורים חיים</span></div>
-    <div class="status-hint">אפשר לגרור חלונות, להגדיל ערוץ ולבחור פריסה</div>
+    <div class="status-hint" id="qualityStatus">מצב חסכון: עד 360p לכל ערוץ - מפחית עומס כשצופים בכמה שידורים יחד.</div>
   </div>
 
   <main class="workspace" id="workspace">
     <section class="channel-grid" id="channelGrid" aria-live="polite"></section>
     <div class="empty-state" id="emptyState" hidden>
-      <div class="empty-mark">TV</div>
+      <img class="empty-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/device-tv-off.svg" alt="">
       <h1>לא נבחרו ערוצים</h1>
       <p>לחצי על "ערוצים" ובחרי את השידורים שתרצי לראות.</p>
       <button class="primary-button" type="button" id="emptyChannelsBtn">בחירת ערוצים</button>
@@ -66,6 +68,35 @@
     <button type="button" data-layout="9">9 ערוצים - 3x3</button>
   </div>
 
+  <div class="popover quality-popover" id="qualityPopover" hidden>
+    <div class="popover-title">איכות וצריכת משאבים</div>
+    <button class="quality-option" type="button" data-quality="economy">
+      <span><strong>חסכון</strong><small>עד 360p לכל ערוץ</small></span>
+      <em>מומלץ ל-4-6 ערוצים. צורך פחות אינטרנט ומעבד.</em>
+    </button>
+    <button class="quality-option" type="button" data-quality="balanced">
+      <span><strong>מאוזן</strong><small>עד 720p לכל ערוץ</small></span>
+      <em>תמונה חדה יותר עם עומס בינוני.</em>
+    </button>
+    <button class="quality-option" type="button" data-quality="max">
+      <span><strong>מקסימום</strong><small>האיכות הגבוהה ביותר שהמקור מציע</small></span>
+      <em>צורך יותר רוחב פס ומשאבי מחשב.</em>
+    </button>
+    <div class="quality-explainer">ההגדרה לא משנה את מספר הערוצים. היא רק מגבילה את רזולוציית הווידאו בכל חלון.</div>
+  </div>
+
+  <aside class="quality-intro" id="qualityIntro" hidden>
+    <div class="quality-intro-icon"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/gauge.svg" alt=""></div>
+    <div class="quality-intro-copy">
+      <strong>מצב חסכון פעיל</strong>
+      <p>כל ערוץ מוגבל לעד 360p כדי שכמה שידורים יוכלו לרוץ יחד בלי להעמיס יותר מדי על המחשב או על החיבור. אפשר לשנות בכל רגע דרך כפתור "איכות" למעלה.</p>
+      <div class="quality-intro-actions">
+        <button class="secondary-button" id="qualityIntroChange" type="button">שינוי איכות</button>
+        <button class="primary-button" id="qualityIntroDismiss" type="button">הבנתי</button>
+      </div>
+    </div>
+  </aside>
+
   <dialog class="modal" id="channelsDialog">
     <form method="dialog" class="modal-card" id="channelsForm">
       <div class="modal-header">
@@ -74,7 +105,7 @@
           <h2>בחירת ערוצים</h2>
           <p>בחרי את ערוצי החדשות שיופיעו יחד במסך.</p>
         </div>
-        <button class="close-dialog" value="cancel" aria-label="סגירה" type="submit">×</button>
+        <button class="close-dialog icon-only" value="cancel" aria-label="סגירה" type="submit"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/x.svg" alt=""></button>
       </div>
       <div class="channel-picker" id="channelPicker"></div>
       <details class="custom-stream-panel">
@@ -94,6 +125,27 @@
     </form>
   </dialog>
 
+  <dialog class="modal" id="scheduleDialog">
+    <div class="modal-card schedule-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">TV GUIDE</span>
+          <h2 id="scheduleTitle">לוח שידורים</h2>
+          <p>הלוח נטען מהאתר הרשמי של הערוץ ולכן הוא נשאר עדכני גם כשהתוכניות משתנות.</p>
+        </div>
+        <button class="close-dialog icon-only" id="scheduleCloseBtn" aria-label="סגירה" type="button"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/x.svg" alt=""></button>
+      </div>
+      <div class="schedule-frame-wrap">
+        <iframe id="scheduleFrame" title="לוח שידורים" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <div class="schedule-frame-note">אם האתר הרשמי חוסם הצגה בתוך חלון, השתמשי בכפתור "פתיחה באתר הרשמי".</div>
+      </div>
+      <div class="modal-actions">
+        <a class="secondary-button link-button" id="scheduleExternal" href="#" target="_blank" rel="noopener noreferrer"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/external-link.svg" alt="">פתיחה באתר הרשמי</a>
+        <button class="primary-button" id="scheduleDoneBtn" type="button">סגירה</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog class="modal" id="helpDialog">
     <form method="dialog" class="modal-card help-card">
       <div class="modal-header">
@@ -102,15 +154,15 @@
           <h2>עזרה</h2>
           <p>הממשק רץ מקומית. תוכן הווידאו מגיע מהאינטרנט.</p>
         </div>
-        <button class="close-dialog" value="cancel" aria-label="סגירה" type="submit">×</button>
+        <button class="close-dialog icon-only" value="cancel" aria-label="סגירה" type="submit"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/x.svg" alt=""></button>
       </div>
       <div class="help-content">
-        <p><strong>הפעלה:</strong> מומלץ להפעיל דרך Start.cmd. ערוץ 12 משתמש במתווך מקומי קטן כדי להעביר את כותרות הבקשה שהמקור הרשמי דורש.</p>
+        <p><strong>הפעלה:</strong> מומלץ להפעיל דרך Start.cmd. קשת 12 משתמש בשרת המקומי כדי לאתר בכל הפעלה את כתובות השידור שקשת מפרסמת כרגע, במקום להסתמך על כתובת ישנה.</p>
+        <p><strong>מצב חסכון:</strong> מגביל כל חלון לעד 360p. זה לא "מכבה" משהו ולא מוריד ערוצים - הוא רק מונע מכל שידור לבחור איכות גבוהה כשפתוחים כמה שידורים יחד. "מאוזן" מאפשר עד 720p ו"מקסימום" מאפשר לנגן לבחור את האיכות הגבוהה ביותר.</p>
         <p><strong>קול:</strong> כל הערוצים מתחילים במצב שקט כדי לאפשר הפעלה אוטומטית. הפעלת קול בערוץ אחד משתיקה את האחרים.</p>
-        <p><strong>משאבים:</strong> מצב "חסכון" מגביל את איכות כל חלון. אפשר לעבור ל"מאוזן" או "מקסימום".</p>
+        <p><strong>לוח שידורים:</strong> בערוצים שיש להם לוח רשמי מופיע כפתור לוח שנה. הלוח עצמו מגיע מהאתר הרשמי של הערוץ.</p>
         <p><strong>סידור:</strong> במחשב אפשר לגרור חלון למיקום אחר. הסדר נשמר אוטומטית.</p>
         <p><strong>הגדלת ערוץ:</strong> לחיצה כפולה על הווידאו או על כפתור ההגדלה מציגה ערוץ יחיד.</p>
-        <p><strong>שידור שלא נטען:</strong> האתר מנסה מקורות חלופיים כשקיימים. ספקי השידור יכולים לשנות כתובות בעתיד, ולכן נשמר גם קישור לאתר הרשמי.</p>
       </div>
       <div class="modal-actions"><button class="primary-button" value="default" type="submit">סגירה</button></div>
     </form>
@@ -127,10 +179,11 @@
           </div>
         </div>
         <div class="channel-actions">
-          <button class="card-button audio-btn" type="button" title="הפעלת קול" aria-label="הפעלת קול">שקט</button>
-          <button class="card-button maximize-btn" type="button" title="הגדלת הערוץ" aria-label="הגדלת הערוץ">□</button>
-          <button class="card-button restart-btn" type="button" title="טעינה מחדש" aria-label="טעינה מחדש">↻</button>
-          <button class="card-button close-btn" type="button" title="סגירת הערוץ" aria-label="סגירת הערוץ">×</button>
+          <button class="card-button audio-btn" type="button" title="הפעלת קול" aria-label="הפעלת קול"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/volume-off.svg" alt=""><span>שקט</span></button>
+          <button class="card-button schedule-btn" type="button" title="לוח שידורים" aria-label="לוח שידורים"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/calendar-event.svg" alt=""></button>
+          <button class="card-button maximize-btn" type="button" title="הגדלת הערוץ" aria-label="הגדלת הערוץ"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/arrows-maximize.svg" alt=""></button>
+          <button class="card-button restart-btn" type="button" title="טעינה מחדש" aria-label="טעינה מחדש"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/reload.svg" alt=""></button>
+          <button class="card-button close-btn" type="button" title="סגירת הערוץ" aria-label="סגירת הערוץ"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/x.svg" alt=""></button>
         </div>
       </div>
       <div class="player-shell">
@@ -143,8 +196,8 @@
           <strong>לא ניתן לטעון את השידור</strong>
           <span class="error-text">ייתכן שהמקור שינה את כתובת השידור.</span>
           <div class="error-actions">
-            <button class="retry-stream" type="button">נסה שוב</button>
-            <a class="official-link" href="#" target="_blank" rel="noopener noreferrer">פתיחת האתר הרשמי</a>
+            <button class="retry-stream" type="button"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/reload.svg" alt="">נסה שוב</button>
+            <a class="official-link" href="#" target="_blank" rel="noopener noreferrer"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/external-link.svg" alt="">פתיחת האתר הרשמי</a>
           </div>
         </div>
       </div>
