@@ -100,9 +100,62 @@
     }
   }
 
+  function isCustomChannel(channel) {
+    return Boolean(channel && (channel.custom === true || String(channel.id || "").startsWith("custom-")));
+  }
+
+  function normalizedChannelName(value) {
+    return String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("he-IL");
+  }
+
+  function normalizedStreamUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    try {
+      const parsed = new URL(raw);
+      parsed.hash = "";
+      return `${parsed.protocol.toLowerCase()}//${parsed.host.toLowerCase()}${parsed.pathname}${parsed.search}`;
+    } catch {
+      return raw;
+    }
+  }
+
+  function nextFreeChannelNumber(usedNumbers) {
+    let number = 1;
+    while (usedNumbers.has(number)) number += 1;
+    usedNumbers.add(number);
+    return String(number);
+  }
+
   function getCustomChannels() {
-    const list = safeJson(STORAGE.custom, []);
-    return Array.isArray(list) ? list : [];
+    const stored = safeJson(STORAGE.custom, []);
+    if (!Array.isArray(stored)) return [];
+
+    const base = Array.isArray(window.NEWS_CHANNELS) ? window.NEWS_CHANNELS : [];
+    const usedNumbers = new Set(
+      base
+        .map(channel => String(channel?.short || "").trim())
+        .filter(value => /^\d+$/.test(value))
+        .map(Number)
+    );
+
+    let changed = false;
+    const repaired = stored.filter(Boolean).map(channel => {
+      const copy = { ...channel, custom: true };
+      const short = String(copy.short || "").trim();
+      const numeric = /^\d+$/.test(short) ? Number(short) : null;
+      if (numeric !== null && !usedNumbers.has(numeric)) {
+        usedNumbers.add(numeric);
+      } else {
+        copy.short = nextFreeChannelNumber(usedNumbers);
+        changed = true;
+      }
+      if (channel.custom !== true) changed = true;
+      return copy;
+    });
+
+    if (changed) localStorage.setItem(STORAGE.custom, JSON.stringify(repaired));
+    return repaired;
   }
 
   function getAllChannels() {
@@ -888,6 +941,9 @@
     els.channelPicker.textContent = "";
     const selected = new Set(activeIds);
     getAllChannels().forEach(channel => {
+      const row = document.createElement("div");
+      row.className = "channel-option-row";
+
       const label = document.createElement("label");
       label.className = "channel-option";
 
@@ -902,10 +958,29 @@
       badge.style.setProperty("--picker-accent", channel.accent || "#284b69");
 
       const name = document.createElement("span");
+      name.className = "channel-option-name";
       name.textContent = channel.name;
 
       label.append(checkbox, badge, name);
-      els.channelPicker.appendChild(label);
+      row.appendChild(label);
+
+      if (isCustomChannel(channel)) {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-custom-channel";
+        deleteBtn.type = "button";
+        deleteBtn.title = `מחיקת ${channel.name}`;
+        deleteBtn.setAttribute("aria-label", `מחיקת ${channel.name}`);
+
+        const icon = document.createElement("img");
+        icon.className = "tabler-icon";
+        icon.src = `${TABLER_ICON_BASE}trash.svg`;
+        icon.alt = "";
+        deleteBtn.appendChild(icon);
+        deleteBtn.addEventListener("click", () => deleteCustomChannel(channel));
+        row.appendChild(deleteBtn);
+      }
+
+      els.channelPicker.appendChild(row);
     });
   }
 
@@ -923,6 +998,18 @@
     render();
   }
 
+  function deleteCustomChannel(channel) {
+    if (!isCustomChannel(channel)) return;
+    if (!confirm(`למחוק את הערוץ "${channel.name}" מהרשימה?`)) return;
+
+    const custom = getCustomChannels().filter(item => item.id !== channel.id);
+    localStorage.setItem(STORAGE.custom, JSON.stringify(custom));
+    activeIds = activeIds.filter(id => id !== channel.id);
+    saveActiveIds();
+    renderPicker();
+    render();
+  }
+
   function addCustomChannel() {
     const name = els.customName.value.trim();
     const url = els.customUrl.value.trim();
@@ -932,17 +1019,38 @@
       return;
     }
 
+    const allChannels = getAllChannels();
+    const wantedName = normalizedChannelName(name);
+    const wantedUrl = normalizedStreamUrl(url);
+    const duplicate = allChannels.find(channel => {
+      const sameName = normalizedChannelName(channel.name) === wantedName;
+      const sameUrl = channelUrls(channel).some(source => normalizedStreamUrl(source) === wantedUrl);
+      return sameName || sameUrl;
+    });
+
+    if (duplicate) {
+      alert(`הערוץ כבר קיים ברשימה: ${duplicate.name}`);
+      return;
+    }
+
     const custom = getCustomChannels();
+    const usedNumbers = new Set(
+      allChannels
+        .map(channel => String(channel.short || "").trim())
+        .filter(value => /^\d+$/.test(value))
+        .map(Number)
+    );
     const id = `custom-${Date.now().toString(36)}`;
     custom.push({
       id,
       name,
-      short: "LIVE",
+      short: nextFreeChannelNumber(usedNumbers),
       type: "hls",
       urls: [url],
       official,
       accent: "#3f8fc5",
-      primary: false
+      primary: false,
+      custom: true
     });
     localStorage.setItem(STORAGE.custom, JSON.stringify(custom));
     activeIds.push(id);

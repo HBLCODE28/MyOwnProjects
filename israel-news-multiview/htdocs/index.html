@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0b1324">
   <title>חדשות ישראל LIVE - מסך מפוצל</title>
-  <link rel="stylesheet" href="styles.css?v=if-20260829">
+  <link rel="stylesheet" href="styles.css?v=if-20260829-custom2">
 </head>
 <body>
   <header class="topbar" id="topbar">
@@ -120,6 +120,7 @@
       <div class="channel-picker" id="channelPicker"></div>
       <details class="custom-stream-panel">
         <summary>הוספת שידור HLS מותאם אישית</summary>
+        <p class="custom-stream-note">לערוץ שתוסיפי יוקצה אוטומטית מספר פנוי. ערוצים שהוספת ניתנים למחיקה מהרשימה.</p>
         <div class="custom-stream-fields">
           <label>שם הערוץ<input id="customName" type="text" autocomplete="off" placeholder="לדוגמה: ערוץ מקומי"></label>
           <label>כתובת m3u8<input id="customUrl" type="url" autocomplete="off" placeholder="https://example.com/live.m3u8" dir="ltr"></label>
@@ -231,7 +232,7 @@
   </template>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.13/hls.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="streams.js?v=if-20260829"></script>
-  <script src="app.js?v=if-20260829"></script>
+  <script src="streams.js?v=if-20260829-custom2"></script>
+  <script src="app.js?v=if-20260829-custom2"></script>
 </body>
 </html>

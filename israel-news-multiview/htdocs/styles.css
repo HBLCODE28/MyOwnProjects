@@ -254,13 +254,18 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 .close-dialog { border: 1px solid transparent; background: transparent; font-size: 30px; line-height: 1; color: #95a5ba; padding: 0 7px; border-radius: 7px; }
 .close-dialog:hover { background: #1e2d43; border-color: #31455f; color: #fff; }
 .channel-picker { padding: 14px 22px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
-.channel-option { display: flex; align-items: center; gap: 10px; border: 1px solid #2b3c55; background: #151f30; border-radius: 9px; padding: 11px; min-width: 0; }
-.channel-option:hover { background: #19283d; border-color: #3c5270; }
-.channel-option input { width: 18px; height: 18px; accent-color: #2c98e9; }
+.channel-option-row { display: flex; align-items: stretch; min-width: 0; border: 1px solid #2b3c55; background: #151f30; border-radius: 9px; overflow: hidden; }
+.channel-option-row:hover { background: #19283d; border-color: #3c5270; }
+.channel-option { display: flex; flex: 1 1 auto; align-items: center; gap: 10px; padding: 11px; min-width: 0; cursor: pointer; }
+.channel-option input { width: 18px; height: 18px; accent-color: #2c98e9; flex: 0 0 auto; }
 .channel-badge { width: 42px; height: 30px; flex: 0 0 auto; border-radius: 6px; display: grid; place-items: center; background: var(--picker-accent, #284b69); color: #fff; font-weight: 700; direction: ltr; }
-.channel-option span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.channel-option-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.delete-custom-channel { width: 44px; flex: 0 0 44px; border: 0; border-right: 1px solid #2b3c55; background: transparent; color: #d8e2ef; display: grid; place-items: center; }
+.delete-custom-channel:hover, .delete-custom-channel:focus-visible { background: #5e2530; color: #fff; outline: none; }
+.delete-custom-channel .tabler-icon { width: 18px; height: 18px; }
 .custom-stream-panel { margin: 4px 22px 16px; border: 1px solid #2b3c55; border-radius: 9px; background: #141e2e; }
 .custom-stream-panel summary { cursor: pointer; padding: 12px; font-weight: 700; color: #cbd8e8; }
+.custom-stream-note { margin: -2px 12px 12px; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .custom-stream-fields { border-top: 1px solid #293a52; padding: 12px; display: grid; gap: 10px; }
 .custom-stream-fields label { display: grid; gap: 5px; font-size: 12px; color: var(--muted); }
 .custom-stream-fields input { height: 40px; border: 1px solid #334863; border-radius: 7px; padding: 0 10px; color: var(--text); background: #0d1624; }
