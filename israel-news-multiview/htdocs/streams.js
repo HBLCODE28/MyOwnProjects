@@ -1,7 +1,6 @@
 /*
-  רשימת הערוצים.
-  רוב השידורים נטענים ישירות. קשת 12 נפתר בזמן אמת דרך השרת המקומי
-  כדי שלא נהיה תלויים בכתובת m3u8 קשיחה שמשתנה אצל הספק.
+  גרסת InfinityFree: האתר סטטי ואינו משתמש ב-proxy או בשרת יישומים.
+  כל מקורות הווידאו נטענים ישירות בדפדפן של המשתמש.
 */
 window.NEWS_CHANNELS = [
   {
@@ -15,7 +14,6 @@ window.NEWS_CHANNELS = [
     ],
     official: "https://www.kan.org.il/live/?stationId=4482",
     schedule: "https://www.kan.org.il/tv-guide/?channelId=4444",
-    scheduleMode: "kan-html",
     accent: "#1f9bd1",
     primary: true
   },
@@ -24,8 +22,11 @@ window.NEWS_CHANNELS = [
     name: "קשת 12 / חדשות 12",
     short: "12",
     type: "hls",
-    urls: ["/n12/live.m3u8"],
-    requiresLocalServer: true,
+    urls: [
+      "https://mako-streaming.akamaized.net/direct/hls/live/20000821/k12rh/index.m3u8?b-in-range=0-800",
+      "https://mako-streaming.akamaized.net/direct/hls/live/20000821/k12ni-bu/index.m3u8?b-in-range=0-800",
+      "https://mako-streaming.akamaized.net/stream/hls/live/20000821/k12n12wad/index.m3u8?b-in-range=0-800"
+    ],
     official: "https://www.mako.co.il/tv-live/Article-90408c620b8df81026.htm",
     schedule: "https://www.mako.co.il/tv-tv-schedule",
     accent: "#ff4c62",
@@ -81,7 +82,7 @@ window.NEWS_CHANNELS = [
       "https://kneset.gostreaming.tv/p2-kneset/_definst_/myStream/playlist.m3u8"
     ],
     official: "https://www.knesset.tv/live/",
-    schedule: "https://www.knesset.tv/%D7%A2%D7%9B%D7%A9%D7%99%D7%95-%D7%9E%D7%A0%D7%92%D7%9F-%D7%91%D7%A2%D7%A8%D7%95%D7%A5/",
+    schedule: "https://main.knesset.gov.il/News/Broadcast/pages/default.aspx?pos=tv",
     accent: "#4aa36b",
     primary: true
   },

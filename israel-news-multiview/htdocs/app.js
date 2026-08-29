@@ -376,9 +376,9 @@
   }
 
   function streamUrlFor(channel, sourceUrl) {
-    if (sourceUrl.startsWith("/")) return sourceUrl;
-    if (!channel.proxyProfile || location.protocol === "file:") return sourceUrl;
-    return `/proxy?p=${encodeURIComponent(channel.proxyProfile)}&url=${encodeURIComponent(sourceUrl)}`;
+    // InfinityFree version: streams are fetched directly from their public CDN.
+    // No server-side proxy is used, which keeps the hosting lightweight and compliant.
+    return sourceUrl;
   }
 
   function startPlayer(card, channel, sourceIndex = 0) {
@@ -389,11 +389,6 @@
     const loading = card.querySelector(".loading-overlay");
     const loadingText = card.querySelector(".loading-text");
     const error = card.querySelector(".error-overlay");
-
-    if (channel.requiresLocalServer && location.protocol === "file:") {
-      showError(card, "הערוץ הזה דורש הפעלה דרך Start.cmd כדי לאתר ולתווך את כתובת השידור העדכנית.");
-      return;
-    }
 
     const attemptToken = `${Date.now()}-${Math.random()}`;
     card.dataset.attemptToken = attemptToken;
@@ -413,10 +408,7 @@
     }
 
     if (sourceIndex >= urls.length) {
-      const proxyHint = channel.proxyProfile && location.protocol === "file:"
-        ? " הפעילי את האתר דרך Start.cmd כדי לאפשר את החיבור המקומי הנדרש לערוץ הזה."
-        : "";
-      showError(card, `כל מקורות השידור הזמינים נכשלו.${proxyHint}`);
+      showError(card, "כל מקורות השידור הזמינים נכשלו. ייתכן שספק הערוץ חוסם ניגון מאתרים חיצוניים או ששינה את כתובת השידור.");
       return;
     }
 
@@ -435,10 +427,7 @@
         }, 250);
         return;
       }
-      const proxyHint = channel.proxyProfile && location.protocol === "file:"
-        ? " הפעילי דרך Start.cmd ולא דרך Open-Direct.cmd."
-        : "";
-      showError(card, `${message || "השידור לא זמין כרגע."}${proxyHint}`);
+      showError(card, `${message || "השידור לא זמין כרגע."} אם הערוץ חוסם הטמעה חיצונית, אפשר להשתמש בכפתור "פתיחת האתר הרשמי".`);
     };
 
     const onCanPlay = () => {
@@ -768,36 +757,10 @@
   }
 
   async function loadKanSchedule(channel) {
-    const token = ++scheduleLoadToken;
-    els.scheduleCustomBody.innerHTML = '<div class="schedule-loading"><div class="spinner"></div><span>טוען את לוח השידורים...</span></div>';
-    els.scheduleCustomMeta.textContent = "קורא נתוני HTML ומעצב אותם מחדש...";
-
-    if (location.protocol === "file:") {
-      els.scheduleCustomBody.innerHTML = '<div class="schedule-custom-error"><strong>לוח כאן דורש הפעלה דרך Start.cmd.</strong><span>השרת המקומי קורא את עמוד לוח השידורים ומעביר את ה-HTML לאתר המקומי כדי שנוכל להציג אותו בעיצוב משלנו.</span></div>';
-      els.scheduleCustomMeta.textContent = "נדרש Start.cmd";
-      return;
-    }
-
-    try {
-      const response = await fetch(`/kan/guide?ts=${Date.now()}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const html = await response.text();
-      if (token !== scheduleLoadToken || currentScheduleChannel?.id !== channel.id) return;
-      const items = parseKanSchedule(html);
-      renderKanSchedule(items);
-      const source = response.headers.get("X-Schedule-Source") || (html.includes("LOCAL_SCHEDULE_SOURCE:isramedia") ? "isramedia" : "kan");
-      if (items.length) {
-        els.scheduleCustomMeta.textContent = source === "isramedia"
-          ? `${items.length} תוכניות - מקור EPG חלופי: ישראמדיה`
-          : `${items.length} תוכניות - מקור: כאן`;
-      } else {
-        els.scheduleCustomMeta.textContent = "לא נמצאו תוכניות לקריאה אוטומטית";
-      }
-    } catch (error) {
-      if (token !== scheduleLoadToken) return;
-      els.scheduleCustomBody.innerHTML = `<div class="schedule-custom-error"><strong>לא ניתן לטעון כרגע את לוח כאן.</strong><span>${cleanScheduleText(error.message)}. אפשר להשתמש בכפתור "פתיחה באתר הרשמי".</span></div>`;
-      els.scheduleCustomMeta.textContent = "טעינת הלוח נכשלה";
-    }
+    // Kept only as a defensive fallback. InfinityFree free hosting must not be used
+    // for scraping/proxying third-party pages, so this build does not fetch guide HTML.
+    els.scheduleCustomBody.innerHTML = '<div class="schedule-custom-error"><strong>לוח כאן נטען מהאתר הרשמי בגרסת InfinityFree.</strong><span>השתמשי בכפתור "פתיחה באתר הרשמי" אם האתר אינו מאפשר הצגה בתוך חלון.</span></div>';
+    els.scheduleCustomMeta.textContent = "לוח חיצוני";
   }
 
   function openSchedule(channel) {

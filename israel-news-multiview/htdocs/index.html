@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0b1324">
   <title>חדשות ישראל LIVE - מסך מפוצל</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=if-20260829">
 </head>
 <body>
   <header class="topbar" id="topbar">
@@ -176,19 +176,19 @@
         <div>
           <span class="modal-kicker">HELP</span>
           <h2>עזרה</h2>
-          <p>הממשק רץ מקומית. תוכן הווידאו מגיע מהאינטרנט.</p>
+          <p>האתר מותאם לאחסון סטטי ב-InfinityFree. השידורים עצמם מגיעים ישירות מספקי הערוצים.</p>
         </div>
         <button class="close-dialog icon-only" value="cancel" aria-label="סגירה" type="submit"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/x.svg" alt=""></button>
       </div>
       <div class="help-content">
-        <p><strong>הפעלה:</strong> מומלץ להפעיל דרך Start.cmd. קשת 12 משתמש בשרת המקומי כדי לאתר בכל הפעלה את כתובות השידור שקשת מפרסמת כרגע, במקום להסתמך על כתובת ישנה.</p>
+        <p><strong>אחסון:</strong> גרסה זו אינה דורשת Node.js, PowerShell או שרת יישומים. מעלים את קבצי האתר לתיקיית htdocs ב-InfinityFree והאתר פועל ישירות מהדפדפן.</p>
         <p><strong>מצב חסכון:</strong> מגביל כל חלון לעד 360p. זה לא "מכבה" משהו ולא מוריד ערוצים - הוא רק מונע מכל שידור לבחור איכות גבוהה כשפתוחים כמה שידורים יחד. "מאוזן" מאפשר עד 720p ו"מקסימום" מאפשר לנגן לבחור את האיכות הגבוהה ביותר.</p>
         <p><strong>קול:</strong> כל הערוצים מתחילים במצב שקט כדי לאפשר הפעלה אוטומטית. הפעלת קול בערוץ אחד משתיקה את האחרים.</p>
-        <p><strong>לוח שידורים:</strong> בערוצים שיש להם לוח שידורים מופיע כפתור לוח שנה. בכאן 11 האתר קורא HTML של מקור EPG חיצוני ומציג רק את שעות ושמות התוכניות בעיצוב נקי משלנו. אם המקור החיצוני לא זמין, השרת מנסה גם את עמוד כאן הרשמי.</p>
+        <p><strong>לוח שידורים:</strong> בערוצים שיש להם לוח מופיע כפתור לוח שנה. בגרסת InfinityFree הלוחות נטענים מהאתרים הרשמיים בתוך חלון, כאשר האתר המקורי מאפשר הטמעה. אם הוא חוסם הטמעה, אפשר לפתוח אותו בכרטיסייה חדשה.</p>
         <p><strong>מזג אוויר:</strong> ליד השעון מוצגת עיר אחת בכל פעם עם אייקון מזג אוויר מ-Tabler Icons והטמפרטורה. העיר מתחלפת כל 10 שניות באנימציית טשטוש. נתוני מזג האוויר מתרעננים בערך כל 10 דקות באמצעות Open-Meteo.</p>
         <p><strong>מסך מלא:</strong> הכפתור משתמש במצב Fullscreen של הדפדפן ומבקש להסתיר גם את ממשק הניווט כאשר הדפדפן תומך בכך. במצב זה האתר מנצל את כל שטח המסך.</p>
         <p><strong>סידור:</strong> במחשב אפשר לגרור חלון למיקום אחר. הסדר נשמר אוטומטית.</p>
-        <p><strong>הגדלת ערוץ:</strong> לחיצה כפולה על הווידאו או על כפתור ההגדלה מציגה ערוץ יחיד.</p>
+        <p><strong>הגדלת ערוץ:</strong> לחיצה כפולה על הווידאו או על כפתור ההגדלה מעבירה את הערוץ למסך מלא.</p>
       </div>
       <div class="modal-actions"><button class="primary-button" value="default" type="submit">סגירה</button></div>
     </form>
@@ -231,7 +231,7 @@
   </template>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.13/hls.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="streams.js"></script>
-  <script src="app.js"></script>
+  <script src="streams.js?v=if-20260829"></script>
+  <script src="app.js?v=if-20260829"></script>
 </body>
 </html>
