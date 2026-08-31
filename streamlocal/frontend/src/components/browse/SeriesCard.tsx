@@ -1,3 +1,4 @@
+import { TablerListDetailsIcon } from "../icons/TablerIcons";
 import type { SeriesCard as SeriesCardModel } from "../../services/browseSelectors";
 import { ArtworkImage } from "./ArtworkImage";
 
@@ -43,7 +44,10 @@ export function SeriesCard({ card, onOpen }: Props) {
         />
 
         {onOpen && (
-          <span className="card-play card-play-series">View episodes</span>
+          <span className="card-play card-play-series">
+            <TablerListDetailsIcon size={15} />
+            View episodes
+          </span>
         )}
       </div>
 

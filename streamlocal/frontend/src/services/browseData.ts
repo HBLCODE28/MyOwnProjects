@@ -88,8 +88,8 @@ export async function loadBrowseData(): Promise<BrowseData> {
   const continueRows = progressRows
     .filter(
       (row) =>
+        row.started &&
         !row.watched &&
-        row.positionSeconds > 10 &&
         row.percent < 0.9,
     )
     .sort((a, b) => b.lastPlayedAt - a.lastPlayedAt)

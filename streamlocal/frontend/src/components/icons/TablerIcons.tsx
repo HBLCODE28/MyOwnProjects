@@ -109,6 +109,47 @@ export function TablerDotsIcon(props: Props) {
     </TablerIcon>
   );
 }
+
+export function TablerAdjustmentsHorizontalIcon(props: Props) {
+  return (
+    <TablerIcon {...props}>
+      <path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M4 6l8 0" />
+      <path d="M16 6l4 0" />
+      <path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M4 12l2 0" />
+      <path d="M10 12l10 0" />
+      <path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M4 18l11 0" />
+      <path d="M19 18l1 0" />
+    </TablerIcon>
+  );
+}
+
+export function TablerCaptionsIcon(props: Props) {
+  return (
+    <TablerIcon {...props}>
+      <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+      <path d="M8 11a2 2 0 0 1 2 -2h1" />
+      <path d="M11 15h-1a2 2 0 0 1 -2 -2" />
+      <path d="M14 11a2 2 0 0 1 2 -2h1" />
+      <path d="M17 15h-1a2 2 0 0 1 -2 -2" />
+    </TablerIcon>
+  );
+}
+
+export function TablerListDetailsIcon(props: Props) {
+  return (
+    <TablerIcon {...props}>
+      <path d="M13 5h8" />
+      <path d="M13 9h5" />
+      <path d="M13 15h8" />
+      <path d="M13 19h5" />
+      <path d="M3 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+      <path d="M3 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+    </TablerIcon>
+  );
+}
 export function TablerChevronLeftIcon(props: Props) {
   return (
     <TablerIcon {...props}>
@@ -124,4 +165,3 @@ export function TablerChevronRightIcon(props: Props) {
     </TablerIcon>
   );
 }
-

@@ -97,7 +97,7 @@
   font-size: clamp(54px, 6.5vw, 96px);
   font-weight: 850;
   line-height: .92;
-  letter-spacing: -.065em;
+  letter-spacing: .01em;
   text-wrap: balance;
 }
 
@@ -472,7 +472,10 @@
   bottom: 10px;
   z-index: 5;
   display: grid;
+  grid-auto-flow: column;
+  gap: 5px;
   min-height: 30px;
+  align-items: center;
   place-items: center;
   padding: 0 10px;
   border-radius: 3px;
@@ -495,16 +498,18 @@
 }
 
 .series-card .card-play-series {
-  right: auto;
-  left: 50%;
+  top: 10px;
+  right: 10px;
+  bottom: auto;
+  left: auto;
   max-width: calc(100% - 24px);
   white-space: nowrap;
-  transform: translate(-50%, 4px);
+  transform: translateY(-4px);
 }
 
 .series-card:hover .card-play-series,
 .series-card:focus-visible .card-play-series {
-  transform: translate(-50%, 0);
+  transform: translateY(0);
 }
 
 .card-unavailable,

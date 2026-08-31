@@ -83,6 +83,24 @@ describe("browse data", () => {
     expect(data.continueWatching[0]?.reason).toBe("next_episode");
   });
 
+  it("keeps started low-position episodes in Continue Watching", async () => {
+    await db.playbackProgress.put({
+      mediaItemId: "episode-2",
+      positionSeconds: 4,
+      durationSeconds: 1200,
+      percent: 0.003,
+      started: true,
+      firstPlayedAt: 3,
+      watched: false,
+      lastPlayedAt: 3,
+      completedAt: null,
+    });
+
+    const data = await loadBrowseData();
+    expect(data.continueWatching[0]?.item.id).toBe("episode-2");
+    expect(data.continueWatching[0]?.reason).toBe("resume");
+  });
+
   it("prefers an episode-specific still in Continue Watching and falls back to series artwork", async () => {
     await db.mediaItems.update("episode-2", {
       remoteEpisodeStillUrl: "https://static.tvmaze.com/episode-2.jpg",

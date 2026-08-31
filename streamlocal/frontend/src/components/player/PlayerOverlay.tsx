@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
-  TablerDotsIcon,
+  TablerAdjustmentsHorizontalIcon,
+  TablerCaptionsIcon,
   TablerMaximizeIcon,
   TablerMinimizeIcon,
   TablerPlayerPauseIcon,
@@ -169,6 +170,7 @@ export function PlayerOverlay({
   const [audioTracks, setAudioTracks] = useState<AudioTrackOption[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState(0);
   const [selectedSubtitleTrack, setSelectedSubtitleTrack] = useState(0);
+  const [playbackMenuOpen, setPlaybackMenuOpen] = useState(false);
   const [subtitleMenuOpen, setSubtitleMenuOpen] = useState(false);
   const [subtitleMatches, setSubtitleMatches] = useState<OpenSubtitleMatch[]>([]);
   const [subtitleBusy, setSubtitleBusy] = useState(false);
@@ -210,7 +212,7 @@ export function PlayerOverlay({
 
     setControlsVisible(true);
 
-    if (fullscreenActive && !subtitleMenuOpen) {
+    if (fullscreenActive && !playbackMenuOpen && !subtitleMenuOpen) {
       controlsHideTimerRef.current = window.setTimeout(() => {
         setControlsVisible(false);
         controlsHideTimerRef.current = null;
@@ -223,7 +225,7 @@ export function PlayerOverlay({
         controlsHideTimerRef.current = null;
       }
     };
-  }, [fullscreenActive, subtitleMenuOpen]);
+  }, [fullscreenActive, playbackMenuOpen, subtitleMenuOpen]);
 
   function revealFullscreenControls() {
     if (!fullscreenActive) return;
@@ -234,7 +236,7 @@ export function PlayerOverlay({
       controlsHideTimerRef.current = null;
     }
 
-    if (!subtitleMenuOpen) {
+    if (!playbackMenuOpen && !subtitleMenuOpen) {
       controlsHideTimerRef.current = window.setTimeout(() => {
         setControlsVisible(false);
         controlsHideTimerRef.current = null;
@@ -1088,21 +1090,51 @@ export function PlayerOverlay({
             <div className="player-control-group">
               <button
                 className="player-icon-button player-icon-only"
-                aria-expanded={subtitleMenuOpen}
+                aria-expanded={playbackMenuOpen}
                 aria-label="Playback options"
-                onClick={() => setSubtitleMenuOpen((open) => !open)}
+                onClick={() => {
+                  setPlaybackMenuOpen((open) => !open);
+                  setSubtitleMenuOpen(false);
+                }}
                 title="Playback options"
               >
-                <TablerDotsIcon size={25} />
+                <TablerAdjustmentsHorizontalIcon size={25} />
               </button>
 
-              {subtitleMenuOpen && (
+              {playbackMenuOpen && (
                 <div className="player-options-menu">
                   <strong>Playback options</strong>
                   <label className="player-speed">
                     Brightness
                     <input type="range" min="0.5" max="1.8" step="0.05" value={brightness} onChange={(event) => setBrightness(Number(event.target.value))} />
                   </label>
+                  <label className="player-speed">
+                    Speed
+                    <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
+                      {[0.5, 0.75, 1, 1.25, 1.5, 2].map((value) => (
+                        <option key={value} value={value}>{value}x</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+
+              <button
+                className="player-icon-button player-icon-only"
+                aria-expanded={subtitleMenuOpen}
+                aria-label="Subtitle options"
+                onClick={() => {
+                  setSubtitleMenuOpen((open) => !open);
+                  setPlaybackMenuOpen(false);
+                }}
+                title="Subtitle options"
+              >
+                <TablerCaptionsIcon size={25} />
+              </button>
+
+              {subtitleMenuOpen && (
+                <div className="player-options-menu player-subtitle-menu">
+                  <strong>Subtitle options</strong>
                   <label className="player-speed">
                     Subtitles
                     <select

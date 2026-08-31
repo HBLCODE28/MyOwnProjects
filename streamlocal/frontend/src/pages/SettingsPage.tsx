@@ -20,6 +20,7 @@ import "../styles/settings.css";
 import { useToast } from "../components/ui/Toast";
 import {
   connectExternalHistoryBridge,
+  connectVlcHistory,
   externalHistoryConnectionState,
   syncConnectedExternalHistories,
   type ExternalHistoryImportReport,
@@ -235,6 +236,13 @@ export function SettingsPage() {
               <p className="vault-security-note">
                 VLC resume positions are imported when <code>vlc-qt-interface.ini</code> is available in the mirrored folder. On VLC versions that expose a Windows system playback timeline, the helper also imports live position and duration.
               </p>
+              <button
+                className="secondary-button"
+                disabled={externalSyncBusy}
+                onClick={() => void runExternalHistoryAction(connectVlcHistory)}
+              >
+                Connect VLC history file
+              </button>
             </div>
           </div>
 

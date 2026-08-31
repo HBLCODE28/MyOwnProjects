@@ -52,7 +52,6 @@ export function HomePage() {
       .slice(0, HOME_RAIL_LIMIT);
 
     const movieGenres = groupMoviesByGenre(data.movies)
-      .filter(({ cards }) => cards.length >= 2)
       .slice(0, HOME_GENRE_RAILS);
     const seriesGenres = groupSeriesByGenre(data.series)
       .filter(({ cards }) => cards.length >= 2)
