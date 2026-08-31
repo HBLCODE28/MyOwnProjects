@@ -4,6 +4,25 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-08-31 15:14:00 (local) | streamlocal-fix-streamlocal-dev-service-worker-20260831-151358.zip
+
+- Task: Prevent stale service-worker cache from hiding Vite dev changes.
+- Backup: `_CODEX/backups/streamlocal-fix-streamlocal-dev-service-worker-20260831-151358.zip`
+- Files changed:
+  - `frontend/src/main.tsx`
+  - `_CODEX/AGENT_HISTORY.md`
+- Change summary:
+  - Service worker registration now runs only in production builds.
+  - Vite dev mode unregisters existing service workers for this origin so old portable assets do not keep controlling localhost.
+- Verification:
+  - `curl http://127.0.0.1:5173/src/main.tsx` shows dev-mode unregister logic.
+  - `node node_modules/typescript/bin/tsc -b --pretty false` PASS.
+  - `bash /mnt/VMSHARE/_CODEX_SHARED/scripts/after_change.sh "$PWD"` PASS.
+- Notes:
+  - Port `17836` serves the Windows portable package and still requires rebuilding `release/StreamLocal-Website-Portable` from Windows.
+
+---
+
 ## 2026-08-31 15:04:00 (local) | streamlocal-fix-streamlocal-vite-dev-entry-20260831-150406.zip
 
 - Task: Fixed Vite dev server white page showing only `v0.3.1`.
@@ -78,3 +97,5 @@ Rolling log of agent changes. Most recent first.
 | 2026-08-31 14:50:00 | `streamlocal-organize-streamlocal-project-folder-docs-20260831-145000.manifest.txt` | organize streamlocal project folder docs |
 
 | 2026-08-31 15:04:06 | `streamlocal-fix-streamlocal-vite-dev-entry-20260831-150406.zip` | fix streamlocal vite dev entry |
+
+| 2026-08-31 15:13:58 | `streamlocal-fix-streamlocal-dev-service-worker-20260831-151358.zip` | fix streamlocal dev service worker |
