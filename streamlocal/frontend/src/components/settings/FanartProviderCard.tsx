@@ -44,9 +44,16 @@ export function FanartProviderCard() {
         when its encrypted key is available, with public fallbacks where appropriate.
         Logo candidates are checked before they are accepted.
       </p>
-      <button className="primary-button" onClick={() => void sync()} disabled={running}>
-        {running ? "Finding artwork..." : "Find all artwork"}
-      </button>
+      <div className="artwork-sync-action">
+        <button className="primary-button" onClick={() => void sync()} disabled={running}>
+          {running ? "Finding artwork..." : "Find all artwork"}
+        </button>
+        {running && (
+          <span className="artwork-sync-process">
+            Checking TVmaze episodes, posters, backdrops, and logos.
+          </span>
+        )}
+      </div>
 
       {summary && result && (
         <div className="artwork-scan-report">

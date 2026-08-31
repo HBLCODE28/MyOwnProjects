@@ -99,3 +99,35 @@ Rolling log of agent changes. Most recent first.
 | 2026-08-31 15:04:06 | `streamlocal-fix-streamlocal-vite-dev-entry-20260831-150406.zip` | fix streamlocal vite dev entry |
 
 | 2026-08-31 15:13:58 | `streamlocal-fix-streamlocal-dev-service-worker-20260831-151358.zip` | fix streamlocal dev service worker |
+
+| 2026-08-31 18:44:37 | `streamlocal-fix-streamlocal-pending-ui-batch-20260831-184437.zip` | fix streamlocal pending ui batch |
+## 2026-08-31 18:55:00 (local) | streamlocal-fix-streamlocal-pending-ui-batch-20260831-184437.zip
+
+- Task: Implemented SuperTasks pending UI batch for project_key `p-9b67f541403bbb68`.
+- Run ID: `codex-20260831T184354-140847`
+- Backup: `_CODEX/backups/streamlocal-fix-streamlocal-pending-ui-batch-20260831-184437.zip`
+- SuperTasks moved to `ready_for_qa`: 349, 350, 351, 352, 353, 354, 355, 356.
+- Files changed:
+  - `frontend/index.html`
+  - `frontend/src/components/browse/HeroRail.tsx`
+  - `frontend/src/components/browse/SeriesHubOverlay.tsx`
+  - `frontend/src/components/settings/FanartProviderCard.tsx`
+  - `frontend/src/pages/LibraryPage.tsx`
+  - `frontend/src/pages/RecognitionPage.tsx`
+  - `frontend/src/styles/browse.css`
+  - `frontend/src/styles/responsive.css`
+  - `frontend/src/styles/settings.css`
+- Change summary:
+  - Hero descriptions have more spacing from the header and can expand from More info.
+  - Movie genre rails now match the compact series rail sizing more closely.
+  - The visible `v0.3.1` version marker was removed from the app shell.
+  - Recognition header copy now explains why identification matters.
+  - Library source Disconnect is a two-step action that changes to Delete on first click.
+  - Artwork sync shows a short live process note while Finding artwork is running.
+  - Episode thumbnails now prefer episode still/backdrop/poster URLs before series artwork.
+- Verification:
+  - Typecheck: `node node_modules/typescript/bin/tsc -b --pretty false` PASS
+  - Shared smoke: PHP lint PASS; JS syntax phase was interrupted after hanging on the Windows share.
+  - Deployment: not deployed.
+
+---

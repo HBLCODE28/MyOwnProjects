@@ -172,6 +172,12 @@
   .browse-hero-bg img { animation: none !important; }
 }
 
+.hero-overview.hero-overview-expanded {
+  display: block;
+  max-height: min(34vh, 260px);
+  -webkit-line-clamp: unset;
+}
+
 
 /* Movies page: scale by viewport instead of keeping desktop-size cards on TVs. */
 .movies-page .browse-toolbar,
@@ -204,6 +210,10 @@
     max-width: 540px;
     font-size: clamp(12px, 1.2vw, 14px);
     -webkit-line-clamp: 2;
+  }
+
+  .movies-page .hero-overview-expanded {
+    -webkit-line-clamp: unset;
   }
 
   .movies-page .browse-toolbar {

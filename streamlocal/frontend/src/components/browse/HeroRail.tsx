@@ -59,6 +59,7 @@ function firstPlayableEpisode(card: SeriesCard): MediaItem | null {
 
 export function HeroRail({ movies, series, onOpenSeries, onPlaySeries, onPlayMovie }: Props) {
   const [featuredSeriesIndex, setFeaturedSeriesIndex] = useState(0);
+  const [expandedOverviewKey, setExpandedOverviewKey] = useState<string | null>(null);
   const seriesPoolLength = useMemo(() => {
     const available = series.filter((card) => card.availableEpisodeCount > 0);
     const artwork = available.filter((card) => Boolean(
@@ -82,6 +83,16 @@ export function HeroRail({ movies, series, onOpenSeries, onPlaySeries, onPlayMov
   }, [seriesPoolLength]);
 
   const featured = chooseFeatured(movies, series, featuredSeriesIndex);
+  const featuredKey = featured
+    ? featured.kind === "series"
+      ? `series-${featured.series.series.id}`
+      : `movie-${featured.movie.item.id}`
+    : "empty";
+  const overviewExpanded = expandedOverviewKey === featuredKey;
+
+  useEffect(() => {
+    setExpandedOverviewKey(null);
+  }, [featuredKey]);
 
   if (!featured) {
     return (
@@ -140,7 +151,11 @@ export function HeroRail({ movies, series, onOpenSeries, onPlaySeries, onPlayMov
             <span>{card.seasons.length} season{card.seasons.length === 1 ? "" : "s"}</span>
             {card.series.genres.slice(0, 2).map((genre) => <span key={genre}>{genre}</span>)}
           </div>
-          {card.series.overview && <p className="hero-overview">{card.series.overview}</p>}
+          {card.series.overview && (
+            <p className={`hero-overview ${overviewExpanded ? "hero-overview-expanded" : ""}`}>
+              {card.series.overview}
+            </p>
+          )}
           {(playableEpisode && onPlaySeries || onOpenSeries) && (
             <div className="hero-actions-row">
               {playableEpisode && onPlaySeries && (
@@ -150,8 +165,18 @@ export function HeroRail({ movies, series, onOpenSeries, onPlaySeries, onPlayMov
                 </button>
               )}
               {onOpenSeries && (
-                <button className="hero-info-button" onClick={() => onOpenSeries(card)}>
-                  More info
+                <button
+                  className="hero-info-button"
+                  aria-expanded={card.series.overview ? overviewExpanded : undefined}
+                  onClick={() => {
+                    if (card.series.overview && !overviewExpanded) {
+                      setExpandedOverviewKey(featuredKey);
+                      return;
+                    }
+                    onOpenSeries(card);
+                  }}
+                >
+                  {overviewExpanded ? "View episodes" : "More info"}
                 </button>
               )}
             </div>
@@ -199,13 +224,28 @@ export function HeroRail({ movies, series, onOpenSeries, onPlaySeries, onPlayMov
           <span>Movie</span>
           {item.genres.slice(0, 2).map((genre) => <span key={genre}>{genre}</span>)}
         </div>
-        {item.overview && <p className="hero-overview">{item.overview}</p>}
-        {canPlay && onPlayMovie && (
+        {item.overview && (
+          <p className={`hero-overview ${overviewExpanded ? "hero-overview-expanded" : ""}`}>
+            {item.overview}
+          </p>
+        )}
+        {(canPlay && onPlayMovie || item.overview) && (
           <div className="hero-actions-row">
-            <button className="hero-play-button" onClick={() => onPlayMovie(item)}>
-              <TablerPlayerPlayIcon className="play-glyph" size={22} />
-              Play
-            </button>
+            {canPlay && onPlayMovie && (
+              <button className="hero-play-button" onClick={() => onPlayMovie(item)}>
+                <TablerPlayerPlayIcon className="play-glyph" size={22} />
+                Play
+              </button>
+            )}
+            {item.overview && (
+              <button
+                className="hero-info-button"
+                aria-expanded={overviewExpanded}
+                onClick={() => setExpandedOverviewKey(overviewExpanded ? null : featuredKey)}
+              >
+                {overviewExpanded ? "Less info" : "More info"}
+              </button>
+            )}
           </div>
         )}
       </div>

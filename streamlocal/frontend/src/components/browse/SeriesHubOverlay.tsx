@@ -296,6 +296,9 @@ export function SeriesHubOverlay({
                             null
                           }
                           remoteUrl={
+                            item.remoteEpisodeStillUrl ??
+                            item.remoteBackdropUrl ??
+                            item.remotePosterUrl ??
                             card.series.remoteBackdropUrl ??
                             card.series.remotePosterUrl ??
                             null

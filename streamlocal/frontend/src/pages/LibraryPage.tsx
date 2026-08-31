@@ -27,6 +27,7 @@ export function LibraryPage() {
   const [networkMode, setNetworkMode] = useState(false);
   const [fileQuery, setFileQuery] = useState("");
   const [filePage, setFilePage] = useState(1);
+  const [sourcePendingDeleteId, setSourcePendingDeleteId] = useState<string | null>(null);
   const { showToast } = useToast();
 
   async function importBackup(file: File | undefined) {
@@ -189,7 +190,10 @@ export function LibraryPage() {
   }
 
   async function removeSource(source: LibrarySource) {
-    if (!window.confirm("Disconnect this folder? No video file will be deleted.")) return;
+    if (sourcePendingDeleteId !== source.id) {
+      setSourcePendingDeleteId(source.id);
+      return;
+    }
 
     const sourceFiles = await db.mediaFiles.where("sourceId").equals(source.id).toArray();
     for (const file of sourceFiles) {
@@ -200,6 +204,7 @@ export function LibraryPage() {
       handle: null,
       nativePath: null,
     });
+    setSourcePendingDeleteId(null);
     await refresh();
   }
 
@@ -365,8 +370,12 @@ export function LibraryPage() {
                       {busy === source.id ? "Scanning..." : "Rescan"}
                     </button>
                   )}
-                  <button className="danger-button" onClick={() => removeSource(source)}>
-                    Disconnect
+                  <button
+                    className="danger-button"
+                    type="button"
+                    onClick={() => removeSource(source)}
+                  >
+                    {sourcePendingDeleteId === source.id ? "Delete" : "Disconnect"}
                   </button>
                 </div>
               </article>

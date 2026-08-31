@@ -94,6 +94,18 @@
   background: linear-gradient(135deg, rgba(240,53,70,.055), rgba(255,255,255,.018));
 }
 
+.artwork-sync-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.artwork-sync-process {
+  color: #a4a6ad;
+  font-size: 12px;
+}
+
 .artwork-scan-report {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

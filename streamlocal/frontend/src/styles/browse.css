@@ -144,13 +144,21 @@
   display: -webkit-box;
   overflow: hidden;
   max-width: 600px;
-  margin: 15px 0 0;
+  margin: 20px 0 0;
   color: rgba(255,255,255,.82);
   font-size: 16px;
   line-height: 1.5;
   text-shadow: 0 2px 12px rgba(0,0,0,.7);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
+}
+
+.hero-overview-expanded {
+  display: block;
+  max-height: min(34vh, 260px);
+  overflow-y: auto;
+  padding-right: 8px;
+  -webkit-line-clamp: unset;
 }
 
 .hero-actions-row {
@@ -668,7 +676,7 @@
 }
 
 .movie-rail-grid > .media-card {
-  flex-basis: clamp(230px, 19vw, 330px);
+  flex-basis: clamp(260px, 21vw, 360px);
 }
 
 .movies-search-section {
@@ -751,7 +759,7 @@
 
 .home-page .hero-overview {
   max-width: 540px;
-  margin-top: 11px;
+  margin-top: 15px;
   font-size: clamp(13px, .86vw, 15px);
   line-height: 1.42;
   -webkit-line-clamp: 3;
@@ -881,7 +889,7 @@
   }
 
   .home-page .hero-meta { margin-top: 10px; font-size: 12px; }
-  .home-page .hero-overview { margin-top: 9px; font-size: clamp(12px, .9vw, 14px); line-height: 1.4; -webkit-line-clamp: 2; }
+  .home-page .hero-overview { margin-top: 13px; font-size: clamp(12px, .9vw, 14px); line-height: 1.4; -webkit-line-clamp: 2; }
   .home-page .hero-actions-row { margin-top: 14px; }
   .home-page .hero-play-button,
   .home-page .hero-info-button { min-height: 40px; padding: 0 18px; font-size: 13px; }

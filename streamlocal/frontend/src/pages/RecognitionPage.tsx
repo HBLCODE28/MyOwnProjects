@@ -61,8 +61,8 @@ export function RecognitionPage() {
           <p className="eyebrow">100% LOCAL IDENTIFICATION</p>
           <h1>Identify your library.</h1>
           <p>
-            Filenames and folder names are parsed entirely in your browser. No metadata
-            is sent to any external service.
+            This step turns raw filenames into clean movie and episode records, so Browse,
+            Series seasons, artwork lookup, and watch history can organize the library correctly.
           </p>
         </div>
         <div className="recognition-actions">
