@@ -4,6 +4,29 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-08-31 14:50:00 (local) | streamlocal-organize-streamlocal-project-folder-docs-20260831-145000.manifest.txt
+
+- Task: Organized StreamLocal project documentation entrypoints.
+- Backup: `_CODEX/backups/streamlocal-organize-streamlocal-project-folder-docs-20260831-145000.manifest.txt`
+- Files changed:
+  - `AGENTS.md`
+  - `_CODEX/project_specific/INDEX.md`
+  - `_CODEX/project_specific/.context_hygiene.json`
+  - `docs/INDEX.md`
+  - `_CODEX/AGENT_HISTORY.md`
+- Change summary:
+  - Added a short project-local `AGENTS.md` to route future agents to current context.
+  - Added `_CODEX/project_specific/INDEX.md` so future sessions start from a compact current architecture map.
+  - Added `docs/INDEX.md` so root and docs-folder documents have clear roles.
+  - Recorded context hygiene marker metadata.
+- Verification:
+  - Pending: shared after-change smoke.
+- Notes:
+  - No app source files were moved or edited.
+  - Root `.txt` and `.docx` files were left in place pending explicit approval to move tracked files.
+
+---
+
 ## 2026-08-31 14:36:00 (local) | streamlocal-fix-streamlocal-pending-queue-issues-20260831-142550.zip
 
 - Task: Implemented SuperTasks pending batch for project_key `p-9b67f541403bbb68`.
@@ -34,3 +57,5 @@ Rolling log of agent changes. Most recent first.
 - Notes:
   - Plain `npm run typecheck` is blocked by non-executable `.bin` wrappers on the CIFS share.
   - Plain Vitest is blocked by the esbuild binary on the CIFS share; using an executable `/tmp` copy of esbuild verified the tests.
+
+| 2026-08-31 14:50:00 | `streamlocal-organize-streamlocal-project-folder-docs-20260831-145000.manifest.txt` | organize streamlocal project folder docs |
