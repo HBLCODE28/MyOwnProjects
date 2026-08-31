@@ -4,6 +4,23 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-08-31 15:04:00 (local) | streamlocal-fix-streamlocal-vite-dev-entry-20260831-150406.zip
+
+- Task: Fixed Vite dev server white page showing only `v0.3.1`.
+- Backup: `_CODEX/backups/streamlocal-fix-streamlocal-vite-dev-entry-20260831-150406.zip`
+- Files changed:
+  - `frontend/index.html`
+  - `_CODEX/AGENT_HISTORY.md`
+- Change summary:
+  - Replaced stale portable-build asset tags in `frontend/index.html` with the Vite dev module entry `/src/main.tsx`.
+  - Removed the direct `./assets/index-streamlocal.css` reference from the dev index because Vite imports app CSS through React modules.
+- Verification:
+  - `curl http://127.0.0.1:5173/` shows `<script type="module" src="/src/main.tsx"></script>`.
+  - `node node_modules/typescript/bin/tsc -b --pretty false` PASS.
+  - `bash /mnt/VMSHARE/_CODEX_SHARED/scripts/after_change.sh "$PWD"` PASS.
+
+---
+
 ## 2026-08-31 14:50:00 (local) | streamlocal-organize-streamlocal-project-folder-docs-20260831-145000.manifest.txt
 
 - Task: Organized StreamLocal project documentation entrypoints.
@@ -59,3 +76,5 @@ Rolling log of agent changes. Most recent first.
   - Plain Vitest is blocked by the esbuild binary on the CIFS share; using an executable `/tmp` copy of esbuild verified the tests.
 
 | 2026-08-31 14:50:00 | `streamlocal-organize-streamlocal-project-folder-docs-20260831-145000.manifest.txt` | organize streamlocal project folder docs |
+
+| 2026-08-31 15:04:06 | `streamlocal-fix-streamlocal-vite-dev-entry-20260831-150406.zip` | fix streamlocal vite dev entry |
