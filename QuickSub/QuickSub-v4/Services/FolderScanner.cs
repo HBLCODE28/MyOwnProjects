@@ -7,7 +7,9 @@ public sealed partial class FolderScanner
 {
     private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".mkv", ".mp4", ".avi", ".mov", ".m4v", ".wmv", ".ts", ".m2ts", ".webm"
+        ".mkv", ".mp4", ".avi", ".mov", ".m4v", ".wmv", ".ts", ".m2ts", ".mts", ".m2t",
+        ".webm", ".flv", ".vob", ".ogv", ".ogm", ".divx", ".asf", ".rm", ".rmvb",
+        ".mpg", ".mpeg", ".m2v", ".3gp", ".3g2"
     };
 
     private static readonly HashSet<string> SubtitleExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -22,14 +24,26 @@ public sealed partial class FolderScanner
         _logger = logger;
     }
 
-    [GeneratedRegex(@"(?i)(?:^|[.\s_\-])S(?<season>\d{1,3})E(?<episodes>\d{1,3}(?:E\d{1,3})*)")]
+    [GeneratedRegex(@"(?i)(?:^|[.\s_\-\[])S(?<season>\d{1,3})[.\s_\-]*E(?<episodes>\d{1,3}(?:[.\s_\-]*E?\d{1,3})*)")]
     private static partial Regex StandardEpisodeRegex();
 
-    [GeneratedRegex(@"(?i)(?:^|[.\s_\-])(?<season>\d{1,3})x(?<episode>\d{1,3})(?:$|[.\s_\-])")]
+    [GeneratedRegex(@"(?i)(?:^|[.\s_\-\[])(?<season>\d{1,3})x(?<episodes>\d{1,3}(?:[.\s_\-]*x?\d{1,3})*)")]
     private static partial Regex AlternativeEpisodeRegex();
 
-    [GeneratedRegex(@"(?i)E(?<episode>\d{1,3})")]
-    private static partial Regex AdditionalEpisodeRegex();
+    [GeneratedRegex(@"(?i)(?:Season|Saison|Staffel|Temporada|Sesoen|Seasone|Seasons|Sesón|עונה|S)\s*[-._]?\s*(?<season>\d{1,3})\s*[-._]?\s*(?:Episode|Episodio|Ep|E)?\s*[-._]?\s*(?<episodes>\d{1,3}(?:[.\s_\-]*E?\d{1,3})*)")]
+    private static partial Regex ExplicitSeasonEpisodeRegex();
+
+    [GeneratedRegex(@"(?i)(?:^|[.\s_\-\[])(?<code>\d{3,4})(?:$|[.\s_\-\]])")]
+    private static partial Regex Code34DigitRegex();
+
+    [GeneratedRegex(@"(?i)\b(?:Season|Saison|Staffel|Temporada|Sesoen|Seasone|Seasons|Sesón|עונה|S)\s*[-._]?\s*(?<season>\d{1,3})\b")]
+    private static partial Regex ParentSeasonRegex();
+
+    [GeneratedRegex(@"(?i)(?:^|[.\s_\-\[])(?:Episode|Episodio|Ep|E)?\s*[-._]?\s*(?<episode>\d{1,3})(?:$|[.\s_\-\]])")]
+    private static partial Regex EpisodeNumberRegex();
+
+    [GeneratedRegex(@"(?i)\b(?<episode>\d{1,3})\b")]
+    private static partial Regex AdditionalEpisodeNumbersRegex();
 
     public FolderScanResult Scan(string folderPath, string languageCode)
     {
@@ -84,49 +98,123 @@ public sealed partial class FolderScanner
     public static VideoEpisode? ParseVideo(string path)
     {
         string baseName = Path.GetFileNameWithoutExtension(path);
+
+        // Pass 1: Standard S01E01 / S01E01E02 / S01.E01
         Match standard = StandardEpisodeRegex().Match(baseName);
-
-        if (standard.Success && int.TryParse(standard.Groups["season"].Value, out int season))
+        if (standard.Success && int.TryParse(standard.Groups["season"].Value, out int season1))
         {
-            var episodes = new List<int>();
-            string episodeText = "E" + standard.Groups["episodes"].Value;
-            foreach (Match episodeMatch in AdditionalEpisodeRegex().Matches(episodeText))
-            {
-                if (int.TryParse(episodeMatch.Groups["episode"].Value, out int number))
-                    episodes.Add(number);
-            }
-
+            List<int> episodes = ParseEpisodeList(standard.Groups["episodes"].Value);
             if (episodes.Count > 0)
             {
-                return new VideoEpisode
-                {
-                    FullPath = path,
-                    FileName = Path.GetFileName(path),
-                    BaseName = baseName,
-                    Season = season,
-                    Episodes = episodes,
-                    FileSize = new FileInfo(path).Length
-                };
+                return CreateEpisode(path, baseName, season1, episodes);
             }
         }
 
-        Match alternative = AlternativeEpisodeRegex().Match(baseName);
-        if (alternative.Success &&
-            int.TryParse(alternative.Groups["season"].Value, out int altSeason) &&
-            int.TryParse(alternative.Groups["episode"].Value, out int altEpisode))
+        // Pass 2: Alternative 1x01 / 01x05
+        Match alt = AlternativeEpisodeRegex().Match(baseName);
+        if (alt.Success && int.TryParse(alt.Groups["season"].Value, out int season2))
         {
-            return new VideoEpisode
+            List<int> episodes = ParseEpisodeList(alt.Groups["episodes"].Value);
+            if (episodes.Count > 0)
             {
-                FullPath = path,
-                FileName = Path.GetFileName(path),
-                BaseName = baseName,
-                Season = altSeason,
-                Episodes = [altEpisode],
-                FileSize = new FileInfo(path).Length
-            };
+                return CreateEpisode(path, baseName, season2, episodes);
+            }
+        }
+
+        // Pass 3: Explicit "Season 1 Episode 1" / "Season 1 Ep 01" in filename
+        Match explicitMatch = ExplicitSeasonEpisodeRegex().Match(baseName);
+        if (explicitMatch.Success && int.TryParse(explicitMatch.Groups["season"].Value, out int season3))
+        {
+            List<int> episodes = ParseEpisodeList(explicitMatch.Groups["episodes"].Value);
+            if (episodes.Count > 0)
+            {
+                return CreateEpisode(path, baseName, season3, episodes);
+            }
+        }
+
+        // Pass 4: 3 or 4 digit episode numbers (e.g. 101 for S01E01, 1205 for S12E05)
+        foreach (Match codeMatch in Code34DigitRegex().Matches(baseName))
+        {
+            if (int.TryParse(codeMatch.Groups["code"].Value, out int codeVal))
+            {
+                // Filter out common resolutions / years
+                if (codeVal is 720 or 1080 or 2160 or 480 or 576 or (>= 1900 and <= 2099))
+                    continue;
+
+                int season4 = codeVal / 100;
+                int ep4 = codeVal % 100;
+
+                if (season4 is >= 1 and <= 99 && ep4 is >= 1 and <= 99)
+                {
+                    return CreateEpisode(path, baseName, season4, [ep4]);
+                }
+            }
+        }
+
+        // Pass 5: Parent directory season fallback (e.g., folder "Season 1" or "SESOEN 1", file "01.mkv" or "Episode 1.mp4")
+        int? parentSeason = ExtractSeasonFromPath(path);
+        if (parentSeason.HasValue)
+        {
+            int season5 = parentSeason.Value;
+            foreach (Match epMatch in EpisodeNumberRegex().Matches(baseName))
+            {
+                if (int.TryParse(epMatch.Groups["episode"].Value, out int ep5) && ep5 is >= 1 and <= 99)
+                {
+                    // Filter out 720/1080/480/2160 if matched
+                    if (ep5 is 720 or 1080 or 480 or 576)
+                        continue;
+
+                    return CreateEpisode(path, baseName, season5, [ep5]);
+                }
+            }
         }
 
         return null;
+    }
+
+    private static List<int> ParseEpisodeList(string text)
+    {
+        var episodes = new List<int>();
+        foreach (Match match in AdditionalEpisodeNumbersRegex().Matches(text))
+        {
+            if (int.TryParse(match.Groups["episode"].Value, out int number) && number is >= 1 and <= 99)
+            {
+                if (!episodes.Contains(number))
+                    episodes.Add(number);
+            }
+        }
+        return episodes;
+    }
+
+    private static int? ExtractSeasonFromPath(string fullPath)
+    {
+        string? directoryPath = Path.GetDirectoryName(fullPath);
+        while (!string.IsNullOrEmpty(directoryPath))
+        {
+            string dirName = Path.GetFileName(directoryPath);
+            Match match = ParentSeasonRegex().Match(dirName);
+            if (match.Success && int.TryParse(match.Groups["season"].Value, out int season))
+            {
+                return season;
+            }
+
+            directoryPath = Path.GetDirectoryName(directoryPath);
+        }
+
+        return null;
+    }
+
+    private static VideoEpisode CreateEpisode(string path, string baseName, int season, List<int> episodes)
+    {
+        return new VideoEpisode
+        {
+            FullPath = path,
+            FileName = Path.GetFileName(path),
+            BaseName = baseName,
+            Season = season,
+            Episodes = episodes,
+            FileSize = new FileInfo(path).Length
+        };
     }
 
     private static string? FindExistingSubtitle(
@@ -169,7 +257,6 @@ public sealed partial class FolderScanner
 
         return null;
     }
-
 
     private static bool HasExplicitOtherLanguage(string subtitleStem, string selectedLanguage)
     {
@@ -214,3 +301,4 @@ public sealed partial class FolderScanner
         return index >= 0 ? value[..index] : value;
     }
 }
+

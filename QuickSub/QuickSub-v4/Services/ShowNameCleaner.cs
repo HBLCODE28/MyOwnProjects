@@ -22,7 +22,7 @@ public static partial class ShowNameCleaner
     [GeneratedRegex(@"\s+")]
     private static partial Regex SpacesRegex();
 
-    [GeneratedRegex(@"(?i)^Season\s*\d{1,3}$|^S\d{1,3}$")]
+    [GeneratedRegex(@"(?i)^(?:Season|Saison|Staffel|Temporada|Sesoen|Seasone|Seasons|Sesón|עונה|S)\s*[-._]?\s*\d{1,3}$")]
     private static partial Regex SeasonFolderRegex();
 
     public static string GetSearchName(string folderPath)
@@ -69,3 +69,4 @@ public static partial class ShowNameCleaner
         return normalized;
     }
 }
+

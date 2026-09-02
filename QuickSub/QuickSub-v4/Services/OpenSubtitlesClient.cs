@@ -110,6 +110,8 @@ public sealed class OpenSubtitlesClient
         }
 
         string? imdbId = NormalizeImdbId(show.Externals?.Imdb);
+        string cleanShowName = ShowNameCleaner.RemoveYear(ShowNameCleaner.RemoveDashSuffix(show.Name));
+
         if (video.IsMultiEpisode)
         {
             var query = new Dictionary<string, string>
@@ -121,28 +123,57 @@ public sealed class OpenSubtitlesClient
                 query["parent_imdb_id"] = imdbId;
 
             await AddSearchResultsAsync(query, candidatesByFileId, cancellationToken);
-        }
-        else
-        {
-            int episodeNumber = video.Episodes[0];
-            var query = new Dictionary<string, string>
-            {
-                ["languages"] = settings.SubtitleLanguage,
-                ["season_number"] = video.Season.ToString(),
-                ["episode_number"] = episodeNumber.ToString()
-            };
-            if (!string.IsNullOrWhiteSpace(imdbId))
-                query["parent_imdb_id"] = imdbId;
-            else
-                query["query"] = show.Name;
-
-            await AddSearchResultsAsync(query, candidatesByFileId, cancellationToken);
 
             if (candidatesByFileId.Count == 0)
             {
                 query.Remove("parent_imdb_id");
-                query["query"] = show.Name;
+                query["query"] = $"{cleanShowName} {video.EpisodeCode}";
                 await AddSearchResultsAsync(query, candidatesByFileId, cancellationToken);
+            }
+        }
+        else
+        {
+            int episodeNumber = video.Episodes[0];
+
+            // Primary search: IMDB ID + Season + Episode
+            if (!string.IsNullOrWhiteSpace(imdbId))
+            {
+                var imdbQuery = new Dictionary<string, string>
+                {
+                    ["languages"] = settings.SubtitleLanguage,
+                    ["season_number"] = video.Season.ToString(),
+                    ["episode_number"] = episodeNumber.ToString(),
+                    ["parent_imdb_id"] = imdbId
+                };
+                await AddSearchResultsAsync(imdbQuery, candidatesByFileId, cancellationToken);
+            }
+
+            // Secondary search: Show Name + Season + Episode
+            var nameQuery = new Dictionary<string, string>
+            {
+                ["languages"] = settings.SubtitleLanguage,
+                ["season_number"] = video.Season.ToString(),
+                ["episode_number"] = episodeNumber.ToString(),
+                ["query"] = show.Name
+            };
+            await AddSearchResultsAsync(nameQuery, candidatesByFileId, cancellationToken);
+
+            // Cleaned name search if different
+            if (!cleanShowName.Equals(show.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                nameQuery["query"] = cleanShowName;
+                await AddSearchResultsAsync(nameQuery, candidatesByFileId, cancellationToken);
+            }
+
+            // Fallback search by video release base name if still 0 candidates
+            if (candidatesByFileId.Count == 0)
+            {
+                var baseQuery = new Dictionary<string, string>
+                {
+                    ["languages"] = settings.SubtitleLanguage,
+                    ["query"] = video.BaseName
+                };
+                await AddSearchResultsAsync(baseQuery, candidatesByFileId, cancellationToken);
             }
         }
 
@@ -150,16 +181,20 @@ public sealed class OpenSubtitlesClient
             .Where(candidate => !IsKnownImageSubtitle(candidate.FileName))
             .ToList();
 
-        if (video.IsMultiEpisode)
+        if (video.IsMultiEpisode && candidates.Count > 0)
         {
-            string multiCode = ShowNameCleaner.NormalizeForComparison(video.EpisodeCode);
-            candidates = candidates
+            List<string> episodeTokens = video.Episodes.Select(ep => $"e{ep:00}").ToList();
+            List<SubtitleCandidate> filtered = candidates
                 .Where(candidate =>
                 {
                     string searchable = ShowNameCleaner.NormalizeForComparison(candidate.Release + candidate.FileName);
-                    return searchable.Contains(multiCode, StringComparison.OrdinalIgnoreCase);
+                    return episodeTokens.All(token => searchable.Contains(token, StringComparison.OrdinalIgnoreCase)) ||
+                           searchable.Contains(ShowNameCleaner.NormalizeForComparison(video.EpisodeCode), StringComparison.OrdinalIgnoreCase);
                 })
                 .ToList();
+
+            if (filtered.Count > 0)
+                candidates = filtered;
         }
 
         if (settings.HearingImpairedPreference == HearingImpairedPreference.AllowIfNeeded &&

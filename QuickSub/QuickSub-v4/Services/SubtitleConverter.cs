@@ -302,6 +302,8 @@ public sealed partial class SubtitleConverter
 
     private static string DecodeText(byte[] bytes)
     {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
         if (HasUtf8Bom(bytes))
             return Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
 
@@ -311,8 +313,24 @@ public sealed partial class SubtitleConverter
         if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
             return Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
 
-        return new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: false)
-            .GetString(bytes);
+        try
+        {
+            var strictUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+            return strictUtf8.GetString(bytes);
+        }
+        catch
+        {
+            try
+            {
+                Encoding cp1255 = Encoding.GetEncoding(1255);
+                return cp1255.GetString(bytes);
+            }
+            catch
+            {
+                return new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: false)
+                    .GetString(bytes);
+            }
+        }
     }
 
     private static bool HasUtf8Bom(byte[] bytes) =>

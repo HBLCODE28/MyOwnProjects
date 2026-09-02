@@ -167,7 +167,7 @@ public partial class MainWindow : Window
             StatusText.Text = "Ready to scan for subtitles.";
             SummaryText.Text = localScan.UnrecognizedFiles.Count == 0
                 ? $"{localScan.Episodes.Count} video files detected."
-                : $"{localScan.Episodes.Count} video files detected. {localScan.UnrecognizedFiles.Count} files will be skipped because their names do not contain S01E01 or 1x01.";
+                : $"{localScan.Episodes.Count} video files detected. {localScan.UnrecognizedFiles.Count} unrecognized files will be skipped.";
             WorkProgress.Value = 0;
             _canScan = localScan.Episodes.Count > 0;
             ScanButton.IsEnabled = _canScan;
@@ -297,7 +297,7 @@ public partial class MainWindow : Window
             if (localScan.Episodes.Count == 0)
             {
                 StatusText.Text = "No recognized episode files were found.";
-                SummaryText.Text = "Video names must contain S01E01 or 1x01.";
+                SummaryText.Text = "Check that video files contain season and episode numbers.";
                 return;
             }
 
@@ -314,8 +314,7 @@ public partial class MainWindow : Window
             {
                 MessageBox.Show(
                     this,
-                    $"{localScan.UnrecognizedFiles.Count} video files were skipped because their names do not contain S01E01 or 1x01. " +
-                    "QuickSub does not guess these files because that could download subtitles for the wrong episode.",
+                    $"{localScan.UnrecognizedFiles.Count} video files were skipped because their season and episode numbers could not be identified.",
                     "QuickSub",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
