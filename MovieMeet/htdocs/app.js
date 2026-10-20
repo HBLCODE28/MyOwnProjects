@@ -19,7 +19,10 @@ async function api(action, options = {}) {
   if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
   const response = await fetch(`${API}?${new URLSearchParams({action, ...(options.query || {})})}`, {...options, headers});
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || 'אירעה שגיאה. נסו שוב.');
+  if (!response.ok) {
+    const code = payload.code ? ` (${payload.code})` : '';
+    throw new Error(`${payload.error || 'אירעה שגיאה. נסו שוב.'}${code}`);
+  }
   return payload;
 }
 
