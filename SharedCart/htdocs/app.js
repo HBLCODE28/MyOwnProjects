@@ -1023,6 +1023,7 @@ function setHeader(title, showBack, canRename = false) {
     $('#hdrTitle').text(title);
     $('#btnBack').toggleClass('hidden', !showBack);
     $('#btnGroupMenu').toggleClass('hidden', !showBack);
+    $('#btnProfile').toggleClass('hidden', !showBack);
     $('#btnRenameGroup').toggleClass('hidden', !showBack || !canRename);
     $('#mobileMenuRename').toggleClass('hidden', !showBack || !canRename);
     if (!showBack) closeMobileGroupMenu();

@@ -2016,8 +2016,6 @@ body.report-modal-open{overflow:hidden}
   align-items:center;
   justify-content:center;
   flex:0 0 auto;
-  border-radius:50%;
-  background:var(--cyan-light);
   color:var(--cyan-dark);
 }
 .home-profile-icon .tabler-icon{width:24px;height:24px}
