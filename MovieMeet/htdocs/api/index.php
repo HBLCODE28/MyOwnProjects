@@ -93,6 +93,15 @@ try {
         $candidates = $candidateStmt->fetchAll();
         $myParticipant = participantByToken($dbh, (int)$event['id']);
         foreach ($candidates as &$candidate) {
+            if (empty($candidate['poster_path'])) {
+                $movie = tmdbMovie((string)$candidate['movie_title']);
+                if ($movie) {
+                    $dbh->prepare('UPDATE mm_candidates SET tmdb_id=?,poster_path=? WHERE id=?')->execute([$movie['id'], $movie['poster_path'], $candidate['id']]);
+                    $candidate['tmdb_id'] = $movie['id'];
+                    $candidate['poster_path'] = $movie['poster_path'];
+                }
+            }
+            $candidate['poster_url'] = tmdbPosterUrl($candidate['poster_path'] ?? null);
             $candidate['genres'] = jsonList($candidate['genres']);
             $candidate['score'] = recommendationScore($candidate, $participants);
             $voteStmt = $dbh->prepare('SELECT SUM(vote=1) yes_votes,SUM(vote=-1) no_votes FROM mm_votes WHERE candidate_id=?');
@@ -138,7 +147,10 @@ try {
         $stmt = $dbh->prepare('SELECT booking_url FROM mm_cinemas WHERE id=?'); $stmt->execute([$cinemaId]); $url = (string)$stmt->fetchColumn();
         if ('' === $url) respond(['error' => 'הקולנוע לא נמצא'], 404);
         $genres = array_values(array_filter(array_map(static fn($genre): string => cleanText($genre, 40), $input['genres'] ?? [])));
-        $dbh->prepare('INSERT INTO mm_candidates(event_id,cinema_id,tmdb_id,movie_title,poster_path,genres,show_date,show_time,booking_url) VALUES(?,?,?,?,?,?,?,?,?)')->execute([$event['id'], $cinemaId, (int)($input['tmdb_id'] ?? 0) ?: null, $title, cleanText($input['poster_path'] ?? '', 300) ?: null, json_encode($genres), $date, $time . ':00', $url]);
+        $movie = tmdbMovie($title);
+        $tmdbId = (int)($input['tmdb_id'] ?? 0) ?: ($movie['id'] ?? null);
+        $posterPath = cleanText($input['poster_path'] ?? '', 300) ?: ($movie['poster_path'] ?? null);
+        $dbh->prepare('INSERT INTO mm_candidates(event_id,cinema_id,tmdb_id,movie_title,poster_path,genres,show_date,show_time,booking_url) VALUES(?,?,?,?,?,?,?,?,?)')->execute([$event['id'], $cinemaId, $tmdbId, $title, $posterPath, json_encode($genres), $date, $time . ':00', $url]);
         respond(['ok' => true], 201);
     }
 

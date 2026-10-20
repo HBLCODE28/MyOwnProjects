@@ -101,6 +101,26 @@ function jsonList(mixed $value): array {
     return is_array($value) ? array_values($value) : [];
 }
 
+function tmdbMovie(string $title): ?array {
+    static $cache = [];
+    $key = textLower($title);
+    if (array_key_exists($key, $cache)) return $cache[$key];
+    $token = envValue('MOVIEMEET_TMDB_TOKEN');
+    if ('' === $token || '' === $title) return $cache[$key] = null;
+    $url = 'https://api.themoviedb.org/3/search/movie?language=he-IL&region=IL&include_adult=false&query=' . rawurlencode($title);
+    $context = stream_context_create(['http' => ['timeout' => 5, 'header' => "Accept: application/json\r\nAuthorization: Bearer $token\r\n"]]);
+    $raw = @file_get_contents($url, false, $context);
+    $results = is_string($raw) ? json_decode($raw, true)['results'] ?? [] : [];
+    foreach ($results as $result) {
+        if (!empty($result['id']) && !empty($result['poster_path'])) return $cache[$key] = ['id' => (int)$result['id'], 'poster_path' => (string)$result['poster_path']];
+    }
+    return $cache[$key] = null;
+}
+
+function tmdbPosterUrl(?string $path): ?string {
+    return is_string($path) && str_starts_with($path, '/') ? 'https://image.tmdb.org/t/p/w342' . $path : null;
+}
+
 function eventByToken(PDO $dbh, string $token): array {
     $stmt = $dbh->prepare('SELECT * FROM mm_events WHERE token=?');
     $stmt->execute([$token]);
