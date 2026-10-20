@@ -1,0 +1,181 @@
+<?php
+declare(strict_types=1);
+$configPath = __DIR__ . '/config.php';
+if (is_file($configPath)) require_once $configPath;
+require_once __DIR__ . '/lib.php';
+
+try {
+    $dbh = db();
+    $action = cleanText($_GET['action'] ?? '', 40);
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+    if ('register' === $action && 'POST' === $method) {
+        $input = body();
+        $name = cleanText($input['name'] ?? '', 80);
+        $email = strtolower(cleanText($input['email'] ?? '', 254));
+        $password = (string)($input['password'] ?? '');
+        if ('' === $name || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8) respond(['error' => 'יש למלא שם, אימייל תקין וסיסמה של 8 תווים לפחות'], 422);
+        $stmt = $dbh->prepare('INSERT INTO mm_users(name,email,password_hash) VALUES(?,?,?)');
+        try { $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]); } catch (PDOException $e) { respond(['error' => 'האימייל כבר רשום'], 409); }
+        $userId = (int)$dbh->lastInsertId();
+        $token = randomToken(32);
+        $dbh->prepare('INSERT INTO mm_sessions(token,user_id,expires_at) VALUES(?,?,DATE_ADD(UTC_TIMESTAMP(), INTERVAL 30 DAY))')->execute([$token, $userId]);
+        respond(['token' => $token, 'user' => ['id' => $userId, 'name' => $name, 'email' => $email]], 201);
+    }
+
+    if ('login' === $action && 'POST' === $method) {
+        $input = body();
+        $email = strtolower(cleanText($input['email'] ?? '', 254));
+        $stmt = $dbh->prepare('SELECT * FROM mm_users WHERE email=?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if (!$user || !password_verify((string)($input['password'] ?? ''), $user['password_hash'])) respond(['error' => 'האימייל או הסיסמה אינם נכונים'], 401);
+        $token = randomToken(32);
+        $dbh->prepare('INSERT INTO mm_sessions(token,user_id,expires_at) VALUES(?,?,DATE_ADD(UTC_TIMESTAMP(), INTERVAL 30 DAY))')->execute([$token, $user['id']]);
+        respond(['token' => $token, 'user' => ['id' => (int)$user['id'], 'name' => $user['name'], 'email' => $user['email']]]);
+    }
+
+    if ('me' === $action) respond(['user' => currentUser($dbh)]);
+
+    if ('cinemas' === $action) {
+        $rows = $dbh->query('SELECT id,network,name,city,booking_url FROM mm_cinemas ORDER BY network,name')->fetchAll();
+        respond(['cinemas' => $rows]);
+    }
+
+    if ('movies' === $action) {
+        $query = cleanText($_GET['q'] ?? '', 80);
+        $token = envValue('MOVIEMEET_TMDB_TOKEN');
+        if (strlen($query) < 2) respond(['movies' => []]);
+        if ('' === $token) respond(['movies' => [], 'notice' => 'יש להגדיר מפתח TMDb בשרת כדי לחפש סרטים']);
+        $url = 'https://api.themoviedb.org/3/search/movie?language=he-IL&include_adult=false&query=' . rawurlencode($query);
+        $context = stream_context_create(['http' => ['header' => "Authorization: Bearer $token\r\nAccept: application/json\r\n", 'timeout' => 8]]);
+        $raw = @file_get_contents($url, false, $context);
+        $data = is_string($raw) ? json_decode($raw, true) : [];
+        $movies = [];
+        foreach (($data['results'] ?? []) as $movie) {
+            $movies[] = ['id' => (int)$movie['id'], 'title' => (string)($movie['title'] ?: $movie['original_title']), 'poster_path' => !empty($movie['poster_path']) ? 'https://image.tmdb.org/t/p/w342' . $movie['poster_path'] : '', 'genre_ids' => array_map('intval', $movie['genre_ids'] ?? [])];
+        }
+        respond(['movies' => $movies]);
+    }
+
+    if ('event-create' === $action && 'POST' === $method) {
+        $user = requireUser($dbh);
+        $input = body();
+        $name = cleanText($input['name'] ?? '', 120);
+        $start = cleanText($input['date_start'] ?? '', 10);
+        $end = cleanText($input['date_end'] ?? '', 10);
+        if ('' === $name || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end) || $end < $start) respond(['error' => 'יש למלא שם וטווח תאריכים תקין'], 422);
+        $token = randomToken(16);
+        $dbh->prepare('INSERT INTO mm_events(token,organizer_id,name,date_start,date_end) VALUES(?,?,?,?,?)')->execute([$token, $user['id'], $name, $start, $end]);
+        respond(['token' => $token], 201);
+    }
+
+    if ('event' === $action) {
+        $token = cleanText($_GET['token'] ?? '', 32);
+        $event = eventByToken($dbh, $token);
+        $user = currentUser($dbh);
+        $participantsStmt = $dbh->prepare('SELECT id,name,city,availability,genres FROM mm_participants WHERE event_id=? ORDER BY created_at');
+        $participantsStmt->execute([$event['id']]);
+        $participants = $participantsStmt->fetchAll();
+        foreach ($participants as &$participant) { $participant['availability'] = jsonList($participant['availability']); $participant['genres'] = jsonList($participant['genres']); }
+        $candidateStmt = $dbh->prepare('SELECT c.*,ci.network,ci.name cinema_name,ci.city cinema_city,ci.latitude,ci.longitude FROM mm_candidates c JOIN mm_cinemas ci ON ci.id=c.cinema_id WHERE c.event_id=? ORDER BY c.show_date,c.show_time');
+        $candidateStmt->execute([$event['id']]);
+        $candidates = $candidateStmt->fetchAll();
+        $myParticipant = participantFor($dbh, (int)$event['id'], $user ? (int)$user['id'] : null);
+        foreach ($candidates as &$candidate) {
+            $candidate['genres'] = jsonList($candidate['genres']);
+            $candidate['score'] = recommendationScore($candidate, $participants);
+            $voteStmt = $dbh->prepare('SELECT SUM(vote=1) yes_votes,SUM(vote=-1) no_votes FROM mm_votes WHERE candidate_id=?');
+            $voteStmt->execute([$candidate['id']]);
+            $candidate['votes'] = $voteStmt->fetch() ?: ['yes_votes' => 0, 'no_votes' => 0];
+            $candidate['my_vote'] = null;
+            if ($myParticipant) { $voteStmt = $dbh->prepare('SELECT vote FROM mm_votes WHERE participant_id=? AND candidate_id=?'); $voteStmt->execute([$myParticipant['id'], $candidate['id']]); $candidate['my_vote'] = $voteStmt->fetchColumn() ?: null; }
+        }
+        usort($candidates, static fn(array $a, array $b): int => $b['score']['total'] <=> $a['score']['total']);
+        respond(['event' => ['token' => $event['token'], 'name' => $event['name'], 'date_start' => $event['date_start'], 'date_end' => $event['date_end'], 'is_organizer' => $user && (int)$user['id'] === (int)$event['organizer_id']], 'participants' => $participants, 'candidates' => $candidates, 'my_participant' => $myParticipant ? (int)$myParticipant['id'] : null]);
+    }
+
+    if ('join' === $action && 'POST' === $method) {
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
+        $input = body();
+        $user = currentUser($dbh);
+        $name = cleanText($input['name'] ?? '', 80);
+        $city = cleanText($input['city'] ?? '', 80);
+        $availability = array_values(array_filter($input['availability'] ?? [], static fn($row): bool => is_array($row) && isset($row['date'], $row['start'], $row['end'])));
+        $genres = array_values(array_filter(array_map(static fn($genre): string => cleanText($genre, 40), $input['genres'] ?? [])));
+        if ('' === $name || '' === $city || !$availability) respond(['error' => 'יש למלא שם, עיר ולפחות חלון זמן אחד'], 422);
+        if ($user) {
+            $stmt = $dbh->prepare('INSERT INTO mm_participants(event_id,user_id,name,city,availability,genres) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name),city=VALUES(city),availability=VALUES(availability),genres=VALUES(genres)');
+            $stmt->execute([$event['id'], $user['id'], $name, $city, json_encode($availability), json_encode($genres)]);
+        } else {
+            $stmt = $dbh->prepare('INSERT INTO mm_participants(event_id,name,city,availability,genres) VALUES(?,?,?,?,?)');
+            $stmt->execute([$event['id'], $name, $city, json_encode($availability), json_encode($genres)]);
+        }
+        respond(['ok' => true]);
+    }
+
+    if ('candidate-create' === $action && 'POST' === $method) {
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
+        $user = requireUser($dbh);
+        if ((int)$event['organizer_id'] !== (int)$user['id']) respond(['error' => 'רק המארגן יכול להוסיף הקרנה'], 403);
+        $input = body();
+        $cinemaId = (int)($input['cinema_id'] ?? 0);
+        $title = cleanText($input['movie_title'] ?? '', 180);
+        $date = cleanText($input['show_date'] ?? '', 10);
+        $time = cleanText($input['show_time'] ?? '', 5);
+        if (!$cinemaId || '' === $title || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !preg_match('/^\d{2}:\d{2}$/', $time) || $date < $event['date_start'] || $date > $event['date_end']) respond(['error' => 'יש למלא קולנוע, סרט ותאריך ושעה בתוך טווח המפגש'], 422);
+        $stmt = $dbh->prepare('SELECT booking_url FROM mm_cinemas WHERE id=?'); $stmt->execute([$cinemaId]); $url = (string)$stmt->fetchColumn();
+        if ('' === $url) respond(['error' => 'הקולנוע לא נמצא'], 404);
+        $genres = array_values(array_filter(array_map(static fn($genre): string => cleanText($genre, 40), $input['genres'] ?? [])));
+        $dbh->prepare('INSERT INTO mm_candidates(event_id,cinema_id,tmdb_id,movie_title,poster_path,genres,show_date,show_time,booking_url) VALUES(?,?,?,?,?,?,?,?,?)')->execute([$event['id'], $cinemaId, (int)($input['tmdb_id'] ?? 0) ?: null, $title, cleanText($input['poster_path'] ?? '', 300) ?: null, json_encode($genres), $date, $time . ':00', $url]);
+        respond(['ok' => true], 201);
+    }
+
+    if ('vote' === $action && 'POST' === $method) {
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
+        $user = requireUser($dbh);
+        $participant = participantFor($dbh, (int)$event['id'], (int)$user['id']);
+        if (!$participant) respond(['error' => 'יש לשמור את ההעדפות לפני הצבעה'], 403);
+        $input = body(); $candidateId = (int)($input['candidate_id'] ?? 0); $vote = (int)($input['vote'] ?? 0);
+        if (!$candidateId || !in_array($vote, [-1, 1], true)) respond(['error' => 'הצבעה לא תקינה'], 422);
+        $check = $dbh->prepare('SELECT 1 FROM mm_candidates WHERE id=? AND event_id=?'); $check->execute([$candidateId, $event['id']]); if (!$check->fetchColumn()) respond(['error' => 'ההצעה לא נמצאה'], 404);
+        $dbh->prepare('INSERT INTO mm_votes(participant_id,candidate_id,vote) VALUES(?,?,?) ON DUPLICATE KEY UPDATE vote=VALUES(vote),created_at=UTC_TIMESTAMP()')->execute([$participant['id'], $candidateId, $vote]);
+        respond(['ok' => true]);
+    }
+
+    if ('seats-checked' === $action && 'POST' === $method) {
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
+        $user = requireUser($dbh);
+        $participant = participantFor($dbh, (int)$event['id'], (int)$user['id']);
+        if (!$participant) respond(['error' => 'יש לשמור את ההעדפות לפני אישור'], 403);
+        $candidateId = (int)(body()['candidate_id'] ?? 0);
+        $dbh->prepare('UPDATE mm_candidates SET seats_checked=1 WHERE id=? AND event_id=?')->execute([$candidateId, $event['id']]);
+        respond(['ok' => true]);
+    }
+
+    respond(['error' => 'הפעולה לא נמצאה'], 404);
+} catch (Throwable $error) {
+    error_log('MovieMeet API error: ' . $error->getMessage());
+    respond(['error' => 'אירעה שגיאת שרת. נסו שוב בעוד רגע.'], 500);
+}
+
+function recommendationScore(array $candidate, array $participants): array {
+    $count = max(1, count($participants));
+    $showAt = $candidate['show_date'] . ' ' . substr($candidate['show_time'], 0, 5);
+    $available = 0; $genrePoints = 0; $travelMinutes = [];
+    foreach ($participants as $participant) {
+        foreach ($participant['availability'] as $window) {
+            if ($window['date'] === $candidate['show_date'] && $window['start'] <= substr($candidate['show_time'], 0, 5) && $window['end'] >= substr($candidate['show_time'], 0, 5)) { $available++; break; }
+        }
+        $likes = array_map('textLower', $participant['genres']);
+        $movieGenres = array_map('textLower', $candidate['genres']);
+        $genrePoints += !$likes ? .5 : (array_intersect($likes, $movieGenres) ? 1 : 0);
+        $origin = cityCoordinates($participant['city']);
+        if ($origin) $travelMinutes[] = travelMinutes($participant['city'], (float)$candidate['latitude'], (float)$candidate['longitude']);
+    }
+    $availability = round(45 * $available / $count);
+    $genres = round(35 * $genrePoints / $count);
+    $maxTravel = $travelMinutes ? max($travelMinutes) : 90;
+    $travel = max(0, round(20 * (1 - min($maxTravel, 120) / 120)));
+    return ['total' => $availability + $genres + $travel, 'availability' => $availability, 'genres' => $genres, 'travel' => $travel, 'max_travel_minutes' => $maxTravel, 'show_at' => $showAt];
+}

@@ -1,0 +1,9 @@
+<?php
+declare(strict_types=1);
+
+putenv('MOVIEMEET_DB_HOST=127.0.0.1');
+putenv('MOVIEMEET_DB_NAME=moviemeet');
+putenv('MOVIEMEET_DB_USER=replace_me');
+putenv('MOVIEMEET_DB_PASS=replace_me');
+putenv('MOVIEMEET_TMDB_TOKEN=');
+putenv('MOVIEMEET_GOOGLE_MAPS_API_KEY=');
