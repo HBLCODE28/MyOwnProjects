@@ -71,7 +71,34 @@ function ensureIndex(PDO $dbh, string $table, string $name, string $columns): vo
     }
 }
 
+function enforceDatabaseStrictMode(PDO $dbh): void {
+    try {
+        $current = (string)$dbh->query('SELECT @@SESSION.sql_mode')->fetchColumn();
+        $modes = array_values(array_filter(array_map(
+            static fn(string $mode): string => strtoupper(trim($mode)),
+            explode(',', $current)
+        )));
+
+        if (!in_array('STRICT_TRANS_TABLES', $modes, true) && !in_array('STRICT_ALL_TABLES', $modes, true)) {
+            $modes[] = 'STRICT_TRANS_TABLES';
+        }
+
+        $modes = array_values(array_unique(array_filter(
+            $modes,
+            static fn(string $mode): bool => (bool)preg_match('/^[A-Z0-9_]+$/', $mode)
+        )));
+        $sqlMode = implode(',', $modes);
+        $dbh->exec('SET SESSION sql_mode = ' . $dbh->quote($sqlMode));
+    } catch (Throwable $e) {
+        error_log('Unable to enable strict SQL mode: ' . $e->getMessage());
+    }
+}
+
 function ensureAdminSchema(PDO $dbh): void {
+    // Apply data-integrity protection to every DB connection passed here, even
+    // when the schema itself was already checked during this request.
+    enforceDatabaseStrictMode($dbh);
+
     static $done = false;
     if ($done) return;
     $done = true;
@@ -90,20 +117,6 @@ function ensureAdminSchema(PDO $dbh): void {
     ensureIndex($dbh, 'users', 'idx_users_role', '`role`');
     ensureIndex($dbh, 'users', 'idx_users_blocked_until', '`blocked_until`');
     ensureIndex($dbh, 'users', 'idx_users_deleted_at', '`deleted_at`');
-
-    // Keep the explicitly configured first administrator active even when the
-    // migration was uploaded after the application files.
-    try {
-        $stmt = $dbh->prepare(
-            "UPDATE users
-                SET role = 'admin'
-              WHERE LOWER(TRIM(email)) = :email
-                AND deleted_at IS NULL"
-        );
-        $stmt->execute([':email' => 'bl.hilalili@gmail.com']);
-    } catch (Throwable $e) {
-        error_log('First administrator role sync failed: ' . $e->getMessage());
-    }
 
     ensureColumn($dbh, 'grocery_items', 'deleted_at', 'DATETIME NULL');
     ensureColumn($dbh, 'grocery_items', 'deleted_by', 'INT UNSIGNED NULL');
@@ -499,6 +512,9 @@ function enforceAdminRateLimit(PDO $dbh, int $adminId, int $maxPerMinute = 180):
         }
     } catch (PDOException $e) {
         error_log('Admin rate limit failed: ' . $e->getMessage());
+        // SECURITY_RATE_LIMIT_FAIL_CLOSED: admin mutations must not continue
+        // when the rate-limit store cannot be verified.
+        jsonError('Admin request protection temporarily unavailable', 503);
     }
 }
 

@@ -27,6 +27,122 @@ function smtpConfigured(): bool {
     return '' !== trim(SMTP_HOST) && '' !== trim(SMTP_USER) && '' !== trim(SMTP_PASS) && '' !== trim(SMTP_FROM_EMAIL);
 }
 
+
+function emailDailySendLimit(): int {
+    if (defined('EMAIL_DAILY_SEND_LIMIT')) {
+        return max(1, (int)constant('EMAIL_DAILY_SEND_LIMIT'));
+    }
+    return 500;
+}
+
+function emailWarningThreshold(): int {
+    if (defined('EMAIL_WARNING_THRESHOLD')) {
+        return max(1, min(emailDailySendLimit(), (int)constant('EMAIL_WARNING_THRESHOLD')));
+    }
+    return min(emailDailySendLimit(), 350);
+}
+
+function emailCriticalThreshold(): int {
+    if (defined('EMAIL_CRITICAL_THRESHOLD')) {
+        return max(emailWarningThreshold(), min(emailDailySendLimit(), (int)constant('EMAIL_CRITICAL_THRESHOLD')));
+    }
+    return min(emailDailySendLimit(), 450);
+}
+
+function ensureEmailDeliveryLogTable(PDO $dbh): void {
+    static $ready = false;
+    if ($ready) return;
+    $dbh->exec(
+        "CREATE TABLE IF NOT EXISTS email_delivery_log (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            status ENUM('sent','failed') NOT NULL,
+            recipient_hash CHAR(64) NOT NULL,
+            recipient_domain VARCHAR(190) NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_email_delivery_created_status (created_at, status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+    $ready = true;
+}
+
+function recordEmailDelivery(string $recipient, bool $success): void {
+    try {
+        $dbh = getDb();
+        ensureEmailDeliveryLogTable($dbh);
+        $normalized = strtolower(trim($recipient));
+        $at = strrpos($normalized, '@');
+        $domain = false === $at ? null : substr($normalized, $at + 1);
+        $stmt = $dbh->prepare(
+            'INSERT INTO email_delivery_log (status, recipient_hash, recipient_domain)
+             VALUES (:status, :recipient_hash, :recipient_domain)'
+        );
+        $stmt->execute([
+            ':status' => $success ? 'sent' : 'failed',
+            ':recipient_hash' => hash('sha256', $normalized),
+            ':recipient_domain' => $domain,
+        ]);
+
+        if (1 === random_int(1, 100)) {
+            $dbh->exec("DELETE FROM email_delivery_log WHERE created_at < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)");
+        }
+    } catch (Throwable $e) {
+        error_log('Email delivery logging failed: ' . $e->getMessage());
+    }
+}
+
+function emailUsageSummary(PDO $dbh): array {
+    $limit = emailDailySendLimit();
+    $warning = emailWarningThreshold();
+    $critical = emailCriticalThreshold();
+    $summary = [
+        'available' => true,
+        'window_hours' => 24,
+        'sent_24h' => 0,
+        'failed_24h' => 0,
+        'limit' => $limit,
+        'warning_threshold' => $warning,
+        'critical_threshold' => $critical,
+        'remaining' => $limit,
+        'percent' => 0,
+        'level' => 'normal',
+        'tracking_started_at' => null,
+        'last_sent_at' => null,
+    ];
+
+    try {
+        ensureEmailDeliveryLogTable($dbh);
+        $row = $dbh->query(
+            "SELECT
+                COALESCE(SUM(CASE WHEN status = 'sent' AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END), 0) AS sent_24h,
+                COALESCE(SUM(CASE WHEN status = 'failed' AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END), 0) AS failed_24h,
+                MIN(created_at) AS tracking_started_at,
+                MAX(CASE WHEN status = 'sent' THEN created_at ELSE NULL END) AS last_sent_at
+             FROM email_delivery_log"
+        )->fetch();
+        if ($row) {
+            $summary['sent_24h'] = (int)($row['sent_24h'] ?? 0);
+            $summary['failed_24h'] = (int)($row['failed_24h'] ?? 0);
+            $summary['tracking_started_at'] = $row['tracking_started_at'] ?: null;
+            $summary['last_sent_at'] = $row['last_sent_at'] ?: null;
+        }
+    } catch (Throwable $e) {
+        error_log('Email usage summary failed: ' . $e->getMessage());
+        $summary['available'] = false;
+        return $summary;
+    }
+
+    $sent = (int)$summary['sent_24h'];
+    $summary['remaining'] = max(0, $limit - $sent);
+    $summary['percent'] = min(100, (int)round(($sent / max(1, $limit)) * 100));
+    if ($sent >= $critical) {
+        $summary['level'] = 'critical';
+    } elseif ($sent >= $warning) {
+        $summary['level'] = 'warning';
+    }
+    return $summary;
+}
+
 function mailFromAddress(): string {
     if ('' !== trim(SMTP_FROM_EMAIL)) {
         return trim(SMTP_FROM_EMAIL);
@@ -232,7 +348,9 @@ function sendAppEmail(string $to, string $subject, string $textBody, string $htm
     }
 
     if (smtpConfigured()) {
-        return smtpSendMessage($to, $subject, $textBody, $htmlBody);
+        $sent = smtpSendMessage($to, $subject, $textBody, $htmlBody);
+        recordEmailDelivery($to, $sent);
+        return $sent;
     }
 
     error_log('SMTP is not configured');

@@ -7,6 +7,14 @@ const POLL_MS   = 5000;
 
 
 const TABLER_SPRITE_URL = '/img/tabler-icons.svg';
+const KITCHEN_AREAS = [
+    { code: 'fridge_inside', he: 'פנים המקרר', en: 'Inside the fridge' },
+    { code: 'fridge_door', he: 'דלת המקרר', en: 'Fridge door' },
+    { code: 'vegetable_drawers', he: 'מגירות הירקות', en: 'Vegetable drawers' },
+    { code: 'freezer', he: 'המקפיא', en: 'Freezer' },
+    { code: 'pantry', he: 'המזווה', en: 'Pantry' }
+];
+let pendingKitchenArea = null;
 
 function tablerIcon(name, className = 'tabler-icon') {
     const safeName = String(name || '').replace(/[^a-z0-9-]/gi, '');
@@ -90,6 +98,7 @@ function applyMainLanguage() {
     $('#btnShowLogin').text(text.loginLink);
     $('#btnProfile, #btnHomeProfileLabel, #mobileMenuProfile span:last-child').text(text.profile);
     $('#btnLogout, #mobileMenuLogout span:last-child').text(text.logout);
+    $('#btnGroupsLogout span').text(uiText('יציאה מהחשבון', 'Sign out of account'));
     $('#mobileMenuLeave span:last-child').text(text.leaveGroup);
     $('#mobileMenuBack span:last-child').text(text.backToGroups);
     $('#btnRenameGroup').text(text.rename);
@@ -105,8 +114,11 @@ function applyMainLanguage() {
     $('#addItemForm .add-btn').text(text.addItem).attr('aria-label', text.addItem);
     $('.nav-btn[data-tab="items"] span:last-child').text(text.list);
     $('.nav-btn[data-tab="activity"] span:last-child').text(text.history);
+    $('.nav-btn[data-tab="kitchen"] span:last-child').text(uiText('מצב מטבח', 'Kitchen status'));
     $('.nav-btn[data-tab="members"] span:last-child').text(text.members);
     $('.nav-btn[data-tab="share"] span:last-child').text(text.share);
+    $('.staple-toggle span').text(uiText('מוצר ברזל', 'Staple item'));
+    $('#newItemStaple').attr('aria-label', uiText('מוצר ברזל; הסימון מתאפס אחרי יום', 'Staple item; completion resets after one day'));
     $('#btnLanguage').attr({
         'aria-label': currentLanguage === 'he' ? 'Switch to English' : 'מעבר לעברית',
         title: currentLanguage === 'he' ? 'English' : 'עברית'
@@ -232,7 +244,9 @@ function loadCurrentProfile() {
 
 let currentGroupId        = null;
 let currentGroupCanRename = false;
+let currentGroupName      = '';
 let currentUserId         = null;
+let itemsLoadRequestId    = 0;
 let currentUsername       = '';
 let currentUserEmail      = '';
 let currentUserRole       = 'user';
@@ -259,6 +273,10 @@ let reportContext             = null;
 let notificationsPanelOpen = false;
 let profilePasswordResetToken = '';
 let profilePasswordCodeSent = false;
+let kitchenCameraStream = null;
+let shareChoiceReturnFocus = null;
+let joinQrCameraStream = null;
+let joinQrScanFrame = null;
 const shareLinkCache = new Map();
 const shareLinkRequests = new Map();
 
@@ -324,6 +342,9 @@ $(document).on('keydown', event => {
         hideExistingItemSheet();
         hideStyledAlert();
         hideImagePreview();
+        hideKitchenCamera();
+        hideShareChoice();
+        hideJoinQrScanner();
         hideProfileModal();
         hideCommentsModal();
         hideItemActionsModal();
@@ -359,6 +380,7 @@ function hideImagePreview() {
     if (!$modal.length || $modal.hasClass('hidden')) return;
 
     $modal.addClass('hidden');
+    $modal.removeClass('kitchen-image-preview');
     $('#imagePreviewImage').attr('src', '').attr('alt', '');
     $('body').removeClass('image-preview-open');
 
@@ -813,7 +835,9 @@ function openItemActionsModal(context, trigger) {
     $('#itemActionCommentsText').text(commentCount > 0 ? uiText('הצג הערות', 'View comments') : uiText('הוסף הערה', 'Add comment'));
     $('#itemActionCommentsCount').text(commentCount).toggleClass('hidden', commentCount < 1);
     $('#itemActionImageText').text(itemActionsContext.hasImage ? uiText('החלף תמונה', 'Replace image') : uiText('הוסף תמונה', 'Add image'));
-    $('#btnItemActionDelete').toggleClass('hidden', !itemActionsContext.canDelete);
+    const isStaple = !!itemActionsContext.isStaple;
+    $('#btnItemActionDelete').toggleClass('hidden', !itemActionsContext.canDelete || (isStaple && !currentGroupCanRename));
+    $('#btnItemActionStapleInfo').toggleClass('hidden', !isStaple);
     $('#itemActionsModal').removeClass('hidden');
     $('body').addClass('item-actions-modal-open');
     $('#itemActionsClose').trigger('focus');
@@ -866,6 +890,16 @@ $('#btnItemActionDelete').on('click', () => {
     hideItemActionsModal(false);
     itemActionsReturnFocus = null;
     deleteItem(context.id, context.actionName);
+});
+$('#btnItemActionStapleInfo').on('click', () => {
+    const context = itemActionsContext;
+    if (!context || !context.isStaple) return;
+    hideItemActionsModal(false);
+    itemActionsReturnFocus = null;
+    showStyledAlert(
+        uiText('מוצר ברזל נשאר תמיד ברשימה. אפשר לסמן אותו, והסימון יתאפס אוטומטית אחרי יום.', 'A staple item always stays on the list. You can mark it, and the mark resets automatically after one day.'),
+        uiText('הסבר על מוצר ברזל', 'About staple items')
+    );
 });
 
 function closeMobileGroupMenu() {
@@ -1339,6 +1373,8 @@ $('#btnLogout').on('click', () => {
     showScreen('screenAuth');
 });
 
+$('#btnGroupsLogout').on('click', () => $('#btnLogout').trigger('click'));
+
 function authErr(message) {
     $('#authError').text(message).removeClass('hidden');
 }
@@ -1458,9 +1494,12 @@ $('#btnCreateGroup').on('click', () => {
 });
 
 $('#btnJoinGroup').on('click', () => {
-    const raw = $('#joinInviteLink').val().trim();
-    if (!raw) return;
+    joinFromInviteValue($('#joinInviteLink').val(), () => $('#joinInviteLink').val(''));
+});
 
+function joinFromInviteValue(value, onSuccess) {
+    const raw = String(value || '').trim();
+    if (!raw) return false;
     let token = raw;
     try {
         const url = new URL(raw);
@@ -1469,15 +1508,117 @@ $('#btnJoinGroup').on('click', () => {
         // The input may be a token instead of a complete URL.
     }
 
-    if (!/^[0-9a-zA-Z]{10}$/.test(token)) return alert(uiText('קישור לא תקין', 'Invalid link'));
+    if (!/^[0-9a-f]{64}$/i.test(token)) {
+        alert(uiText('קישור לא תקין', 'Invalid link'));
+        return false;
+    }
 
+    redeemInviteToken(token, onSuccess);
+    return true;
+}
+
+function hideJoinQrScanner() {
+    if (joinQrScanFrame) cancelAnimationFrame(joinQrScanFrame);
+    joinQrScanFrame = null;
+    if (joinQrCameraStream) joinQrCameraStream.getTracks().forEach(track => track.stop());
+    joinQrCameraStream = null;
+    const video = $('#joinQrVideo').get(0);
+    if (video) video.srcObject = null;
+    $('#joinQrModal').addClass('hidden');
+    if ($('#kitchenCameraModal').hasClass('hidden') && $('#shareChoiceModal').hasClass('hidden')) $('body').removeClass('report-modal-open');
+}
+
+function openJoinQrScanner() {
+    $('#joinQrModal').removeClass('hidden');
+    $('body').addClass('report-modal-open');
+    if (!window.isSecureContext) {
+        $('#joinQrStatus').text(uiText('הסריקה דורשת חיבור מאובטח (HTTPS). אפשר להדביק קישור במקום זאת.', 'Scanning requires HTTPS. You can paste a link instead.'));
+        return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof window.jsQR !== 'function') {
+        $('#joinQrStatus').text(uiText('סריקת QR אינה זמינה כרגע. אפשר להדביק קישור במקום זאת.', 'QR scanning is currently unavailable. You can paste a link instead.'));
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+        .then(stream => {
+            joinQrCameraStream = stream;
+            const video = $('#joinQrVideo').get(0);
+            video.srcObject = stream;
+            return video.play();
+        })
+        .then(() => {
+            $('#joinQrStatus').text(uiText('כוונו את קוד ה-QR למרכז המסך.', 'Point the QR code at the center of the screen.'));
+            let nativeDetector = null;
+            if ('BarcodeDetector' in window) {
+                try { nativeDetector = new BarcodeDetector({ formats: ['qr_code'] }); } catch (error) { nativeDetector = null; }
+            }
+            const scan = async () => {
+                if (!joinQrCameraStream) return;
+                const video = $('#joinQrVideo').get(0);
+                const canvas = $('#joinQrCanvas').get(0);
+                if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+                    joinQrScanFrame = requestAnimationFrame(scan);
+                    return;
+                }
+                let value = '';
+                try {
+                    if (nativeDetector) {
+                        const codes = await nativeDetector.detect(video);
+                        value = codes && codes[0] ? String(codes[0].rawValue || '') : '';
+                    }
+                    if (!value) {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        const context = canvas.getContext('2d', { willReadFrequently: true });
+                        const image = context.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = window.jsQR(image.data, image.width, image.height, { inversionAttempts: 'attemptBoth' });
+                        value = code ? String(code.data || '') : '';
+                    }
+                } catch (error) {
+                    value = '';
+                }
+                if (!value || !joinFromInviteValue(value, () => $('#joinInviteLink').val(''))) {
+                    joinQrScanFrame = requestAnimationFrame(scan);
+                    return;
+                }
+                hideJoinQrScanner();
+            };
+            scan();
+        })
+        .catch(() => $('#joinQrStatus').text(uiText('לא התקבלה הרשאה למצלמה. אפשר להדביק קישור במקום זאת.', 'Camera permission was not granted. You can paste a link instead.')));
+}
+
+$('#btnScanJoinQr').on('click', openJoinQrScanner);
+$('#joinQrClose').on('click', hideJoinQrScanner);
+$('#joinQrModal').on('click', event => {
+    if (event.target && event.target.id === 'joinQrModal') hideJoinQrScanner();
+});
+
+function showJoinPending(groupName) {
+    stopPoll();
+    $('#appHeader, #bottomNav, #btnNotifications').addClass('hidden');
+    $('#joinPendingText').text(uiText(
+        `בקשת ההצטרפות לקבוצה "${groupName || ''}" נשלחה. אפשר להיכנס לאחר שהמנהל יאשר אותה.`,
+        `Your request to join "${groupName || ''}" was sent. You can enter after the manager approves it.`
+    ));
+    showScreen('screenJoinPending');
+}
+
+function redeemInviteToken(token, onSuccess) {
     apiCall('GET', `/invite/join?t=${encodeURIComponent(token)}`)
         .done(group => {
-            $('#joinInviteLink').val('');
+            if (typeof onSuccess === 'function') onSuccess();
+            if (group && group.status === 'pending') {
+                showJoinPending(group.name);
+                return;
+            }
             showItems(group.id, group.name, !!group.can_rename);
         })
         .fail(xhr => alert(apiErr(xhr)));
-});
+}
+
+$('#btnPendingBack').on('click', loadGroups);
 
 $('#btnDeleteGroup').on('click', () => {
     if (!currentGroupId || !currentGroupCanRename) return;
@@ -1516,6 +1657,7 @@ $('#btnLeaveGroup').on('click', () => {
 function showItems(groupId, groupName, canRename = false) {
     currentGroupId = Number(groupId);
     currentGroupCanRename = !!canRename;
+    currentGroupName = String(groupName || '').trim();
     hideExistingItemSheet();
     sessionStorage.setItem('last_group', JSON.stringify({
         id: currentGroupId,
@@ -1546,6 +1688,7 @@ $('#btnBack').on('click', () => {
     stopPoll();
     currentGroupId = null;
     currentGroupCanRename = false;
+    currentGroupName = '';
     hideExistingItemSheet();
     updateMemberCount(0);
     sessionStorage.removeItem('last_group');
@@ -1616,14 +1759,19 @@ $(window).on('resize', updateAdminDashboardButton);
 
 function loadItems() {
     if (!currentGroupId) return;
-    apiCall('GET', `/items?group_id=${currentGroupId}`)
+    const requestedGroupId = currentGroupId;
+    const requestId = ++itemsLoadRequestId;
+
+    apiCall('GET', `/items?group_id=${requestedGroupId}`)
         .done(response => {
+            if (requestedGroupId !== currentGroupId || requestId !== itemsLoadRequestId) return;
             const items = Array.isArray(response) ? response : response.items;
             if (!Array.isArray(response) && response.server_now) syncServerClock(response.server_now);
             if (!Array.isArray(response) && Array.isArray(response.suggestions)) renderSuggestions(response.suggestions);
             renderItems(items || []);
         })
         .fail(xhr => {
+            if (requestedGroupId !== currentGroupId || requestId !== itemsLoadRequestId) return;
             $('#itemList').empty();
             $('#emptyState').removeClass('hidden').text(uiText('לא ניתן לטעון את הרשימה כרגע', 'The list cannot be loaded right now'));
             alert(apiErr(xhr));
@@ -1643,6 +1791,7 @@ function resetNewItemComposer() {
     $('#newItemName').val('');
     $('#newItemQty').val(1);
     $('#newItemImage').val('');
+    $('#newItemStaple').prop('checked', false);
     pendingNewItemImage = null;
     renderNewItemImageButton(false);
 }
@@ -1657,7 +1806,8 @@ function renderItems(items) {
 function buildRow(item) {
     const isDone = !!Number(item.is_completed);
     const isCreator = Number(currentUserId) === Number(item.created_by);
-    const canDelete = isCreator || currentGroupCanRename;
+    const isStaple = !!Number(item.is_staple);
+    const canDelete = isStaple ? currentGroupCanRename : (isCreator || currentGroupCanRename);
     const myContributionQty = Math.max(0, Number(item.my_contribution_qty) || 0);
     const totalLimit = Math.max(0, Number(item.total_limit) || 10);
     const totalRemaining = Math.max(0, Number(item.total_remaining) || Math.max(0, totalLimit - Number(item.quantity || 0)));
@@ -1707,6 +1857,7 @@ function buildRow(item) {
                 commentCount,
                 hasImage: !!imagePath,
                 isCreator,
+                isStaple,
                 canDelete
             }, this);
         });
@@ -1764,7 +1915,8 @@ function buildRow(item) {
         .toggleClass('image-only', isImageOnly);
     if (rawItemName) {
         $nameAndActions.append(
-            $('<div class="item-name">').text(rawItemName).toggleClass('done', isDone)
+            $('<div class="item-name">').text(rawItemName).toggleClass('done', isDone),
+            isStaple ? $('<span class="staple-badge">').text(uiText('מוצר ברזל', 'Staple')) : null
         );
     }
     if (rawItemName) $titleWrap.append($nameAndActions);
@@ -1779,6 +1931,7 @@ function buildRow(item) {
     const $row = $('<li class="item-row">')
         .attr('data-item-id', item.id)
         .toggleClass('image-only', isImageOnly)
+        .toggleClass('staple-item', isStaple)
         .append($check, $itemActions, $body, $qtyControl);
     return $row;
 }
@@ -1787,6 +1940,7 @@ $('#addItemForm').on('submit', event => {
     event.preventDefault();
     const name = $('#newItemName').val().trim();
     const quantity = parseInt($('#newItemQty').val(), 10) || 1;
+    const isStaple = $('#newItemStaple').is(':checked');
     const imageFile = pendingNewItemImage || ($('#newItemImage')[0] && $('#newItemImage')[0].files ? $('#newItemImage')[0].files[0] : null);
 
     if (!name && !imageFile) {
@@ -1799,6 +1953,7 @@ $('#addItemForm').on('submit', event => {
         formData.append('group_id', String(currentGroupId));
         formData.append('name', name);
         formData.append('quantity', String(quantity));
+        formData.append('is_staple', isStaple ? '1' : '0');
         formData.append('image', imageFile);
 
         apiUpload('POST', '/items', formData)
@@ -1812,7 +1967,7 @@ $('#addItemForm').on('submit', event => {
         return;
     }
 
-    apiCall('POST', '/items', { group_id: currentGroupId, name, quantity })
+    apiCall('POST', '/items', { group_id: currentGroupId, name, quantity, is_staple: isStaple })
         .done(() => {
             resetNewItemComposer();
             loadItems();
@@ -2185,6 +2340,7 @@ function loadMembers() {
                 }
             }
 
+            renderMemberJoinRequests(Array.isArray(response.join_requests) ? response.join_requests : []);
             renderMembers(members);
         })
         .fail(xhr => alert(apiErr(xhr)));
@@ -2229,6 +2385,29 @@ function renderMembers(members) {
 
         if ($actions.children().length) $row.append($actions);
         $list.append($row);
+    });
+}
+
+function renderMemberJoinRequests(requests) {
+    const canManage = currentGroupCanRename;
+    const $section = $('#memberJoinRequests').toggleClass('hidden', !canManage || !requests.length);
+    if (!canManage || !requests.length) return;
+    const $list = $('#memberJoinRequestList').empty();
+    $('#memberJoinRequestCount').text(requests.length);
+    $('#memberJoinRequestsEmpty').toggleClass('hidden', requests.length > 0);
+    requests.forEach(request => {
+        $list.append(
+            $('<li class="group-admin-row">').append(
+                $('<div class="group-admin-row-copy">').append(
+                    $('<strong>').text(request.username || uiText('משתמש/ת', 'User')),
+                    $('<span>').text(uiText('ממתין/ה לאישור', 'Waiting for approval'))
+                ),
+                $('<div class="group-admin-request-actions">').append(
+                    $('<button type="button" class="group-admin-approve">').text(uiText('אשר', 'Approve')).on('click', () => resolveJoinRequest(request.id, 'approve')),
+                    $('<button type="button" class="group-admin-reject">').text(uiText('דחה', 'Reject')).on('click', () => resolveJoinRequest(request.id, 'reject'))
+                )
+            )
+        );
     });
 }
 
@@ -2295,6 +2474,13 @@ function loadGroupManagement() {
                 closeGroupManagement();
             }
         });
+}
+
+function resolveJoinRequest(requestId, action) {
+    if (!currentGroupId || !currentGroupCanRename) return;
+    apiCall('POST', `/groups/${currentGroupId}/join-requests`, { request_id: requestId, action })
+        .done(loadMembers)
+        .fail(xhr => alert(apiErr(xhr)));
 }
 
 function renderGroupAdminMembers(members) {
@@ -2516,18 +2702,255 @@ $('#btnCopyLink').on('click', () => {
 
 $('#btnShareClose').on('click', () => $('#shareBanner').addClass('hidden'));
 
-function copyGroupShareLink(groupId) {
+function hideShareChoice() {
+    const $modal = $('#shareChoiceModal');
+    if (!$modal.length || $modal.hasClass('hidden')) return;
+    $modal.addClass('hidden');
+    $('#shareChoiceOptions').removeClass('hidden');
+    $('#shareLinkPanel, #shareQrPanel, #shareChoiceStatus').addClass('hidden');
+    $('#shareQrCode').empty();
+    if ($('#kitchenCameraModal').hasClass('hidden')) $('body').removeClass('report-modal-open');
+    if (shareChoiceReturnFocus && document.contains(shareChoiceReturnFocus)) shareChoiceReturnFocus.focus();
+    shareChoiceReturnFocus = null;
+}
+
+function showShareChoicePanel(mode) {
+    $('#shareChoiceOptions').addClass('hidden');
+    $('#shareLinkPanel, #shareQrPanel, #shareChoiceStatus').addClass('hidden');
+    const groupName = currentGroupName || uiText('הקבוצה שלי', 'my group');
+    $('#shareChoiceStatus').text('');
+    requestShareLink(currentGroupId)
+        .then(url => {
+            if (mode === 'link') {
+                const message = uiText(`תצטרפו לרשימת הסופר שלי בקבוצה "${groupName}"!\n${url}`, `Join my shopping list in the "${groupName}" group!\n${url}`);
+                $('#shareInviteMessage').text(message).data('message', message);
+                $('#shareLinkPanel').removeClass('hidden');
+                $('#btnCopyInviteMessage').trigger('focus');
+                return;
+            }
+            const $qr = $('#shareQrCode').empty();
+            if (typeof QRCode !== 'function') throw new Error('QR code generator unavailable');
+            new QRCode($qr[0], { text: url, width: 232, height: 232, correctLevel: QRCode.CorrectLevel.M });
+            $('#shareQrPanel').removeClass('hidden');
+        })
+        .catch(xhr => $('#shareChoiceStatus').text(apiErr(xhr)).removeClass('hidden'));
+}
+
+function openShareChoice(groupId, trigger) {
     const key = Number(groupId);
     if (!key) {
         showStyledAlert(uiText('לא נמצאה קבוצה לשיתוף', 'No group was found to share'), uiText('שיתוף', 'Share'));
         return;
     }
-
+    shareChoiceReturnFocus = trigger || document.activeElement;
     $('#shareBanner').addClass('hidden');
-    requestShareLink(key)
-        .then(url => copyTextToClipboard(url))
-        .then(() => showStyledAlert(uiText('הקישור הועתק ללוח', 'The link was copied to the clipboard'), uiText('שיתוף', 'Share'), 'success'))
-        .catch(xhr => showStyledAlert(uiText(`לא ניתן להעתיק את הקישור: ${apiErr(xhr)}`, `Could not copy the link: ${apiErr(xhr)}`), uiText('שיתוף', 'Share')));
+    $('#shareChoiceModal').removeClass('hidden');
+    $('body').addClass('report-modal-open');
+    $('#shareChoiceOptions').removeClass('hidden');
+    $('#shareLinkPanel, #shareQrPanel, #shareChoiceStatus').addClass('hidden');
+    $('#shareQrCode').empty();
+    $('#btnShareLinkMode').trigger('focus');
+}
+
+$('#shareChoiceClose').on('click', hideShareChoice);
+$('#shareChoiceModal').on('click', event => {
+    if (event.target && event.target.id === 'shareChoiceModal') hideShareChoice();
+});
+$('#btnShareLinkMode').on('click', () => showShareChoicePanel('link'));
+$('#btnShareQrMode').on('click', () => showShareChoicePanel('qr'));
+$('#btnCopyInviteMessage').on('click', () => {
+    const message = String($('#shareInviteMessage').data('message') || '');
+    if (!message) return;
+    copyTextToClipboard(message)
+        .then(() => $('#btnCopyInviteMessage').text(uiText('הועתק', 'Copied')))
+        .catch(() => alert(uiText('לא ניתן להעתיק אוטומטית. אפשר לסמן ולהעתיק את הטקסט.', 'Automatic copying was blocked. Select and copy the text manually.')));
+});
+
+function kitchenAreaName(area) {
+    return uiText(area.he, area.en);
+}
+
+function kitchenPhotoState(photo) {
+    if (!photo || !photo.image_path) {
+        return { key: 'missing', text: uiText('טרם צולם', 'Not photographed yet') };
+    }
+    const ageSeconds = Math.max(0, Math.floor(Date.now() / 1000) - Number(photo.updated_ts || 0));
+    if (ageSeconds <= 86400) return { key: 'fresh', text: uiText('עדכני', 'Up to date') };
+    if (ageSeconds <= 259200) return { key: 'check', text: uiText('כדאי לבדוק', 'Check soon') };
+    return { key: 'stale', text: uiText('דורש עדכון', 'Needs an update') };
+}
+
+function showKitchenImage(photo, area, trigger) {
+    showImagePreview(photo.image_path, kitchenAreaName(area), trigger);
+    $('#imagePreviewModal').addClass('kitchen-image-preview');
+}
+
+function renderKitchenAreas(rows) {
+    const photos = new Map((Array.isArray(rows) ? rows : []).map(photo => [photo.area_code, photo]));
+    const $list = $('#kitchenAreaList').empty();
+    let needsUpdate = 0;
+
+    KITCHEN_AREAS.forEach(area => {
+        const photo = photos.get(area.code);
+        const state = kitchenPhotoState(photo);
+        if (state.key !== 'fresh') needsUpdate += 1;
+        const areaName = kitchenAreaName(area);
+        const $card = $('<article class="kitchen-area-card">').addClass(`kitchen-state-${state.key}`);
+        const $head = $('<div class="kitchen-area-head">').append(
+            $('<h3>').text(areaName),
+            $('<span class="kitchen-area-state">').text(state.text)
+        );
+        const $body = $('<div class="kitchen-area-body">');
+
+        if (photo && photo.image_path) {
+            const $image = $('<img class="kitchen-area-image">').attr({
+                src: photo.image_path,
+                alt: uiText(`תמונת מצב של ${areaName}`, `Status photo of ${areaName}`)
+            });
+            $('<button type="button" class="kitchen-image-button">')
+                .attr('aria-label', uiText(`פתח תמונה במסך מלא: ${areaName}`, `Open ${areaName} image full screen`))
+                .append($image)
+                .on('click', function () { showKitchenImage(photo, area, this); })
+                .appendTo($body);
+            $body.append($('<p class="kitchen-area-meta">').text(uiText(`עודכן על ידי ${photo.updated_by || 'חבר קבוצה'}`, `Updated by ${photo.updated_by || 'group member'}`)));
+            if (photo.previous_image_path && photo.previous_image_expires_at) {
+                $('<button type="button" class="btn-ghost kitchen-restore-btn">')
+                    .text(uiText('שחזר תמונה קודמת', 'Restore previous image'))
+                    .on('click', () => restoreKitchenImage(area.code))
+                    .appendTo($body);
+                $body.append($('<p class="kitchen-previous-note">').text(uiText('התמונה הקודמת זמינה לשחזור עד מחר.', 'The previous image can be restored for 24 hours.')));
+            }
+        } else {
+            $body.append($('<p class="kitchen-empty-area">').text(uiText('עדיין אין תמונה לאזור הזה.', 'There is no photo for this area yet.')));
+        }
+
+        $('<button type="button" class="btn-primary kitchen-update-btn">')
+            .text(uiText(`עדכן את ${areaName}`, `Update ${areaName}`))
+            .on('click', () => chooseKitchenImage(area.code))
+            .appendTo($body);
+        $card.append($head, $body).appendTo($list);
+    });
+
+    $('#kitchenStatus').text(needsUpdate
+        ? uiText(`${needsUpdate} אזורים מחכים לעדכון או בדיקה.`, `${needsUpdate} areas need an update or check.`)
+        : uiText('כל אזורי המטבח עדכניים.', 'All kitchen areas are up to date.'));
+}
+
+function loadKitchen() {
+    if (!currentGroupId) return;
+    $('#kitchenStatus').text(uiText('טוען את מצב המטבח…', 'Loading kitchen status…'));
+    apiCall('GET', `/kitchen?group_id=${currentGroupId}`)
+        .done(response => {
+            if (response && response.server_now) syncServerClock(response.server_now);
+            renderKitchenAreas(response && response.areas);
+        })
+        .fail(xhr => $('#kitchenStatus').text(apiErr(xhr)));
+}
+
+function chooseKitchenImage(areaCode) {
+    pendingKitchenArea = areaCode;
+    const area = KITCHEN_AREAS.find(entry => entry.code === areaCode);
+    $('#kitchenCameraTitle').text(uiText(`עדכן את ${kitchenAreaName(area)}`, `Update ${kitchenAreaName(area)}`));
+    $('#kitchenCameraStatus').text(uiText('מאשרים גישה למצלמה כדי לצלם תמונה חדשה.', 'Allow camera access to take a new photo.'));
+    $('#kitchenCameraModal').removeClass('hidden');
+    $('body').addClass('report-modal-open');
+
+    startKitchenCamera().catch(() => {});
+}
+
+function startKitchenCamera() {
+    if (kitchenCameraStream) return Promise.resolve($('#kitchenCameraVideo').get(0));
+    if (!window.isSecureContext) {
+        $('#kitchenCameraStatus').text(uiText('המצלמה דורשת חיבור מאובטח (HTTPS). פתחו את האתר דרך https כדי לקבל בקשת הרשאה.', 'Camera access requires HTTPS. Open the site through https to receive the permission prompt.'));
+        return Promise.reject(new Error('HTTPS required'));
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        $('#kitchenCameraStatus').text(uiText('המצלמה אינה זמינה בדפדפן הזה. אפשר לבחור תמונה מהמכשיר.', 'Camera is unavailable in this browser. You can choose an image from the device.'));
+        return Promise.reject(new Error('Camera unavailable'));
+    }
+
+    return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+        .then(stream => {
+            kitchenCameraStream = stream;
+            const video = $('#kitchenCameraVideo').get(0);
+            video.srcObject = stream;
+            return video.play().then(() => video);
+        })
+        .then(video => {
+            $('#kitchenCameraStatus').text(uiText('המצלמה מוכנה. צלמו את האזור כולו.', 'Camera is ready. Capture the whole area.'));
+            return video;
+        })
+        .catch(error => {
+            $('#kitchenCameraStatus').text(uiText('לא התקבלה הרשאה למצלמה. אפשר לבחור תמונה מהמכשיר.', 'Camera permission was not granted. You can choose an image from the device.'));
+            throw error;
+        });
+}
+
+function hideKitchenCamera() {
+    if (kitchenCameraStream) {
+        kitchenCameraStream.getTracks().forEach(track => track.stop());
+        kitchenCameraStream = null;
+    }
+    const video = $('#kitchenCameraVideo').get(0);
+    if (video) video.srcObject = null;
+    $('#kitchenCameraModal').addClass('hidden');
+    if ($('#shareChoiceModal').hasClass('hidden')) $('body').removeClass('report-modal-open');
+}
+
+function uploadKitchenImage(file, areaCode) {
+    if (!file || !areaCode || !currentGroupId) return;
+    const formData = new FormData();
+    formData.append('group_id', String(currentGroupId));
+    formData.append('area', areaCode);
+    formData.append('image', file, file.name || 'kitchen-photo.jpg');
+    hideKitchenCamera();
+    $('#kitchenStatus').text(uiText('מעלה תמונה…', 'Uploading image…'));
+    apiUpload('POST', '/kitchen', formData)
+        .done(() => loadKitchen())
+        .fail(xhr => $('#kitchenStatus').text(apiErr(xhr)));
+}
+
+$('#kitchenCameraClose').on('click', hideKitchenCamera);
+$('#kitchenCameraModal').on('click', event => {
+    if (event.target && event.target.id === 'kitchenCameraModal') hideKitchenCamera();
+});
+$('#btnKitchenChooseImage').on('click', () => $('#kitchenImageInput').val('').trigger('click'));
+function captureKitchenPhoto() {
+    const video = $('#kitchenCameraVideo').get(0);
+    const canvas = $('#kitchenCameraCanvas').get(0);
+    if (!video || !canvas || !video.videoWidth || !pendingKitchenArea) {
+        $('#kitchenCameraStatus').text(uiText('מפעילים את המצלמה…', 'Starting the camera…'));
+        startKitchenCamera().then(() => setTimeout(captureKitchenPhoto, 150)).catch(() => {});
+        return;
+    }
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    const areaCode = pendingKitchenArea;
+    pendingKitchenArea = null;
+    canvas.toBlob(blob => {
+        if (!blob) {
+            $('#kitchenCameraStatus').text(uiText('לא ניתן ליצור את התמונה. נסו שוב או בחרו תמונה מהמכשיר.', 'The photo could not be created. Try again or choose an image from the device.'));
+            return;
+        }
+        uploadKitchenImage(new File([blob], 'kitchen-photo.jpg', { type: 'image/jpeg' }), areaCode);
+    }, 'image/jpeg', .9);
+}
+
+$('#btnKitchenCameraCapture').on('click', captureKitchenPhoto);
+
+$('#kitchenImageInput').on('change', function () {
+    const file = this.files && this.files[0];
+    const areaCode = pendingKitchenArea;
+    pendingKitchenArea = null;
+    uploadKitchenImage(file, areaCode);
+});
+
+function restoreKitchenImage(areaCode) {
+    if (!currentGroupId) return;
+    apiCall('PATCH', `/kitchen?group_id=${currentGroupId}&area=${encodeURIComponent(areaCode)}&action=restore`)
+        .done(() => loadKitchen())
+        .fail(xhr => alert(apiErr(xhr)));
 }
 
 // Navigation
@@ -2535,18 +2958,20 @@ $('.nav-btn').on('click', function () {
     const tab = $(this).data('tab');
     closeMobileGroupMenu();
     if (tab === 'share') {
-        copyGroupShareLink(currentGroupId);
+        openShareChoice(currentGroupId, this);
         return;
     }
 
     $('.nav-btn').removeClass('active').removeAttr('aria-current');
     $(this).addClass('active').attr('aria-current', 'page');
     $('#screenItems').toggleClass('hidden', tab !== 'items');
+    $('#screenKitchen').toggleClass('hidden', tab !== 'kitchen');
     $('#screenActivity').toggleClass('hidden', tab !== 'activity');
     $('#screenMembers').toggleClass('hidden', tab !== 'members');
     $('#screenGroupAdmin').addClass('hidden');
     $('#btnNotifications').removeClass('hidden');
     if (tab === 'activity') loadActivity();
+    if (tab === 'kitchen') loadKitchen();
     if (tab === 'members') loadMembers();
     requestAnimationFrame(syncFixedUiOffsets);
 });
@@ -2858,6 +3283,7 @@ function apiErr(xhr) {
 
 // Boot
 $(function () {
+    $('#kitchenCameraModal').appendTo(document.body);
     const params = new URLSearchParams(location.search);
     const inviteToken = params.get('t');
 
@@ -2886,11 +3312,6 @@ function redeemPendingInvite() {
     if (!token) return false;
 
     sessionStorage.removeItem('pending_invite');
-    apiCall('GET', `/invite/join?t=${encodeURIComponent(token)}`)
-        .done(group => showItems(group.id, group.name, !!group.can_rename))
-        .fail(xhr => {
-            alert(apiErr(xhr));
-            loadGroups();
-        });
+    redeemInviteToken(token);
     return true;
 }

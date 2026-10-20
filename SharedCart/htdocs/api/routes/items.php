@@ -52,11 +52,24 @@ function logActivity(PDO $dbh, int $groupId, int $userId, ?int $itemId, string $
 function purgeExpiredCompletedItems(PDO $dbh, int $groupId): int {
     // Remove completed items that have stayed checked for a full day.
     // This keeps the shared list tidy without clearing the rest of the list.
+    $resetStaples = $dbh->prepare(
+        'UPDATE grocery_items
+            SET is_completed = 0, completed_by = NULL, completed_at = NULL
+          WHERE group_id = :g
+            AND deleted_at IS NULL
+            AND is_staple = 1
+            AND is_completed = 1
+            AND completed_at IS NOT NULL
+            AND completed_at <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ' . (int)COMPLETED_ITEM_RETENTION_HOURS . ' HOUR)'
+    );
+    $resetStaples->execute([':g' => $groupId]);
+
     $stmt = $dbh->prepare(
         'UPDATE grocery_items
             SET deleted_at = UTC_TIMESTAMP(), deleted_by = NULL
           WHERE group_id = :g
             AND deleted_at IS NULL
+            AND is_staple = 0
             AND is_completed = 1
             AND completed_at IS NOT NULL
             AND completed_at <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ' . (int)COMPLETED_ITEM_RETENTION_HOURS . ' HOUR)'
@@ -69,7 +82,7 @@ function purgeExpiredCompletedItems(PDO $dbh, int $groupId): int {
 
 function fetchItemContext(PDO $dbh, int $itemId): ?array {
     $stmt = $dbh->prepare(
-        'SELECT i.id, i.group_id, i.created_by, i.name, i.image_path, i.quantity AS base_quantity, i.is_completed,
+        'SELECT i.id, i.group_id, i.created_by, i.name, i.image_path, i.is_staple, i.quantity AS base_quantity, i.is_completed,
                 g.name AS group_name,
                 u.username AS creator_name
            FROM grocery_items i
@@ -192,6 +205,7 @@ function getItemTotals(PDO $dbh, int $itemId, int $uid): ?array {
 
     $item['base_quantity'] = (int)$item['base_quantity'];
     $item['image_path'] = (string)($item['image_path'] ?? '');
+    $item['is_staple'] = (bool)($item['is_staple'] ?? false);
     $item['total_extra'] = $summary['total_extra'];
     $item['my_contribution_qty'] = $summary['my_contribution'];
     $item['quantity'] = $item['base_quantity'] + $summary['total_extra'];
@@ -209,7 +223,7 @@ function getItemTotals(PDO $dbh, int $itemId, int $uid): ?array {
 
 function fetchItemsFallback(PDO $dbh, int $groupId, int $uid): array {
     $stmt = $dbh->prepare(
-        'SELECT i.id, i.name, i.image_path, i.quantity AS base_quantity,
+        'SELECT i.id, i.name, i.image_path, i.is_staple, i.quantity AS base_quantity,
                 i.quantity AS quantity,
                 i.is_completed,
                 i.created_at, i.completed_at,
@@ -240,7 +254,7 @@ function fetchItemsFallback(PDO $dbh, int $groupId, int $uid): array {
            LEFT JOIN users c ON c.id = i.completed_by AND c.deleted_at IS NULL
           WHERE i.group_id = :g
             AND i.deleted_at IS NULL
-          ORDER BY i.is_completed ASC, usage_count DESC, i.created_at DESC'
+          ORDER BY i.is_completed ASC, i.is_staple DESC, usage_count DESC, i.created_at DESC'
     );
     $stmt->execute([':g' => $groupId]);
     $items = $stmt->fetchAll();
@@ -323,89 +337,23 @@ if ('contribution' === $sub && null !== $id && ('POST' === $method || 'DELETE' =
             insertNotification($dbh, (int)$item['created_by'], (int)$item['id'], $uid, 'contribution_added', $qty);
         }
     } else {
-        $isCreator = (int)$item['created_by'] === (int)$uid;
+        if ($currentUserQty < $qty) {
+            if ($dbh->inTransaction()) $dbh->rollBack();
+            jsonError('You can only remove your own added quantity', 400);
+        }
 
-        if ($isCreator) {
-            // The item creator manages the total quantity. Keep at least one unit
-            // so decreasing quantity never deletes the item itself.
-            $currentTotal = (int)$item['base_quantity'] + (int)$current['total_extra'];
-            if ($qty > max(0, $currentTotal - 1)) {
-                if ($dbh->inTransaction()) $dbh->rollBack();
-                jsonError('Item quantity cannot be lower than 1', 400);
-            }
-
-            $remainingToRemove = $qty;
-
-            // Remove the creator's own added quantity first.
-            if ($remainingToRemove > 0 && $currentUserQty > 0) {
-                $remove = min($remainingToRemove, $currentUserQty);
-                if ($remove === $currentUserQty) {
-                    $stmt = $dbh->prepare('DELETE FROM item_contributions WHERE item_id = :i AND user_id = :u');
-                    $stmt->execute([':i' => $id, ':u' => $uid]);
-                } else {
-                    $stmt = $dbh->prepare(
-                        'UPDATE item_contributions SET quantity = quantity - :q WHERE item_id = :i AND user_id = :u'
-                    );
-                    $stmt->execute([':i' => $id, ':u' => $uid, ':q' => $remove]);
-                }
-                $remainingToRemove -= $remove;
-            }
-
-            // The creator may also remove quantity added by other members.
-            if ($remainingToRemove > 0) {
-                $stmt = $dbh->prepare(
-                    'SELECT user_id, quantity
-                       FROM item_contributions
-                      WHERE item_id = :i AND user_id <> :u
-                      ORDER BY quantity DESC, user_id ASC'
-                );
-                $stmt->execute([':i' => $id, ':u' => $uid]);
-                foreach ($stmt->fetchAll() as $contribution) {
-                    if ($remainingToRemove <= 0) break;
-                    $contributorId = (int)$contribution['user_id'];
-                    $contributorQty = (int)$contribution['quantity'];
-                    $remove = min($remainingToRemove, $contributorQty);
-
-                    if ($remove === $contributorQty) {
-                        $delete = $dbh->prepare('DELETE FROM item_contributions WHERE item_id = :i AND user_id = :u');
-                        $delete->execute([':i' => $id, ':u' => $contributorId]);
-                    } else {
-                        $update = $dbh->prepare(
-                            'UPDATE item_contributions SET quantity = quantity - :q WHERE item_id = :i AND user_id = :u'
-                        );
-                        $update->execute([':i' => $id, ':u' => $contributorId, ':q' => $remove]);
-                    }
-                    $remainingToRemove -= $remove;
-                }
-            }
-
-            // If no added quantity remains, decrease the creator's original base quantity.
-            if ($remainingToRemove > 0) {
-                $newBaseQuantity = max(1, (int)$item['base_quantity'] - $remainingToRemove);
-                $stmt = $dbh->prepare('UPDATE grocery_items SET quantity = :q WHERE id = :id');
-                $stmt->execute([':q' => $newBaseQuantity, ':id' => $id]);
-                $remainingToRemove = 0;
-            }
+        if ($currentUserQty === $qty) {
+            $stmt = $dbh->prepare(
+                'DELETE FROM item_contributions WHERE item_id = :i AND user_id = :u'
+            );
+            $stmt->execute([':i' => $id, ':u' => $uid]);
         } else {
-            // Other members may only remove the quantity they personally added.
-            if ($currentUserQty < $qty) {
-                if ($dbh->inTransaction()) $dbh->rollBack();
-                jsonError('You can only remove your own added quantity', 400);
-            }
-
-            if ($currentUserQty === $qty) {
-                $stmt = $dbh->prepare(
-                    'DELETE FROM item_contributions WHERE item_id = :i AND user_id = :u'
-                );
-                $stmt->execute([':i' => $id, ':u' => $uid]);
-            } else {
-                $stmt = $dbh->prepare(
-                    'UPDATE item_contributions
-                        SET quantity = quantity - :q
-                      WHERE item_id = :i AND user_id = :u'
-                );
-                $stmt->execute([':i' => $id, ':u' => $uid, ':q' => $qty]);
-            }
+            $stmt = $dbh->prepare(
+                'UPDATE item_contributions
+                    SET quantity = quantity - :q
+                  WHERE item_id = :i AND user_id = :u'
+            );
+            $stmt->execute([':i' => $id, ':u' => $uid, ':q' => $qty]);
         }
 
         logActivity($dbh, (int)$item['group_id'], $uid, $id, 'contribution_removed', $item['name'], $qty);
@@ -458,27 +406,38 @@ if ('complete' === $sub && null !== $id && 'PATCH' === $method) {
     );
     $stmt->execute([':uid' => $uid, ':id' => $id]);
 
+    // The group-management setting controls email to the group creator.
+    // Only notify when another participant marks an item as taken.
     $emailPayload = null;
-    if ((int)$item['created_by'] !== $uid) {
+    $groupNotification = $dbh->prepare(
+        'SELECT g.created_by AS group_creator_id,
+                g.notify_creator_on_item_taken,
+                u.username AS creator_username,
+                u.email AS creator_email
+           FROM `groups` g
+           JOIN users u ON u.id = g.created_by AND u.deleted_at IS NULL
+          WHERE g.id = :group_id
+            AND g.deleted_at IS NULL
+          LIMIT 1'
+    );
+    $groupNotification->execute([':group_id' => (int)$item['group_id']]);
+    $groupNotificationRow = $groupNotification->fetch();
+
+    if ($groupNotificationRow
+        && (int)$groupNotificationRow['notify_creator_on_item_taken'] === 1
+        && (int)$groupNotificationRow['group_creator_id'] !== (int)$uid
+    ) {
         $actor = $dbh->prepare('SELECT username FROM users WHERE id = :id AND deleted_at IS NULL LIMIT 1');
         $actor->execute([':id' => $uid]);
-        $actorName = (string)($actor->fetchColumn() ?: '');
+        $actorName = (string)($actor->fetchColumn() ?: 'משתתף/ת');
 
         $emailPayload = [
-            'to' => null,
-            'recipient_name' => '',
+            'to' => (string)$groupNotificationRow['creator_email'],
+            'recipient_name' => (string)$groupNotificationRow['creator_username'],
             'actor_name' => $actorName,
             'item_name' => (string)$item['name'],
             'group_name' => (string)$item['group_name'],
         ];
-
-        $recipient = $dbh->prepare('SELECT username, email FROM users WHERE id = :id LIMIT 1');
-        $recipient->execute([':id' => (int)$item['created_by']]);
-        $recipientRow = $recipient->fetch();
-        if ($recipientRow) {
-            $emailPayload['to'] = (string)$recipientRow['email'];
-            $emailPayload['recipient_name'] = (string)$recipientRow['username'];
-        }
     }
 
     notifyCreatorAndContributors($dbh, $item, $uid, 'completed', 1);
@@ -503,13 +462,24 @@ if ('complete' === $sub && null !== $id && 'PATCH' === $method) {
 // DELETE /api/items/{id}
 if (null !== $id && 'DELETE' === $method) {
     $stmt = $dbh->prepare(
-        'SELECT group_id, created_by, name, image_path FROM grocery_items WHERE id = :id LIMIT 1'
+        'SELECT i.group_id, i.created_by, i.name, i.image_path, i.is_staple,
+                g.created_by AS group_creator_id
+           FROM grocery_items i
+           JOIN `groups` g ON g.id = i.group_id AND g.deleted_at IS NULL
+          WHERE i.id = :id
+            AND i.deleted_at IS NULL
+          LIMIT 1'
     );
     $stmt->execute([':id' => $id]);
     $item = $stmt->fetch();
 
     if (!$item) jsonError('Item not found', 404);
-    if ((int)$item['created_by'] !== $uid) jsonError('Only the creator can delete', 403);
+    $isItemCreator = (int)$item['created_by'] === (int)$uid;
+    $isGroupCreator = (int)$item['group_creator_id'] === (int)$uid;
+    if ((int)($item['is_staple'] ?? 0) === 1 && !$isGroupCreator) {
+        jsonError('Only the group creator can delete a staple item', 403);
+    }
+    if (!$isItemCreator && !$isGroupCreator) jsonError('Only the item creator or group creator can delete', 403);
 
     $dbh->beginTransaction();
     logActivity($dbh, (int)$item['group_id'], $uid, $id, 'deleted', $item['name'], 1);
@@ -535,7 +505,7 @@ if ('GET' === $method && null === $id && '' === $sub) {
 
     try {
         $stmt = $dbh->prepare(
-            'SELECT i.id, i.name, i.image_path, i.quantity AS base_quantity,
+            'SELECT i.id, i.name, i.image_path, i.is_staple, i.quantity AS base_quantity,
                     i.quantity + COALESCE(extra.total_extra, 0) AS quantity,
                     i.is_completed,
                     i.created_at, i.completed_at,
@@ -589,7 +559,7 @@ if ('GET' === $method && null === $id && '' === $sub) {
                ) ic ON ic.item_id = i.id
               WHERE i.group_id = :g
                 AND i.deleted_at IS NULL
-              ORDER BY i.is_completed ASC, usage_count DESC, i.created_at DESC'
+              ORDER BY i.is_completed ASC, i.is_staple DESC, usage_count DESC, i.created_at DESC'
         );
         $stmt->execute([':g' => $groupId, ':uid' => $uid]);
         $items = $stmt->fetchAll();
@@ -615,6 +585,7 @@ if ('POST' === $method && null === $id && '' === $sub) {
     $name    = trim((string)($body['name'] ?? ''));
     $groupId = (int)($body['group_id'] ?? 0);
     $qty     = max(1, min(MAX_QUANTITY, (int)($body['quantity'] ?? 1)));
+    $isStaple = filter_var($body['is_staple'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $imagePath = null;
     $hasImageUpload = $isMultipart
         && isset($_FILES['image'])
@@ -657,15 +628,15 @@ if ('POST' === $method && null === $id && '' === $sub) {
 
     $dbh->beginTransaction();
     $stmt = $dbh->prepare(
-        'INSERT INTO grocery_items (group_id, created_by, name, image_path, quantity) VALUES (:g, :u, :n, :img, :q)'
+        'INSERT INTO grocery_items (group_id, created_by, name, image_path, is_staple, quantity) VALUES (:g, :u, :n, :img, :staple, :q)'
     );
-    $stmt->execute([':g' => $groupId, ':u' => $uid, ':n' => $name, ':img' => $imagePath, ':q' => $qty]);
+    $stmt->execute([':g' => $groupId, ':u' => $uid, ':n' => $name, ':img' => $imagePath, ':staple' => $isStaple ? 1 : 0, ':q' => $qty]);
     $itemId = (int)$dbh->lastInsertId();
 
     logActivity($dbh, $groupId, $uid, $itemId, 'added', $name, $qty);
     $dbh->commit();
 
-    jsonOut(['id' => $itemId, 'name' => $name, 'image_path' => $imagePath, 'quantity' => $qty], 201);
+    jsonOut(['id' => $itemId, 'name' => $name, 'image_path' => $imagePath, 'is_staple' => $isStaple, 'quantity' => $qty], 201);
 }
 
 // POST /api/items/{id}/comments

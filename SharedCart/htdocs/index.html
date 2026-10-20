@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Karantina:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260728-6">
+  <link rel="stylesheet" href="style.css?v=20261019-5">
   </head>
   <body>
 
@@ -112,7 +112,7 @@
             <strong id="btnHomeProfileLabel">פרופיל</strong>
             <small id="homeProfileName">הגדרות החשבון ושינוי סיסמה</small>
           </span>
-          <span class="home-profile-arrow" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-arrow-back-up tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-arrow-back-up"></use></svg></span>
+          <span class="home-profile-arrow" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-chevron-left tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg?v=20261020-2#tabler-chevron-left"></use></svg></span>
         </button>
       </div>
       <p class="section-label">הקבוצות שלי</p>
@@ -130,8 +130,31 @@
       <div class="form-card">
         <div class="input-row">
           <input type="text" id="joinInviteLink" placeholder="הדבק קישור הצטרפות..." autocomplete="off">
+          <button id="btnScanJoinQr" type="button" class="btn-outline join-qr-btn" aria-label="סרוק QR קוד להצטרפות"><svg class="icon icon-tabler icon-tabler-photo tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-photo"></use></svg><span>סרוק QR</span></button>
           <button id="btnJoinGroup" class="btn-outline">הצטרף</button>
         </div>
+      </div>
+      <div class="groups-logout-wrap">
+        <button id="btnGroupsLogout" type="button" class="btn-outline groups-logout-btn"><svg class="icon icon-tabler icon-tabler-arrow-back-up tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-arrow-back-up"></use></svg><span>יציאה מהחשבון</span></button>
+      </div>
+    </section>
+
+    <div id="joinQrModal" class="report-modal kitchen-camera-modal hidden" role="dialog" aria-modal="true" aria-labelledby="joinQrTitle">
+      <div class="report-card kitchen-camera-card">
+        <button id="joinQrClose" type="button" class="report-close" aria-label="סגור סריקת QR"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+        <h2 id="joinQrTitle" class="report-title">סריקת QR להצטרפות</h2>
+        <p id="joinQrStatus" class="kitchen-camera-status" role="status" aria-live="polite">אפשרו גישה למצלמה וכַוונו את הקוד למרכז המסך.</p>
+        <video id="joinQrVideo" class="kitchen-camera-video" autoplay playsinline muted></video>
+        <canvas id="joinQrCanvas" class="hidden"></canvas>
+      </div>
+    </div>
+
+    <section id="screenJoinPending" class="screen join-pending-screen hidden" aria-labelledby="joinPendingTitle">
+      <div class="join-pending-card">
+        <svg class="icon icon-tabler icon-tabler-user-check tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-user-check"></use></svg>
+        <h1 id="joinPendingTitle">מחכה לאישור מנהל</h1>
+        <p id="joinPendingText">בקשת ההצטרפות נשלחה למנהל הקבוצה.</p>
+        <button id="btnPendingBack" type="button" class="btn-primary">חזרה לקבוצות שלי</button>
       </div>
     </section>
 
@@ -143,6 +166,20 @@
         <span id="shareText" class="share-text"></span>
         <button id="btnCopyLink" class="share-copy-btn">העתק</button>
         <button id="btnShareClose" class="share-x" aria-label="סגור"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      </div>
+
+      <div id="kitchenCameraModal" class="report-modal kitchen-camera-modal hidden" role="dialog" aria-modal="true" aria-labelledby="kitchenCameraTitle">
+        <div class="report-card kitchen-camera-card">
+          <button id="kitchenCameraClose" type="button" class="report-close" aria-label="סגור מצלמה"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+          <h2 id="kitchenCameraTitle" class="report-title">צלמו את אזור המטבח</h2>
+          <p id="kitchenCameraStatus" class="kitchen-camera-status" role="status" aria-live="polite"></p>
+          <video id="kitchenCameraVideo" class="kitchen-camera-video" autoplay playsinline muted></video>
+          <canvas id="kitchenCameraCanvas" class="hidden"></canvas>
+          <div class="kitchen-camera-actions">
+            <button id="btnKitchenCameraCapture" type="button" class="btn-primary">צלם תמונה</button>
+            <button id="btnKitchenChooseImage" type="button" class="btn-ghost">בחר תמונה</button>
+          </div>
+        </div>
       </div>
 
       <div id="existingItemSheet" class="existing-item-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="existingItemTitle">
@@ -166,6 +203,7 @@
         <input type="text" id="newItemName" list="itemSuggestions" placeholder="שם פריט (לא חובה עם תמונה)" maxlength="200" autocomplete="off" aria-label="שם פריט, לא חובה אם נבחרה תמונה">
         <input type="number" id="newItemQty" value="1" min="1" max="999" aria-label="כמות" class="qty-input">
         <input type="file" id="newItemImage" accept="image/*" class="hidden">
+        <label class="staple-toggle" for="newItemStaple"><input type="checkbox" id="newItemStaple" aria-label="מוצר ברזל; הסימון מתאפס אחרי יום"><span>מוצר ברזל</span></label>
         <button type="button" id="btnPickItemImage" class="btn-outline add-img-btn" aria-label="הוסף תמונה"><svg class="icon icon-tabler icon-tabler-photo tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-photo"></use></svg></button>
         <button type="submit" class="btn-primary add-btn" aria-label="הוסף פריט">הוסף פריט</button>
       </form>
@@ -174,6 +212,19 @@
       <div class="form-card group-leave-card" style="margin-top:12px">
         <button id="btnLeaveGroup" class="btn-outline hidden">עזוב קבוצה</button>
       </div>
+    </section>
+
+    <!-- KITCHEN STATUS (mobile only) -->
+    <section id="screenKitchen" class="screen kitchen-screen hidden" aria-labelledby="kitchenTitle">
+      <div class="kitchen-screen-head">
+        <div>
+          <p class="section-label kitchen-eyebrow"><svg class="icon icon-tabler icon-tabler-fridge tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg?v=20261019-1#tabler-fridge"></use></svg><span>מצב מטבח</span></p>
+          <h2 id="kitchenTitle">עדכון לפי אזור</h2>
+        </div>
+      </div>
+      <p id="kitchenStatus" class="kitchen-status" role="status" aria-live="polite"></p>
+      <div id="kitchenAreaList" class="kitchen-area-list" aria-live="polite"></div>
+      <input id="kitchenImageInput" type="file" accept="image/*" class="hidden">
     </section>
 
     <!-- ACTIVITY -->
@@ -189,6 +240,14 @@
     <!-- MEMBERS -->
     <section id="screenMembers" class="screen hidden">
       <p class="section-label">חברי הקבוצה</p>
+      <div id="memberJoinRequests" class="member-join-requests hidden">
+        <div class="group-admin-section-head">
+          <h3>בקשות הצטרפות</h3>
+          <span id="memberJoinRequestCount" class="group-admin-count">0</span>
+        </div>
+        <ul id="memberJoinRequestList" class="group-admin-list" aria-label="בקשות הצטרפות"></ul>
+        <p id="memberJoinRequestsEmpty" class="empty-state hidden">אין בקשות הצטרפות ממתינות.</p>
+      </div>
       <ul id="memberList" class="member-list" aria-label="חברי הקבוצה"></ul>
       <p id="membersEmpty" class="empty-state hidden">אין חברים בקבוצה</p>
       <div class="form-card" style="margin-top:12px">
@@ -249,6 +308,9 @@
     </button>
     <button class="nav-btn" data-tab="activity">
       <span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-history tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-history"></use></svg></span><span>היסטוריה</span>
+    </button>
+    <button class="nav-btn kitchen-nav-btn" data-tab="kitchen">
+      <span aria-hidden="true"><svg class="icon icon-tabler icon-tabler-fridge tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg?v=20261019-1#tabler-fridge"></use></svg></span><span>מצב מטבח</span>
     </button>
     <button class="nav-btn" data-tab="members">
       <span id="memberCount" class="nav-symbol" aria-hidden="true">0</span><span>חברים</span>
@@ -343,6 +405,10 @@
           <span class="item-action-icon" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-trash tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-trash"></use></svg></span>
           <span class="item-action-text">מחק פריט</span>
         </button>
+        <button id="btnItemActionStapleInfo" type="button" class="item-action-option hidden">
+          <span class="item-action-icon staple-info-icon" aria-hidden="true">?</span>
+          <span class="item-action-text">הסבר על מוצר ברזל</span>
+        </button>
       </div>
     </div>
   </div>
@@ -399,7 +465,29 @@
     </div>
   </div>
 
+  <div id="shareChoiceModal" class="report-modal hidden" role="dialog" aria-modal="true" aria-labelledby="shareChoiceTitle">
+    <div class="report-card share-choice-card">
+      <button id="shareChoiceClose" type="button" class="report-close" aria-label="סגור שיתוף"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      <h2 id="shareChoiceTitle" class="report-title">שתף קבוצה</h2>
+      <div id="shareChoiceOptions" class="share-choice-options">
+        <button id="btnShareLinkMode" type="button" class="share-choice-option"><svg class="icon icon-tabler icon-tabler-share tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-share"></use></svg><span>קישור</span></button>
+        <button id="btnShareQrMode" type="button" class="share-choice-option"><span class="share-qr-glyph" aria-hidden="true">▦</span><span>QR קוד</span></button>
+      </div>
+      <div id="shareLinkPanel" class="share-choice-panel hidden">
+        <p id="shareInviteMessage" class="share-invite-message" dir="auto"></p>
+        <button id="btnCopyInviteMessage" type="button" class="btn-primary">העתק הודעה וקישור</button>
+      </div>
+      <div id="shareQrPanel" class="share-choice-panel hidden">
+        <p class="share-qr-help">סרקו את הקוד במצלמת הטלפון כדי להצטרף לקבוצה.</p>
+        <div id="shareQrCode" class="share-qr-code" role="img" aria-label="QR קוד להצטרפות לקבוצה"></div>
+      </div>
+      <p id="shareChoiceStatus" class="report-error hidden" role="alert"></p>
+    </div>
+  </div>
+
   <script src="vendor/jquery-3.7.1.min.js?v=3.7.1-full-1"></script>
-  <script src="app.js?v=20260806-1"></script>
+  <script src="vendor/qrcode.min.js?v=1.0.0"></script>
+  <script src="vendor/jsQR.js?v=1.4.0"></script>
+  <script src="app.js?v=20261020-2"></script>
   </body>
   </html>

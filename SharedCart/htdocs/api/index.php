@@ -65,6 +65,7 @@ try {
         'profile'       => require __DIR__ . '/routes/profile.php',
         'groups'        => require __DIR__ . '/routes/groups.php',
         'items'         => require __DIR__ . '/routes/items.php',
+        'kitchen'       => require __DIR__ . '/routes/kitchen.php',
         'notifications' => require __DIR__ . '/routes/notifications.php',
         'activity'      => require __DIR__ . '/routes/activity.php',
         'reports'       => require __DIR__ . '/routes/reports.php',

@@ -75,6 +75,9 @@ function enforceAuthActionLimit(PDO $dbh, string $action, string $identity, int 
         }
     } catch (PDOException $e) {
         error_log('Auth action rate limit failed: ' . $e->getMessage());
+        // SECURITY_RATE_LIMIT_FAIL_CLOSED: do not process sensitive auth actions
+        // when the rate-limit store cannot be verified.
+        jsonOut(['error' => 'Authentication protection temporarily unavailable'], 503);
     }
 }
 
@@ -119,6 +122,8 @@ function enforceLoginAttemptLimit(PDO $dbh, string $email): void {
         }
     } catch (PDOException $e) {
         error_log('Login rate check failed: ' . $e->getMessage());
+        // SECURITY_RATE_LIMIT_FAIL_CLOSED
+        jsonOut(['error' => 'Login protection temporarily unavailable'], 503);
     }
 }
 
@@ -154,6 +159,9 @@ function recordLoginFailure(PDO $dbh, string $email): void {
         }
     } catch (PDOException $e) {
         error_log('Login failure recording failed: ' . $e->getMessage());
+        // Keep failed-login protection fail-closed if an invalid attempt cannot
+        // be recorded. The authentication attempt is denied with 503.
+        jsonOut(['error' => 'Login protection temporarily unavailable'], 503);
     }
 }
 

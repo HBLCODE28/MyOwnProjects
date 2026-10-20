@@ -69,15 +69,8 @@ if ('PATCH' === $method && 'username' === $sub) {
     if (preg_match('/[\x00-\x1F\x7F]/u', $username)) jsonError('Username contains unsupported characters');
     assertContentAllowed($dbh, $username, $uid, 'username', 'user', $uid);
 
-    $stmt = $dbh->prepare(
-        'SELECT id
-           FROM users
-          WHERE id <> :uid
-            AND deleted_at IS NULL
-            AND (username = :username OR email = :username_as_email)
-          LIMIT 1'
-    );
-    $stmt->execute([':username' => $username, ':username_as_email' => $username, ':uid' => $uid]);
+    $stmt = $dbh->prepare('SELECT id FROM users WHERE username = :username AND id <> :uid AND deleted_at IS NULL LIMIT 1');
+    $stmt->execute([':username' => $username, ':uid' => $uid]);
     if ($stmt->fetch()) jsonError('Email or username already taken', 409);
 
     $stmt = $dbh->prepare('UPDATE users SET username = :username WHERE id = :uid');

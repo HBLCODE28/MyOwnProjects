@@ -1,24 +1,26 @@
 'use strict';
 
 const API = '/api';
-const TOKEN_KEY = 'cg_token';
 const LANGUAGE_KEY = 'cg_language';
 
 const TABLER_SPRITE_URL = '/img/tabler-icons.svg';
 const ADMIN_TIME_ZONE = 'Asia/Jerusalem';
 
 const I18N = {
-  he:{desktopOnlyTitle:'לוח הניהול זמין במחשב',desktopOnlyText:'מטעמי בטיחות ונוחות, לוח הניהול נפתח רק במסך ברוחב 1024 פיקסלים ומעלה.',backToSite:'חזרה לאתר',adminConsole:'מסוף ניהול',overview:'סקירה',users:'משתמשים',groups:'קבוצות',content:'תוכן',moderation:'סינון תוכן',audit:'יומן מנהל',health:'תקינות מערכת',workspace:'SharedCart workspace',days:'ימים',searchPlaceholder:'חיפוש',exportCsv:'ייצוא CSV',totalUsers:'משתמשים',activeUsers:'משתמשים פעילים',totalGroups:'קבוצות',activeItems:'פריטים פעילים',actions:'פעולות',blockedUsers:'משתמשים חסומים',moderationEvents:'חסימות תוכן',activityTrend:'פעילות לפי יום',popularItems:'הפריטים הנצרכים ביותר',topConsumers:'מי לקח הכי הרבה',topWriters:'מי כתב הכי הרבה',topGroups:'הקבוצות הפעילות ביותר',anomalies:'פעילות חריגה',noData:'אין נתונים להצגה',status:'סטטוס',all:'הכל',active:'פעיל',blocked:'חסום',deleted:'נמחק',admins:'מנהלים',name:'שם',email:'אימייל',role:'תפקיד',groupsCount:'קבוצות',itemsAdded:'פריטים',completed:'נלקחו',comments:'הערות',lastLogin:'כניסה אחרונה',created:'נוצר',operations:'פעולות',block:'חסום זמנית',unblock:'בטל חסימה',delete:'מחק',restore:'שחזר',permanentDelete:'מחיקה סופית',permanentDeleteWarning:'הפעולה תמחק לצמיתות את המשתמש ואת הנתונים המקושרים אליו, כולל קבוצות שבבעלותו, פריטים, הערות והיסטוריה. לא ניתן לשחזר פעולה זו.',deletedUser:'משתמש שנמחק',yes:'כן',no:'לא',makeAdmin:'הפוך למנהל',makeUser:'הפוך למשתמש',blockUser:'חסימת משתמש',blockReason:'סיבת החסימה',blockHours:'משך החסימה בשעות',cancel:'ביטול',confirm:'אישור',owner:'יוצר',members:'חברים',lastActivity:'פעילות אחרונה',viewStats:'סטטיסטיקות',groupStats:'סטטיסטיקות קבוצה',items:'פריטים',terms:'מילים חסומות',events:'אירועי חסימה',addTerm:'הוסף מילה',term:'מילה או ביטוי',language:'שפה',severity:'חומרה',hebrew:'עברית',english:'English',save:'שמור',field:'שדה',matchedTerm:'מילה שנחסמה',excerpt:'קטע טקסט',user:'משתמש',date:'תאריך',action:'פעולה',target:'יעד',details:'פרטים',systemStatus:'מצב מערכת',database:'מסד נתונים',uploads:'אחסון תמונות',phpVersion:'גרסת PHP',serverTime:'זמן מערכת - שעון ישראל',healthy:'תקין',unavailable:'לא זמין',page:'עמוד',of:'מתוך',previous:'הקודם',next:'הבא',itemContent:'פריטים',commentContent:'הערות',loading:'טוען נתונים...',adminRequired:'אין הרשאת מנהל',contentBlocked:'הטקסט כולל מילה פוגענית או אסורה. יש לערוך אותו ולנסות שוב.',success:'הפעולה הושלמה',period:'תקופה',reports:'דיווחים',openReports:'דיווחים פתוחים',reporter:'מדווח',reason:'סיבה',resolve:'סגור דיווח',dismiss:'דחה דיווח',resolutionNote:'הערת טיפול',open:'פתוח',resolved:'טופל',dismissed:'נדחה',systemErrors:'שגיאות מערכת',storageUsed:'נפח אחסון',recentErrors:'שגיאות אחרונות',route:'נתיב',message:'הודעה',targetType:'סוג יעד',reportStatus:'מצב דיווח',showAll:'הכל',reportActions:'טיפול',resolveReport:'טיפול בדיווח',systemEvents:'אירועי מערכת',changeUsername:'שנה שם משתמש',resetPassword:'שלח איפוס סיסמה',newUsername:'שם משתמש חדש',passwordResetSent:'קוד איפוס נשלח באימייל',usernameRequired:'יש להזין שם משתמש',recentActivity:'פעולות אחרונות',activityItem:'פריט',activityQuantity:'כמות',securityAlerts:'התראות אבטחה',runFullCheck:'הרצת בדיקה מלאה',runningScan:'בודק את המערכת...',fullSecurityCheck:'בדיקת מערכת ואבטחה מלאה',markAlertsRead:'סמן התראות כנקראו',scanScore:'ציון אבטחה',passedChecks:'בדיקות תקינות',warningChecks:'אזהרות',criticalChecks:'תקלות חמורות',lastScan:'מועד בדיקה',loginProtection:'הגנת התחברות',failedLogins24h:'כניסות שנכשלו ב-24 שעות',successfulLogins24h:'כניסות מוצלחות ב-24 שעות',adminAttempts24h:'ניסיונות גישה למנהל ב-24 שעות',blockedLoginKeys:'חסימות התחברות פעילות',uploadFiles:'מספר תמונות',diskFree:'מקום פנוי',uploadLimits:'מגבלות העלאה',serverSoftware:'שרת',securityEvents:'אירועי אבטחה אחרונים',eventType:'סוג אירוע',ipAddress:'כתובת IP',browser:'דפדפן',occurrences:'מספר ניסיונות',firstSeen:'זוהה לראשונה',lastSeen:'זוהה לאחרונה',unread:'חדש',read:'נקרא',passStatus:'תקין',warningStatus:'אזהרה',criticalStatus:'חמור',scanExplanation:'הבדיקה סורקת את הגדרות האבטחה, מסד הנתונים, ההתחברויות, קובצי ההעלאה והרשאות השרת.',relativePath:'נתיב יחסי',files:'קבצים',memoryLimit:'מגבלת זיכרון',fileUploads:'העלאת קבצים',enabled:'פעיל',disabled:'כבוי',securityCheckResults:'תוצאות בדיקת האבטחה',securityDetails:'פרטים'},
-  en:{desktopOnlyTitle:'Admin dashboard is available on desktop',desktopOnlyText:'For safety and usability, the admin dashboard opens only on screens 1024px wide or larger.',backToSite:'Back to site',adminConsole:'Admin console',overview:'Overview',users:'Users',groups:'Groups',content:'Content',moderation:'Content moderation',audit:'Admin audit',health:'System health',workspace:'SharedCart workspace',days:'days',searchPlaceholder:'Search',exportCsv:'Export CSV',totalUsers:'Users',activeUsers:'Active users',totalGroups:'Groups',activeItems:'Active items',actions:'Actions',blockedUsers:'Blocked users',moderationEvents:'Blocked submissions',activityTrend:'Activity by day',popularItems:'Most consumed items',topConsumers:'Top consumers',topWriters:'Top contributors',topGroups:'Most active groups',anomalies:'Unusual activity',noData:'No data to display',status:'Status',all:'All',active:'Active',blocked:'Blocked',deleted:'Deleted',admins:'Admins',name:'Name',email:'Email',role:'Role',groupsCount:'Groups',itemsAdded:'Items',completed:'Completed',comments:'Comments',lastLogin:'Last login',created:'Created',operations:'Actions',block:'Temporary block',unblock:'Unblock',delete:'Delete',restore:'Restore',permanentDelete:'Delete permanently',permanentDeleteWarning:'This permanently deletes the user and related data, including owned groups, items, comments and history. This action cannot be undone.',deletedUser:'Deleted user',yes:'Yes',no:'No',makeAdmin:'Make admin',makeUser:'Make user',blockUser:'Block user',blockReason:'Block reason',blockHours:'Block duration in hours',cancel:'Cancel',confirm:'Confirm',owner:'Owner',members:'Members',lastActivity:'Last activity',viewStats:'View statistics',groupStats:'Group statistics',items:'Items',terms:'Blocked terms',events:'Blocked events',addTerm:'Add term',term:'Word or phrase',language:'Language',severity:'Severity',hebrew:'Hebrew',english:'English',save:'Save',field:'Field',matchedTerm:'Matched term',excerpt:'Text excerpt',user:'User',date:'Date',action:'Action',target:'Target',details:'Details',systemStatus:'System status',database:'Database',uploads:'Image storage',phpVersion:'PHP version',serverTime:'System time - Israel',healthy:'Healthy',unavailable:'Unavailable',page:'Page',of:'of',previous:'Previous',next:'Next',itemContent:'Items',commentContent:'Comments',loading:'Loading data...',adminRequired:'Administrator access is required',contentBlocked:'The text contains offensive or blocked language. Edit it and try again.',success:'Operation completed',period:'Period',reports:'Reports',openReports:'Open reports',reporter:'Reporter',reason:'Reason',resolve:'Resolve report',dismiss:'Dismiss report',resolutionNote:'Resolution note',open:'Open',resolved:'Resolved',dismissed:'Dismissed',systemErrors:'System errors',storageUsed:'Storage used',recentErrors:'Recent errors',route:'Route',message:'Message',targetType:'Target type',reportStatus:'Report status',showAll:'All',reportActions:'Review',resolveReport:'Review report',systemEvents:'System events',changeUsername:'Change username',resetPassword:'Send password reset',newUsername:'New username',passwordResetSent:'A reset code was sent by email',usernameRequired:'Enter a username',recentActivity:'Recent activity',activityItem:'Item',activityQuantity:'Quantity',securityAlerts:'Security alerts',runFullCheck:'Run full check',runningScan:'Checking the system...',fullSecurityCheck:'Full system and security check',markAlertsRead:'Mark alerts as read',scanScore:'Security score',passedChecks:'Passed checks',warningChecks:'Warnings',criticalChecks:'Critical issues',lastScan:'Scan time',loginProtection:'Login protection',failedLogins24h:'Failed logins in 24 hours',successfulLogins24h:'Successful logins in 24 hours',adminAttempts24h:'Admin access attempts in 24 hours',blockedLoginKeys:'Active login blocks',uploadFiles:'Image files',diskFree:'Free storage',uploadLimits:'Upload limits',serverSoftware:'Server',securityEvents:'Recent security events',eventType:'Event type',ipAddress:'IP address',browser:'Browser',occurrences:'Occurrences',firstSeen:'First seen',lastSeen:'Last seen',unread:'New',read:'Read',passStatus:'Passed',warningStatus:'Warning',criticalStatus:'Critical',scanExplanation:'The scan checks security settings, the database, logins, uploaded files and server permissions.',relativePath:'Relative path',files:'Files',memoryLimit:'Memory limit',fileUploads:'File uploads',enabled:'Enabled',disabled:'Disabled',securityCheckResults:'Security check results',securityDetails:'Details'}
+  he:{desktopOnlyTitle:'לוח הניהול זמין במחשב',desktopOnlyText:'מטעמי בטיחות ונוחות, לוח הניהול נפתח רק במסך ברוחב 1024 פיקסלים ומעלה.',backToSite:'חזרה לאתר',adminConsole:'מסוף ניהול',overview:'סקירה',users:'משתמשים',groups:'קבוצות',content:'תוכן',moderation:'סינון תוכן',audit:'יומן מנהל',health:'תקינות מערכת',workspace:'SharedCart workspace',days:'ימים',searchPlaceholder:'חיפוש',exportCsv:'ייצוא CSV',totalUsers:'משתמשים',activeUsers:'משתמשים פעילים',totalGroups:'קבוצות',activeItems:'פריטים פעילים',actions:'פעולות',blockedUsers:'משתמשים חסומים',pendingJoinRequests:'בקשות הצטרפות ממתינות',moderationEvents:'חסימות תוכן',activityTrend:'פעילות לפי יום',popularItems:'הפריטים הנצרכים ביותר',topConsumers:'מי לקח הכי הרבה',topWriters:'מי כתב הכי הרבה',topGroups:'הקבוצות הפעילות ביותר',anomalies:'פעילות חריגה',noData:'אין נתונים להצגה',status:'סטטוס',all:'הכל',active:'פעיל',blocked:'חסום',deleted:'נמחק',admins:'מנהלים',name:'שם',email:'אימייל',role:'תפקיד',groupsCount:'קבוצות',itemsAdded:'פריטים',completed:'נלקחו',comments:'הערות',lastLogin:'כניסה אחרונה',created:'נוצר',operations:'פעולות',block:'חסום זמנית',unblock:'בטל חסימה',delete:'מחק',restore:'שחזר',permanentDelete:'מחיקה סופית',permanentDeleteWarning:'הפעולה תמחק לצמיתות את המשתמש ואת הנתונים המקושרים אליו, כולל קבוצות שבבעלותו, פריטים, הערות והיסטוריה. לא ניתן לשחזר פעולה זו.',deletedUser:'משתמש שנמחק',yes:'כן',no:'לא',makeAdmin:'הפוך למנהל',makeUser:'הפוך למשתמש',blockUser:'חסימת משתמש',blockReason:'סיבת החסימה',blockHours:'משך החסימה בשעות',cancel:'ביטול',confirm:'אישור',owner:'יוצר',members:'חברים',lastActivity:'פעילות אחרונה',viewStats:'סטטיסטיקות',groupStats:'סטטיסטיקות קבוצה',items:'פריטים',terms:'מילים חסומות',events:'אירועי חסימה',addTerm:'הוסף מילה',term:'מילה או ביטוי',language:'שפה',severity:'חומרה',hebrew:'עברית',english:'English',save:'שמור',field:'שדה',matchedTerm:'מילה שנחסמה',excerpt:'קטע טקסט',user:'משתמש',date:'תאריך',action:'פעולה',target:'יעד',details:'פרטים',systemStatus:'מצב מערכת',database:'מסד נתונים',uploads:'אחסון תמונות',phpVersion:'גרסת PHP',serverTime:'זמן מערכת - שעון ישראל',healthy:'תקין',unavailable:'לא זמין',page:'עמוד',of:'מתוך',previous:'הקודם',next:'הבא',itemContent:'פריטים',commentContent:'הערות',loading:'טוען נתונים...',adminRequired:'אין הרשאת מנהל',contentBlocked:'הטקסט כולל מילה פוגענית או אסורה. יש לערוך אותו ולנסות שוב.',success:'הפעולה הושלמה',period:'תקופה',reports:'דיווחים',openReports:'דיווחים פתוחים',reporter:'מדווח',reason:'סיבה',resolve:'סגור דיווח',dismiss:'דחה דיווח',resolutionNote:'הערת טיפול',open:'פתוח',resolved:'טופל',dismissed:'נדחה',systemErrors:'שגיאות מערכת',storageUsed:'נפח אחסון',recentErrors:'שגיאות אחרונות',route:'נתיב',message:'הודעה',targetType:'סוג יעד',reportStatus:'מצב דיווח',showAll:'הכל',reportActions:'טיפול',resolveReport:'טיפול בדיווח',systemEvents:'אירועי מערכת',changeUsername:'שנה שם משתמש',resetPassword:'שלח איפוס סיסמה',newUsername:'שם משתמש חדש',passwordResetSent:'קוד איפוס נשלח באימייל',usernameRequired:'יש להזין שם משתמש',recentActivity:'פעולות אחרונות',activityItem:'פריט',activityQuantity:'כמות',securityAlerts:'התראות אבטחה',runFullCheck:'הרצת בדיקה מלאה',runningScan:'בודק את המערכת...',fullSecurityCheck:'בדיקת מערכת ואבטחה מלאה',markAlertsRead:'סמן התראות כנקראו',scanScore:'ציון אבטחה',passedChecks:'בדיקות תקינות',warningChecks:'אזהרות',criticalChecks:'תקלות חמורות',lastScan:'מועד בדיקה',loginProtection:'הגנת התחברות',failedLogins24h:'כניסות שנכשלו ב-24 שעות',successfulLogins24h:'כניסות מוצלחות ב-24 שעות',adminAttempts24h:'ניסיונות גישה למנהל ב-24 שעות',blockedLoginKeys:'חסימות התחברות פעילות',uploadFiles:'מספר תמונות',diskFree:'מקום פנוי',uploadLimits:'מגבלות העלאה',serverSoftware:'שרת',securityEvents:'אירועי אבטחה אחרונים',eventType:'סוג אירוע',ipAddress:'כתובת IP',browser:'דפדפן',occurrences:'מספר ניסיונות',firstSeen:'זוהה לראשונה',lastSeen:'זוהה לאחרונה',unread:'חדש',read:'נקרא',passStatus:'תקין',warningStatus:'אזהרה',criticalStatus:'חמור',scanExplanation:'הבדיקה מבצעת סריקה מעמיקה של JWT ועוגיות, HTTPS וכותרות אבטחה, הרשאות קבצים, קובצי העלאה ותוכן MIME, תקינות מסד הנתונים, הרשאות DB, דפוסי PHP חשודים וניסיונות התחברות.',relativePath:'נתיב יחסי',files:'קבצים',memoryLimit:'מגבלת זיכרון',fileUploads:'העלאת קבצים',enabled:'פעיל',disabled:'כבוי',securityCheckResults:'תוצאות בדיקת האבטחה',securityDetails:'פרטים',emailUsage:'שליחת אימיילים',emailsSent24h:'נשלחו ב-24 שעות',emailsRemaining:'נותרו לפי מונה האתר',emailFailures24h:'שליחות שנכשלו',emailUsageWarning:'מתקרבים למגבלת השליחה של Gmail. מומלץ לצמצם שליחות עד שהמונה יורד.',emailUsageCritical:'כמעט הגעת למגבלת השליחה של Gmail. שליחות נוספות עלולות להיחסם.',emailTrackingNote:'המונה כולל רק אימיילים שנשלחו מהאתר ולא הודעות שנשלחו ידנית מחשבון Gmail.',downloadSecurityReport:'הורדת דוח אבטחה',preparingSecurityReport:'מכין דוח...',securityReportReady:'דוח האבטחה הורד',securityReportNeedsScan:'יש להריץ בדיקה מלאה לפני הורדת הדוח'},
+  en:{desktopOnlyTitle:'Admin dashboard is available on desktop',desktopOnlyText:'For safety and usability, the admin dashboard opens only on screens 1024px wide or larger.',backToSite:'Back to site',adminConsole:'Admin console',overview:'Overview',users:'Users',groups:'Groups',content:'Content',moderation:'Content moderation',audit:'Admin audit',health:'System health',workspace:'SharedCart workspace',days:'days',searchPlaceholder:'Search',exportCsv:'Export CSV',totalUsers:'Users',activeUsers:'Active users',totalGroups:'Groups',activeItems:'Active items',actions:'Actions',blockedUsers:'Blocked users',moderationEvents:'Blocked submissions',activityTrend:'Activity by day',popularItems:'Most consumed items',topConsumers:'Top consumers',topWriters:'Top contributors',topGroups:'Most active groups',anomalies:'Unusual activity',noData:'No data to display',status:'Status',all:'All',active:'Active',blocked:'Blocked',deleted:'Deleted',admins:'Admins',name:'Name',email:'Email',role:'Role',groupsCount:'Groups',itemsAdded:'Items',completed:'Completed',comments:'Comments',lastLogin:'Last login',created:'Created',operations:'Actions',block:'Temporary block',unblock:'Unblock',delete:'Delete',restore:'Restore',permanentDelete:'Delete permanently',permanentDeleteWarning:'This permanently deletes the user and related data, including owned groups, items, comments and history. This action cannot be undone.',deletedUser:'Deleted user',yes:'Yes',no:'No',makeAdmin:'Make admin',makeUser:'Make user',blockUser:'Block user',blockReason:'Block reason',blockHours:'Block duration in hours',cancel:'Cancel',confirm:'Confirm',owner:'Owner',members:'Members',lastActivity:'Last activity',viewStats:'View statistics',groupStats:'Group statistics',items:'Items',terms:'Blocked terms',events:'Blocked events',addTerm:'Add term',term:'Word or phrase',language:'Language',severity:'Severity',hebrew:'Hebrew',english:'English',save:'Save',field:'Field',matchedTerm:'Matched term',excerpt:'Text excerpt',user:'User',date:'Date',action:'Action',target:'Target',details:'Details',systemStatus:'System status',database:'Database',uploads:'Image storage',phpVersion:'PHP version',serverTime:'System time - Israel',healthy:'Healthy',unavailable:'Unavailable',page:'Page',of:'of',previous:'Previous',next:'Next',itemContent:'Items',commentContent:'Comments',loading:'Loading data...',adminRequired:'Administrator access is required',contentBlocked:'The text contains offensive or blocked language. Edit it and try again.',success:'Operation completed',period:'Period',reports:'Reports',openReports:'Open reports',reporter:'Reporter',reason:'Reason',resolve:'Resolve report',dismiss:'Dismiss report',resolutionNote:'Resolution note',open:'Open',resolved:'Resolved',dismissed:'Dismissed',systemErrors:'System errors',storageUsed:'Storage used',recentErrors:'Recent errors',route:'Route',message:'Message',targetType:'Target type',reportStatus:'Report status',showAll:'All',reportActions:'Review',resolveReport:'Review report',systemEvents:'System events',changeUsername:'Change username',resetPassword:'Send password reset',newUsername:'New username',passwordResetSent:'A reset code was sent by email',usernameRequired:'Enter a username',recentActivity:'Recent activity',activityItem:'Item',activityQuantity:'Quantity',securityAlerts:'Security alerts',runFullCheck:'Run full check',runningScan:'Checking the system...',fullSecurityCheck:'Full system and security check',markAlertsRead:'Mark alerts as read',scanScore:'Security score',passedChecks:'Passed checks',warningChecks:'Warnings',criticalChecks:'Critical issues',lastScan:'Scan time',loginProtection:'Login protection',failedLogins24h:'Failed logins in 24 hours',successfulLogins24h:'Successful logins in 24 hours',adminAttempts24h:'Admin access attempts in 24 hours',blockedLoginKeys:'Active login blocks',uploadFiles:'Image files',diskFree:'Free storage',uploadLimits:'Upload limits',serverSoftware:'Server',securityEvents:'Recent security events',eventType:'Event type',ipAddress:'IP address',browser:'Browser',occurrences:'Occurrences',firstSeen:'First seen',lastSeen:'Last seen',unread:'New',read:'Read',passStatus:'Passed',warningStatus:'Warning',criticalStatus:'Critical',scanExplanation:'The scan performs deep checks of JWT and cookies, HTTPS and security headers, file permissions, upload MIME integrity, database consistency and privileges, suspicious PHP patterns, and authentication activity.',relativePath:'Relative path',files:'Files',memoryLimit:'Memory limit',fileUploads:'File uploads',enabled:'Enabled',disabled:'Disabled',securityCheckResults:'Security check results',securityDetails:'Details',emailUsage:'Email sending',emailsSent24h:'Sent in the last 24 hours',emailsRemaining:'Remaining by site counter',emailFailures24h:'Failed sends',emailUsageWarning:'You are approaching the Gmail sending limit. Reduce sending until the counter falls.',emailUsageCritical:'You are very close to the Gmail sending limit. Additional messages may be blocked.',emailTrackingNote:'This counter includes only messages sent by the website, not messages sent manually from Gmail.',downloadSecurityReport:'Download security report',preparingSecurityReport:'Preparing report...',securityReportReady:'Security report downloaded',securityReportNeedsScan:'Run a full security check before downloading the report'}
 };
+
+I18N.en.pendingJoinRequests = 'Pending join requests';
 
 const state={language:localStorage.getItem(LANGUAGE_KEY)==='en'?'en':'he',view:'overview',period:30,search:'',page:1,userStatus:'all',groupStatus:'active',contentKind:'items',contentStatus:'all',moderationTab:'terms',moderationStatus:'open',lastRows:[]};
 let searchTimer=null;
 let lastSecurityScan=null;
+let lastHealthSnapshot=null;
 
 const SECURITY_CHECK_LABELS={
-  he:{database_connection:'חיבור למסד הנתונים',required_tables:'טבלאות מערכת נדרשות',active_admins:'חשבונות מנהל פעילים',password_hashes:'הצפנת סיסמאות',jwt_secret:'מפתח חתימת התחברות',php_version:'גרסת PHP נתמכת',display_errors:'הצגת שגיאות למבקרים',allow_url_include:'טעינת קוד מכתובות חיצוניות',expose_php:'חשיפת גרסת PHP',upload_directory:'תיקיית העלאת תמונות',upload_execution_protection:'חסימת הרצת קוד בתיקיית העלאות',suspicious_uploads:'קבצים חשודים בתיקיית התמונות',web_server_rules:'כללי אבטחת השרת',admin_gate:'שער כניסה ללוח הניהול',admin_probe_monitor:'ניטור ניסיונות גילוי עמוד מנהל',sensitive_public_files:'קבצים רגישים בתיקייה הציבורית',blocked_login_attempts:'חסימות התחברות פעילות',admin_access_attempts:'ניסיונות גישה ללוח הניהול',failed_logins:'התחברויות שנכשלו',system_errors:'שגיאות מערכת'},
-  en:{database_connection:'Database connection',required_tables:'Required system tables',active_admins:'Active administrator accounts',password_hashes:'Password hashing',jwt_secret:'Login signing key',php_version:'Supported PHP version',display_errors:'Error display to visitors',allow_url_include:'Remote code inclusion',expose_php:'PHP version exposure',upload_directory:'Image upload directory',upload_execution_protection:'Upload execution protection',suspicious_uploads:'Suspicious files in image storage',web_server_rules:'Web server security rules',admin_gate:'Admin access gate',admin_probe_monitor:'Admin path probe monitor',sensitive_public_files:'Sensitive files in the public directory',blocked_login_attempts:'Active login blocks',admin_access_attempts:'Admin access attempts',failed_logins:'Failed logins',system_errors:'System errors'}
+  he:{database_connection:'חיבור למסד הנתונים',required_tables:'טבלאות מערכת נדרשות',active_admins:'חשבונות מנהל פעילים',password_hashes:'הצפנת סיסמאות',jwt_secret:'מפתח חתימת התחברות',php_version:'גרסת PHP נתמכת',display_errors:'הצגת שגיאות למבקרים',allow_url_include:'טעינת קוד מכתובות חיצוניות',expose_php:'חשיפת גרסת PHP',upload_directory:'תיקיית העלאת תמונות',upload_execution_protection:'חסימת הרצת קוד בתיקיית העלאות',suspicious_uploads:'קבצים חשודים בתיקיית התמונות',web_server_rules:'כללי אבטחת השרת',admin_gate:'שער כניסה ללוח הניהול',admin_probe_monitor:'ניטור ניסיונות גילוי עמוד מנהל',sensitive_public_files:'קבצים רגישים בתיקייה הציבורית',blocked_login_attempts:'חסימות התחברות פעילות',admin_access_attempts:'ניסיונות גישה ללוח הניהול',failed_logins:'התחברויות שנכשלו',system_errors:'שגיאות מערכת',duplicate_identities:'כפילויות בזהויות משתמשים',jwt_self_test:'בדיקת JWT פעילה',jwt_header_validation:'אימות כותרת JWT',auth_cookie_security:'אבטחת עוגיית התחברות',admin_token_storage:'אחסון טוקן בלוח המנהל',session_lifetime:'משך תוקף התחברות',password_policy:'מדיניות אורך סיסמה',password_reset_policy:'מדיניות איפוס סיסמה',https_request:'חיבור HTTPS פעיל',hsts_policy:'מדיניות HSTS',content_security_policy:'מדיניות CSP',csp_script_safety:'בטיחות script-src',security_headers:'כותרות אבטחה',api_private_files:'חסימת קובצי API פנימיים',config_file_permissions:'הרשאות config.php',admin_helper_permissions:'הרשאות admin_helper.php',root_rules_permissions:'הרשאות .htaccess ראשי',world_writable_paths:'קבצים ותיקיות הניתנים לכתיבה לכולם',upload_mime_integrity:'תקינות MIME של קובצי העלאה',upload_symlinks:'קישורים סמליים בתיקיית העלאות',upload_filename_integrity:'תקינות שמות קובצי העלאה',upload_size_integrity:'תקינות גודל קובצי העלאה',upload_validation_code:'בדיקות קוד העלאת תמונות',php_source_heuristics:'סריקת דפוסי PHP חשודים',fixed_admin_bootstrap:'הרשאת מנהל קבועה בקוד',database_strict_mode:'מצב SQL מחמיר',database_charset:'קידוד חיבור למסד',database_table_formats:'מנוע וקידוד טבלאות',database_privileges:'הרשאות משתמש מסד הנתונים',database_orphans:'רשומות יתומות במסד',database_clock:'סנכרון שעון מסד הנתונים',password_reset_state:'מצב בקשות איפוס סיסמה',token_json_exposure:'חשיפת JWT ל-JavaScript',rate_limit_failure_mode:'מצב כשל של הגבלת קצב'},
+  en:{database_connection:'Database connection',required_tables:'Required system tables',active_admins:'Active administrator accounts',password_hashes:'Password hashing',jwt_secret:'Login signing key',php_version:'Supported PHP version',display_errors:'Error display to visitors',allow_url_include:'Remote code inclusion',expose_php:'PHP version exposure',upload_directory:'Image upload directory',upload_execution_protection:'Upload execution protection',suspicious_uploads:'Suspicious files in image storage',web_server_rules:'Web server security rules',admin_gate:'Admin access gate',admin_probe_monitor:'Admin path probe monitor',sensitive_public_files:'Sensitive files in the public directory',blocked_login_attempts:'Active login blocks',admin_access_attempts:'Admin access attempts',failed_logins:'Failed logins',system_errors:'System errors',duplicate_identities:'Duplicate user identities',jwt_self_test:'Active JWT self-test',jwt_header_validation:'JWT header validation',auth_cookie_security:'Authentication cookie security',admin_token_storage:'Admin token storage',session_lifetime:'Session lifetime',password_policy:'Password length policy',password_reset_policy:'Password reset policy',https_request:'Active HTTPS connection',hsts_policy:'HSTS policy',content_security_policy:'Content Security Policy',csp_script_safety:'script-src safety',security_headers:'Security headers',api_private_files:'Private API file protection',config_file_permissions:'config.php permissions',admin_helper_permissions:'admin_helper.php permissions',root_rules_permissions:'Root .htaccess permissions',world_writable_paths:'World-writable paths',upload_mime_integrity:'Upload MIME integrity',upload_symlinks:'Upload-directory symlinks',upload_filename_integrity:'Upload filename integrity',upload_size_integrity:'Upload size integrity',upload_validation_code:'Image upload validation code',php_source_heuristics:'Suspicious PHP source patterns',fixed_admin_bootstrap:'Hard-coded administrator bootstrap',database_strict_mode:'Strict SQL mode',database_charset:'Database connection charset',database_table_formats:'Database table engine and collation',database_privileges:'Database account privileges',database_orphans:'Orphaned database records',database_clock:'Database clock synchronization',password_reset_state:'Password reset request state',token_json_exposure:'JWT exposure to JavaScript',rate_limit_failure_mode:'Rate-limit failure mode'}
 };
 
 const SECURITY_EVENT_LABELS={
@@ -39,7 +41,130 @@ function securityEventLabel(key){return SECURITY_EVENT_LABELS[state.language][St
 function securityStatusLabel(status){return status==='pass'?t('passStatus'):status==='critical'?t('criticalStatus'):t('warningStatus')}
 function setSecurityAlertCount(value){const count=Math.max(0,Number(value)||0);const badge=document.getElementById('securityAlertBadge');if(!badge)return;badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;const button=document.getElementById('btnSecurityAlerts');if(button){button.classList.toggle('has-alerts',count>0);button.title=`${t('securityAlerts')}: ${count}`;button.setAttribute('aria-label',`${t('securityAlerts')}: ${count}`)}}
 function switchAdminView(view){state.view=view;state.page=1;state.search='';document.querySelectorAll('.admin-nav-item').forEach(x=>x.classList.toggle('active',x.dataset.view===view));loadView()}
-function renderSecurityMeta(meta){if(!meta||typeof meta!=='object')return '';const rows=[];if(Array.isArray(meta.missing)&&meta.missing.length)rows.push(meta.missing.join(', '));if(Array.isArray(meta.files)&&meta.files.length)rows.push(meta.files.join(', '));return rows.length?`<div class="security-check-meta">${rows.map(x=>escapeHtml(x)).join('<br>')}</div>`:''}
+function renderSecurityMeta(meta){if(!meta||typeof meta!=='object')return '';const rows=[];for(const [key,value] of Object.entries(meta)){if(value===null||value===undefined||value===''||value===false)continue;let formatted='';if(Array.isArray(value)){if(!value.length)continue;formatted=value.join(', ')}else if(typeof value==='object'){formatted=Object.entries(value).filter(([,v])=>v!==null&&v!==undefined).map(([k,v])=>`${k}: ${Array.isArray(v)?v.join(', '):String(v)}`).join(', ')}else{formatted=String(value)}if(!formatted)continue;const label=key.replaceAll('_',' ');rows.push(`<span><b>${escapeHtml(label)}:</b> ${escapeHtml(formatted)}</span>`)}return rows.length?`<div class="security-check-meta">${rows.join('<br>')}</div>`:''}
+
+function securityReportRouteFile(route){
+  const path=String(route||'').split('?')[0].replace(/^\/+|\/+$/g,'');
+  if(!path)return '';
+  const first=path.split('/')[0].toLowerCase();
+  const map={admin:'api/routes/admin.php',auth:'api/routes/auth.php',groups:'api/routes/groups.php',group:'api/routes/groups.php',items:'api/routes/items.php',item:'api/routes/items.php',comments:'api/routes/comments.php',comment:'api/routes/comments.php',profile:'api/routes/profile.php',users:'api/routes/users.php',user:'api/routes/users.php'};
+  return map[first]||'';
+}
+
+function securityRecommendedUploads(scan,health){
+  const files=new Map();
+  const add=(path,reason,priority='helpful',redact=false)=>{
+    if(!path)return;
+    const clean=String(path).replace(/^\/+/, '');
+    const current=files.get(clean)||{path:clean,priority,reasons:[],redact_secrets:redact};
+    if(priority==='required')current.priority='required';
+    current.redact_secrets=current.redact_secrets||redact;
+    if(reason&&!current.reasons.includes(reason))current.reasons.push(reason);
+    files.set(clean,current);
+  };
+  const map={
+    database_connection:[['api/config.php',true],['database-schema.sql',false]],
+    required_tables:[['database-schema.sql',false],['api/admin_helper.php',false]],
+    active_admins:[['api/admin_helper.php',false]],
+    password_hashes:[['api/routes/auth.php',false],['api/auth_helper.php',false]],
+    duplicate_identities:[['database-schema.sql',false],['api/routes/auth.php',false]],
+    jwt_secret:[['api/config.php',true],['api/auth_helper.php',false]],
+    jwt_self_test:[['api/auth_helper.php',false],['api/config.php',true]],
+    jwt_header_validation:[['api/auth_helper.php',false]],
+    auth_cookie_security:[['api/auth_helper.php',false],['api/config.php',true]],
+    admin_token_storage:[['admin.js',false],['api/auth_helper.php',false]],
+    token_json_exposure:[['api/routes/auth.php',false],['admin.js',false]],
+    rate_limit_failure_mode:[['api/routes/auth.php',false],['api/admin_helper.php',false]],
+    session_lifetime:[['api/config.php',true],['api/auth_helper.php',false]],
+    password_policy:[['api/config.php',true],['api/routes/auth.php',false]],
+    password_reset_policy:[['api/config.php',true],['api/routes/auth.php',false]],
+    password_reset_state:[['api/routes/auth.php',false],['api/routes/admin.php',false]],
+    https_request:[['.htaccess',false]],
+    hsts_policy:[['.htaccess',false]],
+    content_security_policy:[['.htaccess',false]],
+    csp_script_safety:[['.htaccess',false],['admin.js',false]],
+    security_headers:[['.htaccess',false]],
+    web_server_rules:[['.htaccess',false]],
+    api_private_files:[['api/.htaccess',false],['api/routes/.htaccess',false],['.htaccess',false]],
+    config_file_permissions:[['api/config.php',true]],
+    admin_helper_permissions:[['api/admin_helper.php',false]],
+    root_rules_permissions:[['.htaccess',false]],
+    world_writable_paths:[['.htaccess',false]],
+    upload_directory:[['api/config.php',true],['uploads/.htaccess',false]],
+    upload_execution_protection:[['uploads/.htaccess',false],['.htaccess',false]],
+    suspicious_uploads:[['uploads/.htaccess',false],['api/config.php',true]],
+    upload_mime_integrity:[['api/config.php',true],['uploads/.htaccess',false]],
+    upload_symlinks:[['uploads/.htaccess',false]],
+    upload_filename_integrity:[['api/config.php',true]],
+    upload_size_integrity:[['api/config.php',true]],
+    upload_validation_code:[['api/config.php',true]],
+    php_source_heuristics:[['.htaccess',false]],
+    fixed_admin_bootstrap:[['api/admin_helper.php',false]],
+    database_strict_mode:[['api/config.php',true],['database-schema.sql',false]],
+    database_charset:[['api/config.php',true],['database-schema.sql',false]],
+    database_table_formats:[['database-schema.sql',false]],
+    database_privileges:[['api/config.php',true]],
+    database_orphans:[['database-schema.sql',false],['api/routes/admin.php',false]],
+    database_clock:[['api/config.php',true]],
+    blocked_login_attempts:[['api/routes/auth.php',false],['api/admin_helper.php',false]],
+    admin_access_attempts:[['admin-access-monitor.php',false],['api/admin_helper.php',false],['admin-29db540de5959343f303d392c63dcece.php',false]],
+    failed_logins:[['api/routes/auth.php',false],['api/auth_helper.php',false]],
+    system_errors:[['api/routes/admin.php',false],['api/admin_helper.php',false]]
+  };
+  for(const check of (scan?.checks||[])){
+    if(check.status==='pass')continue;
+    const key=String(check.key||'');
+    for(const [path,redact] of (map[key]||[]))add(path,key,check.status==='critical'?'required':'helpful',redact);
+    for(const path of (Array.isArray(check.meta?.files)?check.meta.files:[])){
+      const clean=String(path||'').replace(/^\/+/, '');
+      if(clean&&/\.(?:php|htaccess|ini|conf|json|js|sql)$/i.test(clean))add(clean,key,check.status==='critical'?'required':'helpful',/config\.php$/i.test(clean));
+    }
+  }
+  for(const err of (health?.recent_errors||[])){
+    const routeFile=securityReportRouteFile(err.route);
+    if(routeFile)add(routeFile,`system_error:${String(err.route||'unknown')}`,'helpful',false);
+  }
+  return [...files.values()].sort((a,b)=>Number(b.priority==='required')-Number(a.priority==='required')||a.path.localeCompare(b.path));
+}
+
+function buildSecuritySupportReport(scan,health){
+  const checks=(scan?.checks||[]).map(c=>({key:c.key,status:c.status,value:c.value,meta:c.meta||{}}));
+  return {
+    report_format:'sharedcart-security-support-report',
+    report_version:1,
+    generated_at:new Date().toISOString(),
+    purpose:'Upload this JSON file to ChatGPT to diagnose SharedCart security findings and determine which source files are needed next.',
+    privacy:{contains_passwords:false,contains_jwt_secret:false,contains_auth_token:false,note:'config.php is never embedded in this report. If it is requested separately, redact DB passwords, JWT secrets, SMTP passwords and API keys.'},
+    client:{admin_time_zone:ADMIN_TIME_ZONE,protocol:location.protocol,host:location.host,admin_path:location.pathname},
+    scan:{scan_version:scan?.scan_version||null,scanned_at:scan?.scanned_at||null,overall_status:scan?.overall_status||null,score:scan?.score??null,summary:scan?.summary||{},checks,findings:checks.filter(c=>c.status!=='pass')},
+    environment:{database_version:health?.database_version||null,php_version:health?.php_version||null,server_software:health?.server_software||null,server_time:health?.server_time||null,uploads_path:health?.uploads_path||null,uploads_writable:health?.uploads_writable??null,uploads_bytes:health?.uploads_bytes??null,uploads_files:health?.uploads_files??null,disk_free_bytes:health?.disk_free_bytes??null,disk_total_bytes:health?.disk_total_bytes??null,upload_max_filesize:health?.upload_max_filesize||null,post_max_size:health?.post_max_size||null,memory_limit:health?.memory_limit||null,file_uploads:health?.file_uploads??null,email_usage:health?.email_usage||null,tables:health?.tables||{}},
+    security_activity:health?.security||scan?.security||{},
+    recent_security_events:(health?.recent_security_events||[]).slice(0,30).map(x=>({event_type:x.event_type,severity:x.severity,username:x.username||null,email_masked:x.email_masked||null,ip_address:x.ip_address||null,request_path:x.request_path||null,user_agent:x.user_agent||null,occurrence_count:Number(x.occurrence_count)||0,is_read:Number(x.is_read)||0,first_seen_at:x.first_seen_at||null,last_seen_at:x.last_seen_at||null})),
+    recent_errors:(health?.recent_errors||[]).slice(0,20).map(x=>({event_type:x.event_type,route:x.route||null,message:x.message||null,created_at:x.created_at||null,ip_address:x.ip_address||null,username:x.username||null})),
+    recommended_uploads:securityRecommendedUploads(scan,health),
+    instructions_for_analysis:[
+      'Analyze findings in severity order: critical, then warning.',
+      'Use recommended_uploads to request only files needed to investigate failed checks.',
+      'Do not ask for secrets. For api/config.php, request a redacted copy with constant names and non-secret settings preserved.',
+      'If database-schema.sql is requested, export structure only without table data.',
+      'Correlate recent_errors and recent_security_events with failed checks before requesting additional files.'
+    ]
+  };
+}
+
+async function downloadSecuritySupportReport(){
+  if(!lastSecurityScan)lastSecurityScan=await api('/admin/security/scan',{method:'POST'});
+  lastHealthSnapshot=await api('/admin/health');
+  const report=buildSecuritySupportReport(lastSecurityScan,lastHealthSnapshot);
+  const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`sharedcart-security-report-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+  toast(t('securityReportReady'));
+  return true;
+}
+
 
 const AUDIT_ACTION_LABELS={
   he:{report_resolved:'דיווח טופל',report_dismissed:'דיווח נדחה',user_blocked:'משתמש נחסם',user_unblocked:'חסימת משתמש בוטלה',user_deleted:'משתמש נמחק',user_restored:'משתמש שוחזר',user_permanently_deleted:'משתמש נמחק לצמיתות',user_role_changed:'תפקיד משתמש שונה',username_changed:'שם משתמש שונה',password_reset_requested:'נשלח איפוס סיסמה',group_deleted:'קבוצה נמחקה',group_restored:'קבוצה שוחזרה',item_deleted:'פריט נמחק',item_restored:'פריט שוחזר',comment_deleted:'הערה נמחקה',comment_restored:'הערה שוחזרה',blocked_term_saved:'מילה חסומה נשמרה',blocked_term_disabled:'מילה חסומה הושבתה',security_scan_run:'בוצעה בדיקת אבטחה',security_alerts_read:'התראות אבטחה סומנו כנקראו'},
@@ -64,8 +189,7 @@ function renderAuditDetails(value){
 
 function installIcons(root=document){root.querySelectorAll('[data-icon]').forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
 function applyLanguage(){document.documentElement.lang=state.language;document.documentElement.dir=state.language==='he'?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=t(el.dataset.i18nPlaceholder));document.getElementById('pageTitle').textContent=t(state.view);const badge=document.getElementById('securityAlertBadge');if(badge)setSecurityAlertCount(badge.hidden?0:Number(badge.textContent)||0);localStorage.setItem(LANGUAGE_KEY,state.language)}
-function token(){return localStorage.getItem(TOKEN_KEY)||''}
-async function api(path,options={}){const authToken=token();const headers={...(options.headers||{})};if(authToken)headers.Authorization=`Bearer ${authToken}`;if(options.body&&!(options.body instanceof FormData)){headers['Content-Type']='application/json';options.body=JSON.stringify(options.body)}const res=await fetch(API+path,{credentials:'same-origin',...options,headers});let data={};try{data=await res.json()}catch{}if(!res.ok){const err=new Error(data.error||data.message||`HTTP ${res.status}`);err.status=res.status;err.data=data;throw err}return data}
+async function api(path,options={}){const headers={...(options.headers||{})};if(options.body&&!(options.body instanceof FormData)){headers['Content-Type']='application/json';options.body=JSON.stringify(options.body)}const res=await fetch(API+path,{credentials:'same-origin',...options,headers});let data={};try{data=await res.json()}catch{}if(!res.ok){const err=new Error(data.error||data.message||`HTTP ${res.status}`);err.status=res.status;err.data=data;throw err}return data}
 function toast(message,error=false){const el=document.getElementById('adminToast');el.textContent=message;el.classList.toggle('error',error);el.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.hidden=true,3200)}
 function loading(){document.getElementById('adminContent').innerHTML=`<div class="loading-state"><div><div class="spinner"></div><p>${escapeHtml(t('loading'))}</p></div></div>`}
 function renderError(err){document.getElementById('adminContent').innerHTML=`<div class="error-state">${escapeHtml(err.message||'Error')}</div>`}
@@ -104,6 +228,7 @@ async function renderOverview(){
   const d=await api(`/admin/overview?period=${state.period}`);
   state.lastRows=d.popular_items||[];
   const daily=d.daily_activity||[];
+  const pendingJoinRequests=d.pending_join_requests||[];
   const max=Math.max(1,...daily.map(x=>Number(x.count)||0));
   document.getElementById('adminContent').innerHTML=`
     <section class="metrics-grid">
@@ -113,6 +238,7 @@ async function renderOverview(){
       ${metric(t('activeItems'),d.stats.active_items,'package')}
       ${metric(t('actions'),d.stats.actions,'chart-bar')}
       ${metric(t('blockedUsers'),d.stats.blocked_users,'user-off','warning')}
+      ${metric(t('pendingJoinRequests'),d.stats.pending_join_requests,'users-group','warning')}
       ${metric(t('moderationEvents'),d.stats.moderation_events,'shield-check','danger')}
       ${metric(t('openReports'),d.stats.open_reports,'flag','warning')}
       ${metric(t('systemErrors'),d.stats.system_errors,'alert-triangle',Number(d.stats.system_errors)>0?'danger':'success')}
@@ -128,7 +254,8 @@ async function renderOverview(){
     <section class="dashboard-grid">
       <article class="panel"><div class="panel-header"><h2 class="panel-title">${t('topGroups')}</h2></div>${rankList((d.top_groups||[]).map(x=>({...x,count:x.actions})), 'count',x=>`${formatNumber(x.members)} ${t('members')} · ${formatNumber(x.items)} ${t('items')}`)}</article>
       <article class="panel"><div class="panel-header"><h2 class="panel-title">${t('anomalies')}</h2></div>${rankList((d.anomalies||[]).map(x=>({...x,name:x.username,count:x.actions})),'count',x=>x.day)}</article>
-    </section>`;
+    </section>
+    ${pendingJoinRequests.length?`<section class="panel"><div class="panel-header"><h2 class="panel-title">${t('pendingJoinRequests')}</h2><span>${formatNumber(pendingJoinRequests.length)}</span></div><div class="rank-list">${pendingJoinRequests.map(request=>`<div class="rank-row"><div><div class="rank-name">${escapeHtml(request.username)}</div><div class="rank-meta">${escapeHtml(request.group_name)}</div></div><span class="rank-value">${formatDate(request.requested_at)}</span></div>`).join('')}</div></section>`:''}`;
 }
 function userStatus(row){if(row.deleted_at)return ['deleted','deleted'];if(row.blocked_until&&new Date(row.blocked_until.replace(' ','T')+'Z')>new Date())return ['blocked','blocked'];if(row.role==='admin')return ['admin','admins'];return ['','active']}
 async function renderUsers(){
@@ -259,7 +386,17 @@ async function renderAudit(){
 
 async function renderHealth(){
   const d=await api('/admin/health');
+  lastHealthSnapshot=d;
   const security=d.security||{};
+  const emailUsage=d.email_usage||{};
+  const emailSent=Math.max(0,Number(emailUsage.sent_24h)||0);
+  const emailLimit=Math.max(1,Number(emailUsage.limit)||500);
+  const emailRemaining=Math.max(0,Number(emailUsage.remaining)||0);
+  const emailFailed=Math.max(0,Number(emailUsage.failed_24h)||0);
+  const emailPercent=Math.min(100,Math.max(0,Number(emailUsage.percent)||0));
+  const emailLevel=String(emailUsage.level||'normal');
+  const emailTone=emailLevel==='critical'?'#d93025':emailLevel==='warning'?'#b06000':'#188038';
+  const emailAlert=emailLevel==='critical'?t('emailUsageCritical'):emailLevel==='warning'?t('emailUsageWarning'):'';
   setSecurityAlertCount(security.unread_alerts);
   state.lastRows=Object.entries(d.tables||{}).map(([name,count])=>({name,count}));
   const scan=lastSecurityScan;
@@ -280,8 +417,9 @@ async function renderHealth(){
   document.getElementById('adminContent').innerHTML=`
     <section class="security-control-card">
       <div><span class="security-control-icon">${icon('shield-check')}</span><div><h2>${t('fullSecurityCheck')}</h2><p>${t('scanExplanation')}</p></div></div>
-      <button id="btnRunSecurityScan" type="button" class="md-button primary">${icon('search')}<span>${t('runFullCheck')}</span></button>
+      <div class="security-control-actions"><button id="btnRunSecurityScan" type="button" class="md-button primary">${icon('search')}<span>${t('runFullCheck')}</span></button><button id="btnDownloadSecurityReport" type="button" class="icon-button" title="${escapeHtml(t('downloadSecurityReport'))}" aria-label="${escapeHtml(t('downloadSecurityReport'))}">${icon('download')}</button></div>
     </section>
+    ${emailAlert?`<div style="margin:0 0 18px;padding:14px 16px;border:1px solid ${emailLevel==='critical'?'#f1b2ad':'#f7d58b'};border-radius:12px;background:${emailLevel==='critical'?'#fff5f4':'#fff9ec'};color:${emailTone};font-weight:600">${icon('alert-triangle')}<span style="margin-inline-start:8px">${escapeHtml(emailAlert)}</span></div>`:''}
     <section class="health-grid enhanced-health-grid">
       <article class="health-card"><strong>${t('database')}</strong><span class="health-ok">${t('healthy')}</span><p>${escapeHtml(d.database_version)}</p><strong>${t('serverSoftware')}</strong><p>${escapeHtml(d.server_software||'-')}</p></article>
       <article class="health-card"><strong>${t('uploads')}</strong><span class="${d.uploads_writable?'health-ok':'health-bad'}">${d.uploads_writable?t('healthy'):t('unavailable')}</span><p><span class="path-chip">${escapeHtml(d.uploads_path)}</span></p><strong>${t('storageUsed')}</strong><p>${formatBytes(d.uploads_bytes)} · ${formatNumber(d.uploads_files)} ${t('files')}</p>${d.disk_free_bytes!==null?`<strong>${t('diskFree')}</strong><p>${formatBytes(d.disk_free_bytes)}</p>`:''}</article>
@@ -289,6 +427,7 @@ async function renderHealth(){
       <article class="health-card"><strong>${t('uploadLimits')}</strong><p>${escapeHtml(d.upload_max_filesize||'-')} / ${escapeHtml(d.post_max_size||'-')}</p><strong>${t('fileUploads')}</strong><span class="${d.file_uploads?'health-ok':'health-bad'}">${d.file_uploads?t('enabled'):t('disabled')}</span></article>
       <article class="health-card security-health-card"><strong>${t('loginProtection')}</strong><p>${t('failedLogins24h')}: <b>${formatNumber(security.failed_logins_24h)}</b></p><p>${t('successfulLogins24h')}: <b>${formatNumber(security.successful_logins_24h)}</b></p><p>${t('blockedLoginKeys')}: <b>${formatNumber(security.blocked_login_keys)}</b></p></article>
       <article class="health-card security-health-card"><strong>${t('securityAlerts')}</strong><span class="${Number(security.unread_alerts)>0?'health-bad':'health-ok'}">${formatNumber(security.unread_alerts)}</span><p>${t('adminAttempts24h')}: <b>${formatNumber(security.admin_attempts_24h)}</b></p><p>${t('criticalChecks')}: <b>${formatNumber(security.critical_alerts)}</b></p></article>
+      <article class="health-card security-health-card"><strong>${t('emailUsage')}</strong><span style="color:${emailTone};font-weight:700">${formatNumber(emailSent)} / ${formatNumber(emailLimit)}</span><div style="height:8px;margin:11px 0 10px;border-radius:999px;background:#edf0f2;overflow:hidden"><span style="display:block;width:${emailPercent}%;height:100%;border-radius:inherit;background:${emailTone}"></span></div><p>${t('emailsRemaining')}: <b>${formatNumber(emailRemaining)}</b></p><p>${t('emailFailures24h')}: <b>${formatNumber(emailFailed)}</b></p><p style="font-size:11px">${t('emailTrackingNote')}</p></article>
       <article class="health-card"><strong>${t('systemErrors')}</strong><span class="${Number(d.errors_24h)>0?'health-bad':'health-ok'}">${formatNumber(d.errors_24h)}</span><p>24h</p></article>
     </section>
     ${scanBlock}
@@ -305,6 +444,13 @@ async function renderHealth(){
       toast(t('success'));
       await renderHealth();
     }catch(e){toast(e.message,true);button.disabled=false;button.querySelector('span').textContent=t('runFullCheck')}
+  };
+  document.getElementById('btnDownloadSecurityReport').onclick=async()=>{
+    const button=document.getElementById('btnDownloadSecurityReport');
+    button.disabled=true;
+    button.title=t('preparingSecurityReport');
+    button.setAttribute('aria-label',t('preparingSecurityReport'));
+    try{await downloadSecuritySupportReport();await renderHealth()}catch(e){toast(e.message,true);button.disabled=false;button.title=t('downloadSecurityReport');button.setAttribute('aria-label',t('downloadSecurityReport'))}
   };
   document.getElementById('btnMarkSecurityRead').onclick=async()=>{
     try{await api('/admin/security/read',{method:'POST'});setSecurityAlertCount(0);toast(t('success'));await renderHealth()}catch(e){toast(e.message,true)}

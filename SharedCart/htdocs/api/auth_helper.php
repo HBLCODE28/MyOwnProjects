@@ -22,6 +22,10 @@ function jwtDecode(string $token): ?array {
     if (3 !== count($parts)) return null;
 
     [$header, $payload, $sig] = $parts;
+
+    $headerData = json_decode(base64UrlDecode($header), true);
+    if (!is_array($headerData) || 'HS256' !== ($headerData['alg'] ?? null) || 'JWT' !== ($headerData['typ'] ?? null)) return null;
+
     $expected = base64UrlEncode(hash_hmac('sha256', "$header.$payload", JWT_SECRET, true));
     if (!hash_equals($expected, $sig)) return null;
 

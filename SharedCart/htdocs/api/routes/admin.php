@@ -208,7 +208,7 @@ function adminFindSensitiveWebFiles(string $documentRoot, int $limit = 25): arra
             new RecursiveDirectoryIterator($documentRoot, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST
         );
-        $iterator->setMaxDepth(2);
+        $iterator->setMaxDepth(5);
         foreach ($iterator as $file) {
             if (!$file->isFile()) continue;
             $relative = adminRelativePath($file->getPathname(), $documentRoot);
@@ -216,7 +216,7 @@ function adminFindSensitiveWebFiles(string $documentRoot, int $limit = 25): arra
             if ('api/config.php' === $relative) continue;
             $name = strtolower($file->getFilename());
             $extension = strtolower((string)$file->getExtension());
-            $sensitiveName = str_starts_with($name, '.env') || str_contains($name, 'config.php.') || str_ends_with($name, '~');
+            $sensitiveName = str_starts_with($name, '.env') || in_array($name, ['.git', '.svn', '.hg', '.ds_store'], true) || str_contains($name, 'config.php.') || str_ends_with($name, '~') || str_ends_with($name, '.swp');
             if (!$sensitiveName && !in_array($extension, $extensions, true)) continue;
             $matches[] = $relative;
             if (count($matches) >= $limit) break;
@@ -291,12 +291,186 @@ function adminAddSecurityCheck(array &$checks, string $key, string $status, stri
     ];
 }
 
+function adminReadLocalFile(string $path, int $maxBytes = 1048576): string {
+    if (!is_file($path) || !is_readable($path)) return '';
+    try {
+        $size = filesize($path);
+        if (false !== $size && $size > $maxBytes) return '';
+        $content = file_get_contents($path);
+        return false === $content ? '' : $content;
+    } catch (Throwable $e) {
+        return '';
+    }
+}
+
+function adminTryCount(PDO $dbh, string $sql, array $params = []): ?int {
+    try {
+        $stmt = $dbh->prepare($sql);
+        $stmt->execute($params);
+        return (int)($stmt->fetchColumn() ?: 0);
+    } catch (Throwable $e) {
+        error_log('Deep security count failed: ' . $e->getMessage());
+        return null;
+    }
+}
+
+function adminFileMode(string $path): string {
+    try {
+        $perms = @fileperms($path);
+        return false === $perms ? '' : substr(sprintf('%o', $perms), -4);
+    } catch (Throwable $e) {
+        return '';
+    }
+}
+
+function adminCheckFilePermissions(array &$checks, string $key, string $path, string $documentRoot): void {
+    if (!is_file($path)) {
+        adminAddSecurityCheck($checks, $key, 'critical', 'missing');
+        return;
+    }
+    $perms = @fileperms($path);
+    if (false === $perms) {
+        adminAddSecurityCheck($checks, $key, 'warning', 'unknown');
+        return;
+    }
+    $worldWritable = (bool)($perms & 0x0002);
+    $groupWritable = (bool)($perms & 0x0010);
+    $status = $worldWritable ? 'critical' : ($groupWritable ? 'warning' : 'pass');
+    adminAddSecurityCheck($checks, $key, $status, adminFileMode($path), [
+        'path' => adminRelativePath($path, $documentRoot),
+        'world_writable' => $worldWritable,
+        'group_writable' => $groupWritable,
+    ]);
+}
+
+function adminScanUploadContents(string $uploadDir, int $limit = 2000): array {
+    $result = [
+        'scanned' => 0,
+        'symlinks' => [],
+        'executable' => [],
+        'mime_mismatch' => [],
+        'invalid_images' => [],
+        'unexpected_names' => [],
+        'oversized' => [],
+    ];
+    if (!is_dir($uploadDir)) return $result;
+
+    $allowed = [
+        'jpg' => ['image/jpeg'],
+        'jpeg' => ['image/jpeg'],
+        'png' => ['image/png'],
+        'webp' => ['image/webp'],
+        'gif' => ['image/gif'],
+    ];
+    $dangerous = ['php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'cgi', 'pl', 'py', 'sh', 'shtml', 'htm', 'html', 'svg'];
+    $finfo = function_exists('finfo_open') ? @finfo_open(FILEINFO_MIME_TYPE) : false;
+
+    try {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($uploadDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach ($iterator as $file) {
+            if ($result['scanned'] >= $limit) break;
+            $relative = adminRelativePath($file->getPathname(), $uploadDir);
+            if ($file->isLink()) {
+                $result['symlinks'][] = $relative;
+                continue;
+            }
+            if (!$file->isFile()) continue;
+            $result['scanned']++;
+            $ext = strtolower((string)$file->getExtension());
+            if (in_array($ext, $dangerous, true)) $result['executable'][] = $relative;
+            if ($file->getSize() > MAX_ITEM_IMAGE_BYTES) $result['oversized'][] = $relative;
+            if (!preg_match('/^[a-f0-9]{32}\.(?:jpg|png|webp|gif)$/i', $file->getFilename())) {
+                $result['unexpected_names'][] = $relative;
+            }
+            if (!isset($allowed[$ext])) continue;
+
+            $mime = $finfo ? (string)(@finfo_file($finfo, $file->getPathname()) ?: '') : '';
+            if ('' !== $mime && !in_array($mime, $allowed[$ext], true)) {
+                $result['mime_mismatch'][] = $relative . ' (' . $mime . ')';
+            }
+            if (function_exists('getimagesize') && false === @getimagesize($file->getPathname())) {
+                $result['invalid_images'][] = $relative;
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('Deep upload scan failed: ' . $e->getMessage());
+    } finally {
+        if ($finfo) @finfo_close($finfo);
+    }
+
+    foreach (['symlinks','executable','mime_mismatch','invalid_images','unexpected_names','oversized'] as $key) {
+        $result[$key] = array_slice(array_values(array_unique($result[$key])), 0, 25);
+    }
+    return $result;
+}
+
+function adminFindWorldWritablePaths(string $root, int $maxDepth = 4, int $limit = 25): array {
+    $matches = [];
+    if (!is_dir($root)) return $matches;
+    try {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        $iterator->setMaxDepth($maxDepth);
+        foreach ($iterator as $file) {
+            $path = $file->getPathname();
+            if (str_contains(str_replace('\\', '/', $path), '/uploads/')) continue;
+            $perms = @fileperms($path);
+            if (false === $perms || !($perms & 0x0002)) continue;
+            $matches[] = adminRelativePath($path, $root);
+            if (count($matches) >= $limit) break;
+        }
+    } catch (Throwable $e) {
+        error_log('World writable scan failed: ' . $e->getMessage());
+    }
+    return $matches;
+}
+
+function adminFindSuspiciousPhpPatterns(string $root, int $limit = 25): array {
+    $matches = [];
+    if (!is_dir($root)) return $matches;
+    $pattern = '/(?<!->)\b(?:eval|shell_exec|passthru|proc_open|popen)\s*\(/i';
+    try {
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+        $iterator->setMaxDepth(4);
+        foreach ($iterator as $file) {
+            if (!$file->isFile() || 'php' !== strtolower((string)$file->getExtension())) continue;
+            if ($file->getSize() > 1048576) continue;
+            $content = adminReadLocalFile($file->getPathname());
+            if ('' === $content || !preg_match($pattern, $content, $m)) continue;
+            $matches[] = adminRelativePath($file->getPathname(), $root) . ' (' . strtolower($m[0]) . ')';
+            if (count($matches) >= $limit) break;
+        }
+    } catch (Throwable $e) {
+        error_log('PHP source heuristic scan failed: ' . $e->getMessage());
+    }
+    return $matches;
+}
+
 function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
     $checks = [];
     $documentRoot = dirname(__DIR__, 2);
     $rootHtaccess = $documentRoot . '/.htaccess';
+    $apiHtaccess = $documentRoot . '/api/.htaccess';
+    $routesHtaccess = $documentRoot . '/api/routes/.htaccess';
+    $authHelperFile = $documentRoot . '/api/auth_helper.php';
+    $adminHelperFile = $documentRoot . '/api/admin_helper.php';
+    $configFile = $documentRoot . '/api/config.php';
+    $adminJsFile = $documentRoot . '/admin.js';
     $uploadHtaccess = dirname($uploadDir) . '/.htaccess';
     $gateFile = $documentRoot . '/' . ltrim(ADMIN_CONSOLE_PATH, '/');
+
+    $rootRules = adminReadLocalFile($rootHtaccess);
+    $apiRules = adminReadLocalFile($apiHtaccess);
+    $routeRules = adminReadLocalFile($routesHtaccess);
+    $authSource = adminReadLocalFile($authHelperFile);
+    $adminHelperSource = adminReadLocalFile($adminHelperFile);
+    $adminJsSource = adminReadLocalFile($adminJsFile, 2097152);
+    $authRouteSource = adminReadLocalFile($documentRoot . '/api/routes/auth.php', 2097152);
 
     try {
         $dbVersion = (string)$dbh->query('SELECT VERSION()')->fetchColumn();
@@ -305,7 +479,7 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
         adminAddSecurityCheck($checks, 'database_connection', 'critical');
     }
 
-    $requiredTables = ['users', 'groups', 'grocery_items', 'item_comments', 'activity_log', 'security_events', 'auth_login_attempts', 'system_events'];
+    $requiredTables = ['users', 'groups', 'group_members', 'grocery_items', 'item_comments', 'activity_log', 'security_events', 'auth_login_attempts', 'auth_request_limits', 'admin_audit_log', 'system_events'];
     $missingTables = array_values(array_filter($requiredTables, static fn(string $table): bool => !adminTableExists($dbh, $table)));
     adminAddSecurityCheck($checks, 'required_tables', $missingTables ? 'critical' : 'pass', '', ['missing' => $missingTables]);
 
@@ -320,13 +494,140 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
     );
     adminAddSecurityCheck($checks, 'password_hashes', 0 === $invalidPasswords ? 'pass' : 'critical', (string)$invalidPasswords);
 
-    $jwtLength = defined('JWT_SECRET') ? strlen((string)JWT_SECRET) : 0;
-    adminAddSecurityCheck($checks, 'jwt_secret', $jwtLength >= 32 ? 'pass' : 'critical', $jwtLength >= 32 ? '32+' : (string)$jwtLength);
+    $duplicateEmails = adminTryCount($dbh, "SELECT COUNT(*) FROM (SELECT LOWER(TRIM(email)) e FROM users WHERE deleted_at IS NULL GROUP BY LOWER(TRIM(email)) HAVING COUNT(*) > 1) d");
+    $duplicateNames = adminTryCount($dbh, "SELECT COUNT(*) FROM (SELECT LOWER(TRIM(username)) u FROM users WHERE deleted_at IS NULL GROUP BY LOWER(TRIM(username)) HAVING COUNT(*) > 1) d");
+    $duplicateIdentityTotal = (int)($duplicateEmails ?? 0) + (int)($duplicateNames ?? 0);
+    adminAddSecurityCheck($checks, 'duplicate_identities', $duplicateIdentityTotal > 0 ? 'critical' : (($duplicateEmails === null || $duplicateNames === null) ? 'warning' : 'pass'), (string)$duplicateIdentityTotal, [
+        'duplicate_emails' => $duplicateEmails,
+        'duplicate_usernames' => $duplicateNames,
+    ]);
 
-    adminAddSecurityCheck($checks, 'php_version', version_compare(PHP_VERSION, '8.1.0', '>=') ? 'pass' : 'warning', PHP_VERSION);
+    $jwtLength = defined('JWT_SECRET') ? strlen((string)JWT_SECRET) : 0;
+    $jwtLooksPlaceholder = defined('JWT_SECRET') && preg_match('/^(?:xxx+|changeme|secret|password|your[_ -]?secret)$/i', trim((string)JWT_SECRET));
+    adminAddSecurityCheck($checks, 'jwt_secret', ($jwtLength >= 32 && !$jwtLooksPlaceholder) ? 'pass' : 'critical', $jwtLength >= 32 ? '32+' : (string)$jwtLength);
+
+    $jwtSelfTest = false;
+    try {
+        $valid = jwtEncode(['sub' => 1, 'iat' => time(), 'exp' => time() + 60]);
+        $validDecoded = jwtDecode($valid);
+        $expired = jwtEncode(['sub' => 1, 'iat' => time() - 120, 'exp' => time() - 60]);
+        $parts = explode('.', $valid);
+        if (3 === count($parts)) {
+            $last = substr($parts[2], -1);
+            $parts[2] = substr($parts[2], 0, -1) . ('A' === $last ? 'B' : 'A');
+        }
+        $tampered = implode('.', $parts);
+        $jwtSelfTest = is_array($validDecoded)
+            && 1 === (int)($validDecoded['sub'] ?? 0)
+            && null === jwtDecode($expired)
+            && null === jwtDecode($tampered);
+    } catch (Throwable $e) {
+        $jwtSelfTest = false;
+    }
+    adminAddSecurityCheck($checks, 'jwt_self_test', $jwtSelfTest ? 'pass' : 'critical');
+
+    $jwtHeaderValidated = '' !== $authSource
+        && str_contains($authSource, "['alg']")
+        && str_contains($authSource, "HS256")
+        && str_contains($authSource, 'base64UrlDecode($header)');
+    adminAddSecurityCheck($checks, 'jwt_header_validation', $jwtHeaderValidated ? 'pass' : 'warning');
+
+    $cookieSecure = '' !== $authSource && preg_match("/'secure'\\s*=>\\s*true/i", $authSource);
+    $cookieHttpOnly = '' !== $authSource && preg_match("/'httponly'\\s*=>\\s*true/i", $authSource);
+    $cookieSameSite = '' !== $authSource && preg_match("/'samesite'\\s*=>\\s*'(Strict|Lax)'/i", $authSource, $cookieMatch);
+    $cookieStatus = ($cookieSecure && $cookieHttpOnly && $cookieSameSite) ? 'pass' : 'critical';
+    adminAddSecurityCheck($checks, 'auth_cookie_security', $cookieStatus, $cookieSameSite ? (string)$cookieMatch[1] : 'missing', [
+        'secure' => (bool)$cookieSecure,
+        'httponly' => (bool)$cookieHttpOnly,
+        'samesite' => $cookieSameSite ? (string)$cookieMatch[1] : '',
+    ]);
+
+    $adminUsesLocalStorageToken = '' !== $adminJsSource
+        && str_contains($adminJsSource, 'localStorage.getItem(TOKEN_KEY)')
+        && str_contains($adminJsSource, 'Authorization=`Bearer');
+    adminAddSecurityCheck($checks, 'admin_token_storage', $adminUsesLocalStorageToken ? 'warning' : 'pass', $adminUsesLocalStorageToken ? 'localStorage' : 'HttpOnly cookie');
+
+    $tokenReturnedInJson = '' !== $authRouteSource && preg_match("/'token'\s*=>\s*\$token/", $authRouteSource);
+    adminAddSecurityCheck($checks, 'token_json_exposure', $tokenReturnedInJson ? 'warning' : 'pass', $tokenReturnedInJson ? 'JWT returned to JavaScript' : 'cookie only');
+
+    $authRateLimitFailClosed = '' !== $authRouteSource
+        && false !== stripos($authRouteSource, 'SECURITY_RATE_LIMIT_FAIL_CLOSED')
+        && preg_match('/(?:Authentication|Login) protection temporarily unavailable[^\r\n]{0,120}503/s', $authRouteSource);
+    $adminRateLimitFailClosed = '' !== $adminHelperSource
+        && false !== stripos($adminHelperSource, 'SECURITY_RATE_LIMIT_FAIL_CLOSED')
+        && preg_match('/Admin request protection temporarily unavailable[^\r\n]{0,120}503/s', $adminHelperSource);
+    $rateLimitFailOpen = !$authRateLimitFailClosed || !$adminRateLimitFailClosed;
+    adminAddSecurityCheck($checks, 'rate_limit_failure_mode', $rateLimitFailOpen ? 'warning' : 'pass', $rateLimitFailOpen ? 'fail-open on storage error' : 'fail-closed');
+
+    $ttl = defined('JWT_EXPIRY_SECONDS') ? (int)JWT_EXPIRY_SECONDS : 0;
+    adminAddSecurityCheck($checks, 'session_lifetime', $ttl > 0 && $ttl <= 604800 ? 'pass' : ($ttl <= 2592000 ? 'warning' : 'critical'), $ttl > 0 ? round($ttl / 86400, 1) . ' days' : 'missing');
+    $minPassword = defined('MIN_PASSWORD_LEN') ? (int)MIN_PASSWORD_LEN : 0;
+    // SharedCart policy intentionally allows passwords from 8 characters.
+    $passwordPolicyStatus = $minPassword >= 8 ? 'pass' : ($minPassword >= 6 ? 'warning' : 'critical');
+    adminAddSecurityCheck($checks, 'password_policy', $passwordPolicyStatus, (string)$minPassword);
+    $resetLen = defined('PASSWORD_RESET_CODE_LEN') ? (int)PASSWORD_RESET_CODE_LEN : 0;
+    $resetTtl = defined('PASSWORD_RESET_TTL_MINUTES') ? (int)PASSWORD_RESET_TTL_MINUTES : 0;
+    adminAddSecurityCheck($checks, 'password_reset_policy', ($resetLen >= 6 && $resetTtl > 0 && $resetTtl <= 20) ? 'pass' : 'warning', $resetLen . ' digits / ' . $resetTtl . ' min');
+
+    $phpStatus = version_compare(PHP_VERSION, '8.2.0', '<') ? 'critical' : (version_compare(PHP_VERSION, '8.3.0', '<') ? 'warning' : 'pass');
+    adminAddSecurityCheck($checks, 'php_version', $phpStatus, PHP_VERSION);
     adminAddSecurityCheck($checks, 'display_errors', adminIniEnabled('display_errors') ? 'warning' : 'pass', (string)ini_get('display_errors'));
     adminAddSecurityCheck($checks, 'allow_url_include', adminIniEnabled('allow_url_include') ? 'critical' : 'pass', (string)ini_get('allow_url_include'));
     adminAddSecurityCheck($checks, 'expose_php', adminIniEnabled('expose_php') ? 'warning' : 'pass', (string)ini_get('expose_php'));
+
+    $https = function_exists('isHttpsRequest') ? isHttpsRequest() : (!empty($_SERVER['HTTPS']) && 'off' !== strtolower((string)$_SERVER['HTTPS']));
+    adminAddSecurityCheck($checks, 'https_request', $https ? 'pass' : 'critical', $https ? 'HTTPS' : 'HTTP');
+    $hasHsts = false !== stripos($rootRules, 'Strict-Transport-Security');
+    adminAddSecurityCheck($checks, 'hsts_policy', $hasHsts ? 'pass' : 'warning');
+
+    $hasCsp = false !== stripos($rootRules, 'Content-Security-Policy');
+    $strongCsp = $hasCsp
+        && false !== stripos($rootRules, "object-src 'none'")
+        && false !== stripos($rootRules, 'frame-ancestors')
+        && false !== stripos($rootRules, 'base-uri')
+        && false !== stripos($rootRules, 'form-action');
+    adminAddSecurityCheck($checks, 'content_security_policy', $strongCsp ? 'pass' : ($hasCsp ? 'warning' : 'critical'));
+    // Parse only the script-src directive up to its semicolon. The previous
+    // expression could continue into style-src and incorrectly treat its
+    // 'unsafe-inline' as a script-src finding.
+    $scriptDirective = '';
+    if (preg_match('/(?:^|;)\s*script-src\s+([^;\"\r\n]*)/i', $rootRules, $scriptMatch)) {
+        $scriptDirective = trim((string)$scriptMatch[1]);
+    } elseif (preg_match('/script-src\s+([^;\"\r\n]*)/i', $rootRules, $scriptMatch)) {
+        $scriptDirective = trim((string)$scriptMatch[1]);
+    }
+    $cspUnsafeScript = '' !== $scriptDirective
+        && (bool)preg_match("/'unsafe-(?:inline|eval)'/i", $scriptDirective);
+    adminAddSecurityCheck($checks, 'csp_script_safety', $cspUnsafeScript ? 'critical' : 'pass', $scriptDirective);
+
+    $securityHeaders = [
+        'nosniff' => false !== stripos($rootRules, 'X-Content-Type-Options'),
+        'frame' => false !== stripos($rootRules, 'X-Frame-Options') || false !== stripos($rootRules, 'frame-ancestors'),
+        'referrer' => false !== stripos($rootRules, 'Referrer-Policy'),
+        'permissions' => false !== stripos($rootRules, 'Permissions-Policy'),
+    ];
+    $missingHeaders = array_keys(array_filter($securityHeaders, static fn(bool $ok): bool => !$ok));
+    adminAddSecurityCheck($checks, 'security_headers', $missingHeaders ? 'warning' : 'pass', '', ['missing' => $missingHeaders]);
+
+    $rootProtected = false !== stripos($rootRules, 'Options -Indexes')
+        && false !== stripos($rootRules, 'admin-access-monitor.php');
+    adminAddSecurityCheck($checks, 'web_server_rules', $rootProtected ? 'pass' : 'warning');
+
+    $apiPrivateProtected = '' !== $apiRules
+        && false !== stripos($apiRules, 'Require all denied')
+        && false !== stripos($apiRules, 'config|auth_helper|admin_helper|email_helper');
+    $routeFilesProtected = '' !== $routeRules && false !== stripos($routeRules, 'Require all denied');
+    adminAddSecurityCheck($checks, 'api_private_files', ($apiPrivateProtected && $routeFilesProtected) ? 'pass' : 'critical', '', [
+        'api_helpers' => $apiPrivateProtected,
+        'route_files' => $routeFilesProtected,
+    ]);
+
+    adminCheckFilePermissions($checks, 'config_file_permissions', $configFile, $documentRoot);
+    adminCheckFilePermissions($checks, 'admin_helper_permissions', $adminHelperFile, $documentRoot);
+    adminCheckFilePermissions($checks, 'root_rules_permissions', $rootHtaccess, $documentRoot);
+
+    $worldWritable = adminFindWorldWritablePaths($documentRoot);
+    adminAddSecurityCheck($checks, 'world_writable_paths', $worldWritable ? 'critical' : 'pass', (string)count($worldWritable), ['files' => $worldWritable]);
 
     $uploadExists = is_dir($uploadDir);
     $uploadWritable = $uploadExists ? is_writable($uploadDir) : is_writable(dirname($uploadDir));
@@ -336,34 +637,134 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
     $uploadProtectionFiles = [];
     foreach ([$uploadDir . '/.htaccess', $uploadHtaccess] as $candidate) {
         if (!is_file($candidate)) continue;
-        $rules = (string)file_get_contents($candidate);
-        $hasFilesMatch = str_contains($rules, 'FilesMatch');
-        $hasDenyRule = str_contains($rules, 'Require all denied')
-            || str_contains($rules, 'Deny from all')
-            || str_contains($rules, 'RemoveHandler');
-        if ($hasFilesMatch && $hasDenyRule) $uploadProtected = true;
+        $rules = adminReadLocalFile($candidate);
+        $hasFilesMatch = false !== stripos($rules, 'FilesMatch');
+        $hasDenyRule = false !== stripos($rules, 'Require all denied')
+            || false !== stripos($rules, 'Deny from all');
+        $hasHandlerRemoval = false !== stripos($rules, 'RemoveHandler') || false !== stripos($rules, 'RemoveType');
+        if ($hasFilesMatch && $hasDenyRule && $hasHandlerRemoval) $uploadProtected = true;
         $uploadProtectionFiles[] = adminRelativePath($candidate, $documentRoot);
     }
     adminAddSecurityCheck(
         $checks,
         'upload_execution_protection',
         $uploadProtected ? 'pass' : 'critical',
-        $uploadProtected ? 'protected' : 'missing',
+        $uploadProtected ? 'protected' : 'missing/incomplete',
         ['files' => $uploadProtectionFiles]
     );
 
-    $suspiciousUploads = adminFindFilesByExtension($uploadDir, ['php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'cgi', 'pl', 'py', 'sh']);
-    adminAddSecurityCheck($checks, 'suspicious_uploads', $suspiciousUploads ? 'critical' : 'pass', (string)count($suspiciousUploads), ['files' => $suspiciousUploads]);
+    $uploadScan = adminScanUploadContents($uploadDir);
+    adminAddSecurityCheck($checks, 'suspicious_uploads', $uploadScan['executable'] ? 'critical' : 'pass', (string)count($uploadScan['executable']), ['files' => $uploadScan['executable']]);
+    adminAddSecurityCheck($checks, 'upload_mime_integrity', ($uploadScan['mime_mismatch'] || $uploadScan['invalid_images']) ? 'critical' : 'pass', (string)($uploadScan['scanned'] ?? 0), [
+        'mime_mismatch' => $uploadScan['mime_mismatch'],
+        'invalid_images' => $uploadScan['invalid_images'],
+    ]);
+    adminAddSecurityCheck($checks, 'upload_symlinks', $uploadScan['symlinks'] ? 'critical' : 'pass', (string)count($uploadScan['symlinks']), ['files' => $uploadScan['symlinks']]);
+    adminAddSecurityCheck($checks, 'upload_filename_integrity', $uploadScan['unexpected_names'] ? 'warning' : 'pass', (string)count($uploadScan['unexpected_names']), ['files' => $uploadScan['unexpected_names']]);
+    adminAddSecurityCheck($checks, 'upload_size_integrity', $uploadScan['oversized'] ? 'warning' : 'pass', (string)count($uploadScan['oversized']), ['files' => $uploadScan['oversized']]);
 
-    $rootRules = is_file($rootHtaccess) ? (string)file_get_contents($rootHtaccess) : '';
-    $rootProtected = str_contains($rootRules, 'Options -Indexes') && str_contains($rootRules, 'Content-Security-Policy') && str_contains($rootRules, 'admin-access-monitor.php');
-    adminAddSecurityCheck($checks, 'web_server_rules', $rootProtected ? 'pass' : 'warning');
+    $uploadSource = adminReadLocalFile($documentRoot . '/api/config.php');
+    $uploadValidationStrong = '' !== $uploadSource
+        && str_contains($uploadSource, 'is_uploaded_file')
+        && str_contains($uploadSource, 'finfo_file')
+        && str_contains($uploadSource, 'random_bytes')
+        && str_contains($uploadSource, 'move_uploaded_file');
+    adminAddSecurityCheck($checks, 'upload_validation_code', $uploadValidationStrong ? 'pass' : 'critical');
 
     adminAddSecurityCheck($checks, 'admin_gate', is_file($gateFile) ? 'pass' : 'critical');
     adminAddSecurityCheck($checks, 'admin_probe_monitor', is_file($documentRoot . '/admin-access-monitor.php') ? 'pass' : 'critical');
 
-    $sensitiveFiles = adminFindSensitiveWebFiles($documentRoot);
+    $sensitiveFiles = adminFindSensitiveWebFiles($documentRoot, 50);
     adminAddSecurityCheck($checks, 'sensitive_public_files', $sensitiveFiles ? 'warning' : 'pass', (string)count($sensitiveFiles), ['files' => $sensitiveFiles]);
+
+    $suspiciousPhp = adminFindSuspiciousPhpPatterns($documentRoot);
+    adminAddSecurityCheck($checks, 'php_source_heuristics', $suspiciousPhp ? 'critical' : 'pass', (string)count($suspiciousPhp), ['files' => $suspiciousPhp]);
+
+    $fixedAdminBootstrap = '' !== $adminHelperSource
+        && false !== stripos($adminHelperSource, "SET role = 'admin'")
+        && false !== stripos($adminHelperSource, 'LOWER(TRIM(email)) = :email');
+    adminAddSecurityCheck($checks, 'fixed_admin_bootstrap', $fixedAdminBootstrap ? 'warning' : 'pass');
+
+    try {
+        $sqlMode = (string)$dbh->query('SELECT @@SESSION.sql_mode')->fetchColumn();
+        $strict = str_contains(strtoupper($sqlMode), 'STRICT_TRANS_TABLES') || str_contains(strtoupper($sqlMode), 'STRICT_ALL_TABLES');
+        adminAddSecurityCheck($checks, 'database_strict_mode', $strict ? 'pass' : 'warning', $sqlMode);
+    } catch (Throwable $e) {
+        adminAddSecurityCheck($checks, 'database_strict_mode', 'warning', 'unavailable');
+    }
+
+    try {
+        $charset = (string)$dbh->query('SELECT @@character_set_connection')->fetchColumn();
+        adminAddSecurityCheck($checks, 'database_charset', 'utf8mb4' === strtolower($charset) ? 'pass' : 'warning', $charset);
+    } catch (Throwable $e) {
+        adminAddSecurityCheck($checks, 'database_charset', 'warning', 'unavailable');
+    }
+
+    try {
+        $badTables = $dbh->query(
+            "SELECT CONCAT(table_name, ':', engine, ':', table_collation)
+               FROM information_schema.tables
+              WHERE table_schema = DATABASE()
+                AND table_type = 'BASE TABLE'
+                AND (engine <> 'InnoDB' OR table_collation NOT LIKE 'utf8mb4%')
+              ORDER BY table_name
+              LIMIT 25"
+        )->fetchAll(PDO::FETCH_COLUMN);
+        adminAddSecurityCheck($checks, 'database_table_formats', $badTables ? 'warning' : 'pass', (string)count($badTables), ['files' => $badTables]);
+    } catch (Throwable $e) {
+        adminAddSecurityCheck($checks, 'database_table_formats', 'warning', 'unavailable');
+    }
+
+    try {
+        $grants = $dbh->query('SHOW GRANTS FOR CURRENT_USER')->fetchAll(PDO::FETCH_COLUMN);
+        $grantText = strtoupper(implode("\n", array_map('strval', $grants)));
+        $globalDanger = str_contains($grantText, ' ON *.* ')
+            && (str_contains($grantText, 'ALL PRIVILEGES') || str_contains($grantText, 'GRANT OPTION') || preg_match('/\b(FILE|SUPER|CREATE USER)\b/', $grantText));
+        adminAddSecurityCheck($checks, 'database_privileges', $globalDanger ? 'warning' : 'pass', $globalDanger ? 'global privileges detected' : 'scoped');
+    } catch (Throwable $e) {
+        adminAddSecurityCheck($checks, 'database_privileges', 'warning', 'unavailable');
+    }
+
+    $orphanChecks = [];
+    if (adminTableExists($dbh, 'group_members')) {
+        $orphanChecks['group_members'] = adminTryCount($dbh, 'SELECT COUNT(*) FROM group_members gm LEFT JOIN users u ON u.id = gm.user_id LEFT JOIN `groups` g ON g.id = gm.group_id WHERE u.id IS NULL OR g.id IS NULL');
+    }
+    if (adminTableExists($dbh, 'grocery_items')) {
+        $orphanChecks['grocery_items'] = adminTryCount($dbh, 'SELECT COUNT(*) FROM grocery_items i LEFT JOIN users u ON u.id = i.created_by LEFT JOIN `groups` g ON g.id = i.group_id WHERE u.id IS NULL OR g.id IS NULL');
+    }
+    if (adminTableExists($dbh, 'item_comments')) {
+        $orphanChecks['item_comments'] = adminTryCount($dbh, 'SELECT COUNT(*) FROM item_comments c LEFT JOIN users u ON u.id = c.user_id LEFT JOIN grocery_items i ON i.id = c.item_id WHERE u.id IS NULL OR i.id IS NULL');
+    }
+    if (adminTableExists($dbh, 'item_contributions')) {
+        $orphanChecks['item_contributions'] = adminTryCount($dbh, 'SELECT COUNT(*) FROM item_contributions c LEFT JOIN users u ON u.id = c.user_id LEFT JOIN grocery_items i ON i.id = c.item_id WHERE u.id IS NULL OR i.id IS NULL');
+    }
+    $orphanTotal = 0;
+    $orphanUnknown = false;
+    foreach ($orphanChecks as $count) {
+        if (null === $count) $orphanUnknown = true;
+        else $orphanTotal += $count;
+    }
+    adminAddSecurityCheck($checks, 'database_orphans', $orphanTotal > 0 ? 'critical' : ($orphanUnknown ? 'warning' : 'pass'), (string)$orphanTotal, $orphanChecks);
+
+    try {
+        $dbNow = (string)$dbh->query("SELECT DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-%d %H:%i:%s')")->fetchColumn();
+        $dbTs = strtotime($dbNow . ' UTC');
+        $skew = false === $dbTs ? null : abs(time() - $dbTs);
+        adminAddSecurityCheck($checks, 'database_clock', null === $skew ? 'warning' : ($skew <= 10 ? 'pass' : 'warning'), null === $skew ? 'unavailable' : $skew . 's');
+    } catch (Throwable $e) {
+        adminAddSecurityCheck($checks, 'database_clock', 'warning', 'unavailable');
+    }
+
+    if (adminTableExists($dbh, 'password_reset_requests')) {
+        $expiredResets = adminTryCount($dbh, 'SELECT COUNT(*) FROM password_reset_requests WHERE used = 0 AND expires_at < UTC_TIMESTAMP()');
+        $activeResets = adminTryCount($dbh, 'SELECT COUNT(*) FROM password_reset_requests WHERE used = 0 AND expires_at >= UTC_TIMESTAMP()');
+        adminAddSecurityCheck($checks, 'password_reset_state', ($expiredResets ?? 0) > 1000 ? 'warning' : 'pass', (string)($activeResets ?? 0), [
+            'active' => $activeResets,
+            'expired_unused' => $expiredResets,
+        ]);
+    } else {
+        adminAddSecurityCheck($checks, 'password_reset_state', 'pass', 'table not created yet');
+    }
 
     $security = adminSecuritySummary($dbh);
     adminAddSecurityCheck($checks, 'blocked_login_attempts', $security['blocked_login_keys'] > 0 ? 'warning' : 'pass', (string)$security['blocked_login_keys']);
@@ -375,7 +776,7 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
 
     $counts = ['pass' => 0, 'warning' => 0, 'critical' => 0];
     foreach ($checks as $check) $counts[$check['status']]++;
-    $score = max(0, 100 - ($counts['warning'] * 5) - ($counts['critical'] * 20));
+    $score = max(0, 100 - ($counts['warning'] * 3) - ($counts['critical'] * 12));
     $overall = $counts['critical'] > 0 ? 'critical' : ($counts['warning'] > 0 ? 'warning' : 'pass');
 
     return [
@@ -385,6 +786,7 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
         'summary' => $counts,
         'checks' => $checks,
         'security' => $security,
+        'scan_version' => 3,
     ];
 }
 
@@ -606,6 +1008,7 @@ if ('overview' === $section && 'GET' === $method) {
         'active_items' => adminCount($dbh, 'SELECT COUNT(*) FROM grocery_items WHERE deleted_at IS NULL'),
         'actions' => adminCount($dbh, 'SELECT COUNT(*) FROM activity_log WHERE created_at >= :since', [':since' => $since]),
         'blocked_users' => adminCount($dbh, 'SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND blocked_until > UTC_TIMESTAMP()'),
+        'pending_join_requests' => adminSafeCount($dbh, "SELECT COUNT(*) FROM group_join_requests WHERE status = 'pending'"),
         'moderation_events' => adminCount($dbh, 'SELECT COUNT(*) FROM moderation_events WHERE created_at >= :since', [':since' => $since]),
         'open_reports' => adminCount($dbh, "SELECT COUNT(*) FROM content_reports WHERE status = 'open'"),
         'system_errors' => adminCount($dbh, "SELECT COUNT(*) FROM system_events WHERE event_type IN ('api_error','database_error') AND resolved_at IS NULL AND created_at >= :since", [':since' => $since]),
@@ -699,6 +1102,15 @@ if ('overview' === $section && 'GET' === $method) {
     $anomalyStmt->execute([':since' => $since]);
 
     $uploadDir = adminItemUploadDir();
+    $pendingJoinRequests = adminSafeFetchAll($dbh,
+        'SELECT r.id, u.username, g.name AS group_name, r.requested_at
+           FROM group_join_requests r
+           JOIN users u ON u.id = r.user_id AND u.deleted_at IS NULL
+           JOIN `groups` g ON g.id = r.group_id AND g.deleted_at IS NULL
+          WHERE r.status = "pending"
+          ORDER BY r.requested_at ASC, r.id ASC
+          LIMIT 20'
+    );
     jsonOut([
         'period' => $days,
         'stats' => $stats,
@@ -708,6 +1120,7 @@ if ('overview' === $section && 'GET' === $method) {
         'top_writers' => $writerStmt->fetchAll(),
         'top_groups' => $groupsStmt->fetchAll(),
         'anomalies' => $anomalyStmt->fetchAll(),
+        'pending_join_requests' => $pendingJoinRequests,
         'health' => [
             'database' => 'ok',
             'server_time' => gmdate('c'),
@@ -824,16 +1237,9 @@ if ('users' === $section) {
         if ($length > MAX_USERNAME_LEN) jsonError('Username too long');
         if (preg_match('/[\x00-\x1F\x7F]/u', $username)) jsonError('Username contains unsupported characters');
         assertContentAllowed($dbh, $username, null, 'admin_username_change', 'user', $targetId);
-        $check = $dbh->prepare(
-            'SELECT 1
-               FROM users
-              WHERE id <> :id
-                AND deleted_at IS NULL
-                AND (username = :username OR email = :username_as_email)
-              LIMIT 1'
-        );
-        $check->execute([':username' => $username, ':username_as_email' => $username, ':id' => $targetId]);
-        if ($check->fetchColumn()) jsonError('Email or username already taken', 409);
+        $check = $dbh->prepare('SELECT 1 FROM users WHERE username = :username AND id <> :id AND deleted_at IS NULL LIMIT 1');
+        $check->execute([':username' => $username, ':id' => $targetId]);
+        if ($check->fetchColumn()) jsonError('Username already taken', 409);
         $dbh->prepare('UPDATE users SET username = :username WHERE id = :id')->execute([':username' => $username, ':id' => $targetId]);
         adminAudit($dbh, $adminUserId, 'username_changed', 'user', $targetId, ['username' => $username]);
         jsonOut(['message' => 'Username updated', 'username' => $username]);
@@ -1319,8 +1725,9 @@ if ('security' === $section && 'read' === $action && 'POST' === $method) {
 
 if ('health' === $section && 'GET' === $method) {
     $version = (string)$dbh->query('SELECT VERSION()')->fetchColumn();
+    $emailUsage = emailUsageSummary($dbh);
     $tables = [];
-    foreach (['users', 'groups', 'grocery_items', 'item_comments', 'activity_log', 'blocked_terms', 'moderation_events', 'content_reports', 'admin_audit_log', 'system_events', 'auth_login_attempts', 'auth_request_limits', 'security_events'] as $table) {
+    foreach (['users', 'groups', 'grocery_items', 'item_comments', 'activity_log', 'blocked_terms', 'moderation_events', 'content_reports', 'admin_audit_log', 'system_events', 'auth_login_attempts', 'auth_request_limits', 'security_events', 'email_delivery_log'] as $table) {
         try {
             $tables[$table] = adminCount($dbh, 'SELECT COUNT(*) FROM `' . $table . '`');
         } catch (Throwable $e) {
@@ -1361,6 +1768,7 @@ if ('health' === $section && 'GET' === $method) {
         'errors_24h' => $errors24h,
         'recent_errors' => $recentErrors,
         'security' => $security,
+        'email_usage' => $emailUsage,
         'recent_security_events' => adminRecentSecurityEvents($dbh, 30),
         'tables' => $tables,
     ]);

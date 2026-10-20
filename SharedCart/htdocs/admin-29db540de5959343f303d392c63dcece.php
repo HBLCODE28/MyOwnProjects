@@ -193,6 +193,6 @@ header('Referrer-Policy: same-origin');
   </div>
 
   <div id="adminToast" class="admin-toast" role="status" hidden></div>
-  <script src="admin.js?v=20260707-8"></script>
+  <script src="admin.js?v=20261019-5"></script>
 </body>
 </html>
