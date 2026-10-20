@@ -101,26 +101,6 @@ function jsonList(mixed $value): array {
     return is_array($value) ? array_values($value) : [];
 }
 
-function tmdbMovie(string $title): ?array {
-    static $cache = [];
-    $key = textLower($title);
-    if (array_key_exists($key, $cache)) return $cache[$key];
-    $token = envValue('MOVIEMEET_TMDB_TOKEN');
-    if ('' === $token || '' === $title) return $cache[$key] = null;
-    $url = 'https://api.themoviedb.org/3/search/movie?language=he-IL&region=IL&include_adult=false&query=' . rawurlencode($title);
-    $context = stream_context_create(['http' => ['timeout' => 5, 'header' => "Accept: application/json\r\nAuthorization: Bearer $token\r\n"]]);
-    $raw = @file_get_contents($url, false, $context);
-    $results = is_string($raw) ? json_decode($raw, true)['results'] ?? [] : [];
-    foreach ($results as $result) {
-        if (!empty($result['id']) && !empty($result['poster_path'])) return $cache[$key] = ['id' => (int)$result['id'], 'poster_path' => (string)$result['poster_path']];
-    }
-    return $cache[$key] = null;
-}
-
-function tmdbPosterUrl(?string $path): ?string {
-    return is_string($path) && str_starts_with($path, '/') ? 'https://image.tmdb.org/t/p/w342' . $path : null;
-}
-
 function eventByToken(PDO $dbh, string $token): array {
     $stmt = $dbh->prepare('SELECT * FROM mm_events WHERE token=?');
     $stmt->execute([$token]);
@@ -151,12 +131,12 @@ function travelMinutes(string $city, float $destinationLat, float $destinationLn
     $cacheKey = "$city:$destinationLat:$destinationLng";
     if (isset($memoryCache[$cacheKey])) return $memoryCache[$cacheKey];
     $fallback = minutesBetween($origin[0], $origin[1], $destinationLat, $destinationLng);
-    $apiKey = envValue('MOVIEMEET_GOOGLE_MAPS_API_KEY');
-    if ('' === $apiKey) return $memoryCache[$cacheKey] = $fallback;
-    $url = 'https://maps.googleapis.com/maps/api/directions/json?origin=' . rawurlencode($origin[0] . ',' . $origin[1]) . '&destination=' . rawurlencode($destinationLat . ',' . $destinationLng) . '&mode=driving&key=' . rawurlencode($apiKey);
-    $raw = @file_get_contents($url, false, stream_context_create(['http' => ['timeout' => 5]]));
+    $coordinates = $origin[1] . ',' . $origin[0] . ';' . $destinationLng . ',' . $destinationLat;
+    $url = 'https://router.project-osrm.org/route/v1/driving/' . $coordinates . '?overview=false';
+    $context = stream_context_create(['http' => ['timeout' => 5, 'header' => "Accept: application/json\r\nUser-Agent: MovieMeet/1.0 (https://moviesmeet.ct.ws/)\r\n"]]);
+    $raw = @file_get_contents($url, false, $context);
     $data = is_string($raw) ? json_decode($raw, true) : [];
-    $seconds = (int)($data['routes'][0]['legs'][0]['duration']['value'] ?? 0);
+    $seconds = (int)($data['routes'][0]['duration'] ?? 0);
     return $memoryCache[$cacheKey] = $seconds > 0 ? (int)ceil($seconds / 60) : $fallback;
 }
 
