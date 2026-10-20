@@ -176,10 +176,17 @@ async function joinEvent(event) {
 }
 
 async function setupCandidateForm(token, event, city) {
-  const response = await api('cinemas', {query:{city}}); cinemas = response.cinemas;
   const select = document.querySelector('#cinemaSelect');
-  select.innerHTML = '<option value="">בחרו קולנוע</option>' + cinemas.map(cinema => `<option value="${cinema.id}">${escapeHtml(cinema.network)} — ${escapeHtml(cinema.name)}</option>`).join('');
-  document.querySelector('#cinemaNote').textContent = city ? (response.exact ? `מוצגים בתי קולנוע ב${city}.` : response.nearby ? `אין בית קולנוע ברשימה ב${city}; מוצגות האפשרויות הקרובות ביותר.` : `לא נמצאה התאמת מרחק ל${city}; מוצגים כל בתי הקולנוע.`) : 'שמרו את עיר המוצא כדי לקבל בתי קולנוע קרובים.';
+  try {
+    const response = await api('cinemas', {query:{city}}); cinemas = response.cinemas;
+    select.innerHTML = '<option value="">בחרו קולנוע</option>' + cinemas.map(cinema => `<option value="${cinema.id}">${escapeHtml(cinema.network)} — ${escapeHtml(cinema.name)}</option>`).join('');
+    document.querySelector('#cinemaNote').textContent = city ? (response.exact ? `מוצגים בתי קולנוע ב${city}.` : response.nearby ? `אין בית קולנוע ברשימה ב${city}; מוצגות האפשרויות הקרובות ביותר.` : `לא נמצאה התאמת מרחק ל${city}; מוצגים כל בתי הקולנוע.`) : 'שמרו את עיר המוצא כדי לקבל בתי קולנוע קרובים.';
+  } catch (error) {
+    select.innerHTML = '<option value="">לא ניתן לטעון בתי קולנוע</option>';
+    select.disabled = true;
+    document.querySelector('#cinemaNote').textContent = error.message;
+    return;
+  }
   const form = document.querySelector('#candidateForm');
   form.querySelector('[name="show_date"]').min = event.date_start; form.querySelector('[name="show_date"]').max = event.date_end; form.querySelector('[name="show_date"]').value = event.date_start;
   document.querySelector('#showTime').innerHTML = `<option value="">בחרו שעה</option>${timeOptions('20:00')}`;

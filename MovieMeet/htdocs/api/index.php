@@ -60,7 +60,8 @@ try {
         $city = cleanText($_GET['city'] ?? '', 80);
         $local = array_values(array_filter($rows, static fn(array $cinema): bool => textLower($cinema['city']) === textLower($city)));
         if ($city && !$local && cityCoordinates($city)) {
-            usort($rows, static fn(array $first, array $second): int => travelMinutes($city, (float)$first['latitude'], (float)$first['longitude']) <=> travelMinutes($city, (float)$second['latitude'], (float)$second['longitude']));
+            $origin = cityCoordinates($city);
+            usort($rows, static fn(array $first, array $second): int => minutesBetween($origin[0], $origin[1], (float)$first['latitude'], (float)$first['longitude']) <=> minutesBetween($origin[0], $origin[1], (float)$second['latitude'], (float)$second['longitude']));
             $rows = array_slice($rows, 0, 5);
         } elseif ($local) {
             $rows = $local;
