@@ -220,8 +220,12 @@ function updateAdminDashboardButton() {
 }
 
 function loadCurrentProfile() {
+    const profileToken = getToken();
+    const profileStateVersion = authStateVersion;
+
     return apiCall('GET', '/profile/me')
         .done(profile => {
+            if (profileStateVersion !== authStateVersion || profileToken !== getToken()) return;
             currentUsername = String(profile.username || '');
             currentUserEmail = String(profile.email || '').trim().toLowerCase();
             updateHomeProfileName();
@@ -234,6 +238,8 @@ function loadCurrentProfile() {
             applyMainLanguage();
         })
         .fail(() => {
+            if (profileStateVersion !== authStateVersion || profileToken !== getToken()) return;
+            currentUsername = '';
             currentUserRole = 'user';
             currentUserEmail = '';
             updateHomeProfileName();
@@ -247,6 +253,7 @@ let currentGroupCanRename = false;
 let currentGroupName      = '';
 let currentUserId         = null;
 let itemsLoadRequestId    = 0;
+let authStateVersion      = 0;
 let currentUsername       = '';
 let currentUserEmail      = '';
 let currentUserRole       = 'user';
@@ -975,15 +982,23 @@ requestAnimationFrame(syncFixedUiOffsets);
 
 // Token
 function saveToken(token) {
+    authStateVersion += 1;
     localStorage.setItem(TOKEN_KEY, token);
     currentUserId = parseUserId(token);
+    currentUsername = '';
+    currentUserEmail = '';
 }
 function getToken() {
     return localStorage.getItem(TOKEN_KEY) || '';
 }
 function clearToken() {
+    authStateVersion += 1;
     localStorage.removeItem(TOKEN_KEY);
     currentUserId = null;
+    currentUsername = '';
+    currentUserEmail = '';
+    currentUserRole = 'user';
+    currentAdminPath = '';
     shareLinkCache.clear();
     shareLinkRequests.clear();
 }
