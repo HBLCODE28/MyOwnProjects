@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Karantina:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261020-2">
+  <link rel="stylesheet" href="style.css?v=20261020-3">
   </head>
   <body>
 
@@ -42,6 +42,7 @@
         <div class="auth-hero"><svg class="icon icon-tabler icon-tabler-shopping-cart tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-shopping-cart"></use></svg></div>
         <h1 class="auth-title">סל שיתופי</h1>
         <p class="auth-sub">קניות משותפות, בקלות</p>
+        <button id="btnAbout" type="button" class="auth-about-button" aria-haspopup="dialog">מי אנחנו</button>
 
         <div id="authError" class="msg-error hidden" role="alert"></div>
 
@@ -465,6 +466,19 @@
     </div>
   </div>
 
+  <div id="aboutModal" class="report-modal about-modal hidden" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="report-card about-card">
+      <button id="aboutClose" type="button" class="report-close" aria-label="סגור"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
+      <h2 id="aboutTitle" class="report-title">מי אנחנו</h2>
+      <div class="about-copy">
+        <p>לא פעם ולא פעמיים רשימת הקניות נשלחת בקבוצת WhatsApp, נעלמת בין ההודעות, או ששיחת טלפון קצרה קוטעת בדיוק כשמנסים להיזכר מה חסר בבית.</p>
+        <p>סל שיתופי נותן לכל קבוצה מקום אחד ברור ונוח: מוסיפים פריטים, מסמנים מה כבר נקנה, ורואים היסטוריה כדי שלא יהיה ספק מי עדכן ומתי.</p>
+        <p>אפשר לשתף קבוצה בקישור או ב־QR, לאשר חברים חדשים, להבליט מוצרי ברזל שתמיד צריכים בבית, ולהשתמש במצב מטבח כדי לעדכן בתמונות מה באמת נשאר במקרר ובמזווה.</p>
+        <p>המטרה פשוטה: פחות הודעות, פחות בלבול, ויותר קניות משותפות שעובדות.</p>
+      </div>
+    </div>
+  </div>
+
   <div id="shareChoiceModal" class="report-modal hidden" role="dialog" aria-modal="true" aria-labelledby="shareChoiceTitle">
     <div class="report-card share-choice-card">
       <button id="shareChoiceClose" type="button" class="report-close" aria-label="סגור שיתוף"><svg class="icon icon-tabler icon-tabler-x tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-x"></use></svg></button>
@@ -488,6 +502,6 @@
   <script src="vendor/jquery-3.7.1.min.js?v=3.7.1-full-1"></script>
   <script src="vendor/qrcode.min.js?v=1.0.0"></script>
   <script src="vendor/jsQR.js?v=1.4.0"></script>
-  <script src="app.js?v=20261020-4"></script>
+  <script src="app.js?v=20261020-5"></script>
   </body>
   </html>

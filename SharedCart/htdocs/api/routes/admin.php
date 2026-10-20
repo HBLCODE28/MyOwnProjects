@@ -771,7 +771,7 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
     adminAddSecurityCheck($checks, 'admin_access_attempts', $security['admin_attempts_24h'] > 0 ? 'warning' : 'pass', (string)$security['admin_attempts_24h']);
     adminAddSecurityCheck($checks, 'failed_logins', $security['failed_logins_24h'] >= 20 ? 'critical' : ($security['failed_logins_24h'] > 0 ? 'warning' : 'pass'), (string)$security['failed_logins_24h']);
 
-    $systemErrors = adminSafeCount($dbh, "SELECT COUNT(*) FROM system_events WHERE event_type IN ('api_error','database_error') AND resolved_at IS NULL AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)");
+    $systemErrors = adminSafeCount($dbh, "SELECT COUNT(*) FROM system_events WHERE event_type IN ('api_error','database_error','server_response_error') AND resolved_at IS NULL AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)");
     adminAddSecurityCheck($checks, 'system_errors', $systemErrors >= 10 ? 'critical' : ($systemErrors > 0 ? 'warning' : 'pass'), (string)$systemErrors);
 
     $counts = ['pass' => 0, 'warning' => 0, 'critical' => 0];
@@ -1011,7 +1011,7 @@ if ('overview' === $section && 'GET' === $method) {
         'pending_join_requests' => adminSafeCount($dbh, "SELECT COUNT(*) FROM group_join_requests WHERE status = 'pending'"),
         'moderation_events' => adminCount($dbh, 'SELECT COUNT(*) FROM moderation_events WHERE created_at >= :since', [':since' => $since]),
         'open_reports' => adminCount($dbh, "SELECT COUNT(*) FROM content_reports WHERE status = 'open'"),
-        'system_errors' => adminCount($dbh, "SELECT COUNT(*) FROM system_events WHERE event_type IN ('api_error','database_error') AND resolved_at IS NULL AND created_at >= :since", [':since' => $since]),
+        'system_errors' => adminCount($dbh, "SELECT COUNT(*) FROM system_events WHERE event_type IN ('api_error','database_error','server_response_error') AND resolved_at IS NULL AND created_at >= :since", [':since' => $since]),
     ];
 
     $popularStmt = $dbh->prepare(
@@ -1738,14 +1738,14 @@ if ('health' === $section && 'GET' === $method) {
     $uploadStats = adminDirectoryStats($uploadDir);
     $diskSpace = adminSafeDiskSpace($uploadDir);
     $security = adminSecuritySummary($dbh);
-    $errors24h = adminSafeCount($dbh, "SELECT COUNT(*) FROM system_events WHERE event_type IN ('api_error','database_error') AND resolved_at IS NULL AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)");
+    $errors24h = adminSafeCount($dbh, "SELECT COUNT(*) FROM system_events WHERE event_type IN ('api_error','database_error','server_response_error') AND resolved_at IS NULL AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)");
     $recentErrors = adminSafeFetchAll(
         $dbh,
         "SELECT e.event_type, e.route, e.message, e.created_at, e.ip_address,
                 COALESCE(NULLIF(u.username, ''), NULLIF(e.username_snapshot, '')) AS username
            FROM system_events e
            LEFT JOIN users u ON u.id = e.user_id
-          WHERE e.event_type IN ('api_error','database_error')
+          WHERE e.event_type IN ('api_error','database_error','server_response_error')
             AND e.resolved_at IS NULL
           ORDER BY e.created_at DESC
           LIMIT 20"

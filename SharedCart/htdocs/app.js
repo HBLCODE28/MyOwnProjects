@@ -258,6 +258,7 @@ let currentUsername       = '';
 let currentUserEmail      = '';
 let currentUserRole       = 'user';
 let currentAdminPath      = '';
+let aboutReturnFocus      = null;
 let currentLanguage       = localStorage.getItem(LANGUAGE_KEY) === 'en' ? 'en' : 'he';
 let pollTimer             = null;
 let serverClockOffsetMs   = 0;
@@ -352,6 +353,7 @@ $(document).on('keydown', event => {
         hideKitchenCamera();
         hideShareChoice();
         hideJoinQrScanner();
+        hideAboutModal();
         hideProfileModal();
         hideCommentsModal();
         hideItemActionsModal();
@@ -451,6 +453,23 @@ function hideProfileModal() {
         profileReturnFocus.focus();
     }
     profileReturnFocus = null;
+}
+
+function showAboutModal(trigger) {
+    aboutReturnFocus = trigger || document.activeElement;
+    $('#aboutModal').removeClass('hidden');
+    $('body').addClass('report-modal-open');
+    setTimeout(() => $('#aboutClose').trigger('focus'), 0);
+}
+
+function hideAboutModal() {
+    const $modal = $('#aboutModal');
+    if (!$modal.length || $modal.hasClass('hidden')) return;
+
+    $modal.addClass('hidden');
+    $('body').removeClass('report-modal-open');
+    if (aboutReturnFocus && document.contains(aboutReturnFocus)) aboutReturnFocus.focus();
+    aboutReturnFocus = null;
 }
 
 function saveProfileUsername() {
@@ -1743,6 +1762,11 @@ $('#newItemImage').on('change', function () {
 $('#btnProfile, #btnHomeProfile').on('click', function () {
     closeMobileGroupMenu();
     showProfileModal(this);
+});
+$('#btnAbout').on('click', function () { showAboutModal(this); });
+$('#aboutClose').on('click', hideAboutModal);
+$('#aboutModal').on('click', event => {
+    if (event.target && event.target.id === 'aboutModal') hideAboutModal();
 });
 
 $('#btnAdminDashboard').on('click', () => {

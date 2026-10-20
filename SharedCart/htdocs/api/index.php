@@ -37,6 +37,7 @@ $sub = '';
 $adminSection = '';
 $adminId = null;
 $adminAction = '';
+$serverResponseLogged = false;
 
 if ('auth' === $resource || 'invite' === $resource || 'profile' === $resource) {
     $sub = $parts[1] ?? '';
@@ -52,6 +53,25 @@ if ('auth' === $resource || 'invite' === $resource || 'profile' === $resource) {
     $id  = isset($parts[1]) && ctype_digit((string)$parts[1]) ? (int)$parts[1] : null;
     $sub = $parts[2] ?? '';
 }
+
+register_shutdown_function(static function () use (&$serverResponseLogged, $relativePath): void {
+    $lastError = error_get_last();
+    $fatalTypes = [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+    $isFatal = is_array($lastError) && in_array((int)($lastError['type'] ?? 0), $fatalTypes, true);
+    $statusCode = (int)(http_response_code() ?: 200);
+    if (!$isFatal && $statusCode < 500) return;
+    if ($serverResponseLogged) return;
+    if ($isFatal && $statusCode < 500) {
+        $statusCode = 500;
+        http_response_code($statusCode);
+    }
+
+    try {
+        $message = 'HTTP ' . $statusCode . ' server response' . ($isFatal ? ' (fatal PHP error)' : '');
+        logSystemEvent(getDb(), 'server_response_error', $message, $relativePath);
+    } catch (Throwable $ignored) {
+    }
+});
 
 try {
     $schemaDb = getDb();
@@ -73,10 +93,12 @@ try {
         default         => jsonError('Not found', 404),
     };
 } catch (PDOException $e) {
+    $serverResponseLogged = true;
     error_log('Database operation failed: ' . $e->getMessage());
     try { logSystemEvent(getDb(), 'database_error', $e->getMessage(), $relativePath); } catch (Throwable $ignored) {}
     jsonError('Database operation failed', 500);
 } catch (Throwable $e) {
+    $serverResponseLogged = true;
     error_log('API failure: ' . $e->getMessage());
     try { logSystemEvent(getDb(), 'api_error', $e->getMessage(), $relativePath); } catch (Throwable $ignored) {}
     jsonError('Server operation failed', 500);
