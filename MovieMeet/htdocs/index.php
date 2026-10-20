@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css?v=2">
-  <style>.auth-card .text-button{margin-top:12px}</style>
+  <style>.auth-card .text-button{margin-top:12px}#accountArea{display:flex;align-items:center;gap:10px}</style>
 </head>
 <body>
   <header class="site-header"><a class="brand" href="index.php">MovieMeet</a><div id="accountArea"></div></header>
