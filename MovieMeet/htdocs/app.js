@@ -82,7 +82,7 @@ function renderCreate() {
     event.preventDefault();
     try {
       const form = new FormData(event.currentTarget);
-      const response = await api('event-create', {method:'POST', body:JSON.stringify(Object.fromEntries(form))});
+      const response = await api('meeting-create', {method:'POST', body:JSON.stringify(Object.fromEntries(form))});
       history.pushState({}, '', `?event=${response.token}`); renderEvent(response.token);
     } catch (error) { showError('createError', error); }
   });
@@ -96,7 +96,7 @@ function addWindow(container, date = today(), start = '19:00', end = '23:00') {
 
 async function renderEvent(token) {
   setTemplate('eventTemplate');
-  const data = await api('event', {query:{token}}).catch(error => { app.innerHTML = `<section class="card"><h1>לא ניתן לפתוח את המפגש</h1><p class="form-error">${escapeHtml(error.message)}</p></section>`; return null; });
+  const data = await api('meeting', {query:{token}}).catch(error => { app.innerHTML = `<section class="card"><h1>לא ניתן לפתוח את המפגש</h1><p class="form-error">${escapeHtml(error.message)}</p></section>`; return null; });
   if (!data) return;
   currentEvent = data;
   const {event, participants, candidates} = data;

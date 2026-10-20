@@ -61,7 +61,7 @@ try {
         respond(['movies' => $movies]);
     }
 
-    if ('event-create' === $action && 'POST' === $method) {
+    if ('meeting-create' === $action && 'POST' === $method) {
         $user = requireUser($dbh);
         $input = body();
         $name = cleanText($input['name'] ?? '', 120);
@@ -73,7 +73,7 @@ try {
         respond(['token' => $token], 201);
     }
 
-    if ('event' === $action) {
+    if ('meeting' === $action) {
         $token = cleanText($_GET['token'] ?? '', 32);
         $event = eventByToken($dbh, $token);
         $user = currentUser($dbh);

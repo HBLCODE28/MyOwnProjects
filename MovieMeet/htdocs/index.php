@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css?v=2">
   <style>.auth-card .text-button{margin-top:12px}</style>
 </head>
@@ -31,6 +32,6 @@
     <section><div class="section-heading"><div><p class="eyebrow">הצעות מדורגות</p><h2>מה הכי מתאים לכולם?</h2></div><span id="participantCount" class="pill"></span></div><div id="recommendations" class="recommendations"></div></section>
     <section class="card"><h2>מי כבר מילא?</h2><ul id="participantList" class="participant-list"></ul></section>
   </template>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
