@@ -40,6 +40,13 @@ try {
 
     if ('me' === $action) respond(['user' => currentUser($dbh)]);
 
+    if ('meetings' === $action) {
+        $user = requireUser($dbh);
+        $stmt = $dbh->prepare('SELECT DISTINCT e.token,e.name,e.date_start,e.date_end FROM mm_events e LEFT JOIN mm_participants p ON p.event_id=e.id AND p.user_id=? WHERE e.organizer_id=? OR p.user_id=? ORDER BY e.date_start DESC,e.created_at DESC');
+        $stmt->execute([$user['id'], $user['id'], $user['id']]);
+        respond(['user' => $user, 'meetings' => $stmt->fetchAll()]);
+    }
+
     if ('cinemas' === $action) {
         $rows = $dbh->query('SELECT id,network,name,city,latitude,longitude,booking_url FROM mm_cinemas ORDER BY network,name')->fetchAll();
         $city = cleanText($_GET['city'] ?? '', 80);
@@ -196,5 +203,5 @@ function recommendationScore(array $candidate, array $participants): array {
     $genres = round(35 * $genrePoints / $count);
     $maxTravel = $travelMinutes ? max($travelMinutes) : 90;
     $travel = max(0, round(20 * (1 - min($maxTravel, 120) / 120)));
-    return ['total' => $availability + $genres + $travel, 'availability' => $availability, 'genres' => $genres, 'travel' => $travel, 'max_travel_minutes' => $maxTravel, 'show_at' => $showAt];
+    return ['total' => $availability + $genres + $travel, 'available' => $available, 'participant_count' => $count, 'availability' => $availability, 'genres' => $genres, 'travel' => $travel, 'max_travel_minutes' => $maxTravel, 'show_at' => $showAt];
 }

@@ -50,6 +50,18 @@ function renderHome() {
   currentEvent = null;
   setTemplate('homeTemplate');
   document.querySelector('[data-open="create"]').addEventListener('click', () => getToken() ? renderCreate() : renderAuth('register'));
+  if (getToken()) loadHomeMeetings();
+}
+
+async function loadHomeMeetings() {
+  try {
+    const {user, meetings} = await api('meetings');
+    document.querySelector('#homeProfile').classList.remove('hidden');
+    document.querySelector('#homeProfileText').textContent = `${user.name} · ${user.email}`;
+    const section = document.querySelector('#myMeetingsSection'); section.classList.remove('hidden');
+    document.querySelector('#myMeetings').innerHTML = meetings.length ? meetings.map(meeting => `<article class="meeting-card"><div><strong>${escapeHtml(meeting.name)}</strong><p>${meeting.date_start} עד ${meeting.date_end}</p></div><button class="secondary" data-meeting="${meeting.token}">פתיחת מפגש</button></article>`).join('') : '<p>עדיין אין מפגשים. אפשר ליצור את הראשון.</p>';
+    document.querySelectorAll('[data-meeting]').forEach(button => button.addEventListener('click', () => { history.pushState({}, '', `?event=${button.dataset.meeting}`); renderEvent(button.dataset.meeting); }));
+  } catch { }
 }
 
 function renderAuth(mode = 'login') {
@@ -135,6 +147,12 @@ async function renderEvent(token) {
   (savedWindows.length ? savedWindows : [{date:event.date_start,start:'19:00',end:'23:00'}]).forEach(window => addWindow(windows, window.date, window.start, window.end));
   document.querySelector('#addWindow').addEventListener('click', () => addWindow(windows, event.date_start));
   document.querySelector('#joinForm').addEventListener('submit', joinEvent);
+  document.querySelectorAll('[data-event-view]').forEach(button => button.addEventListener('click', () => {
+    const view = button.dataset.eventView;
+    document.querySelectorAll('.event-pane').forEach(pane => pane.classList.toggle('hidden', pane.dataset.pane !== view));
+    document.querySelectorAll('[data-event-view]').forEach(tab => tab.classList.toggle('active', tab === button));
+  }));
+  document.querySelectorAll('.event-pane').forEach(pane => pane.classList.toggle('hidden', pane.dataset.pane !== 'suggestions'));
   document.querySelector('#organizerCard').classList.toggle('hidden', !event.is_organizer);
   if (event.is_organizer) setupCandidateForm(token, event, data.my_participant?.city || '');
   renderParticipants(participants);
@@ -180,10 +198,16 @@ function renderParticipants(participants) {
 function renderRecommendations(candidates, token, isOrganizer) {
   const target = document.querySelector('#recommendations');
   if (!candidates.length) { target.innerHTML = '<article class="card"><h3>אין עדיין הצעות</h3><p>המארגן יכול להוסיף הקרנה שמצא באתר קולנוע רשמי.</p></article>'; return; }
-  target.innerHTML = candidates.map((candidate, index) => `<article class="recommendation ${index === 0 ? 'top' : ''}"><span class="score">${candidate.score.total}</span><p class="eyebrow">${escapeHtml(candidate.network)} · ${escapeHtml(candidate.cinema_city)}</p><h3>${escapeHtml(candidate.movie_title)}</h3><p>${escapeHtml(candidate.cinema_name)} · ${candidate.show_date} · ${String(candidate.show_time).slice(0,5)}</p><p>${candidate.genres.map(escapeHtml).join(' · ') || 'ללא סגנונות'}</p><div class="score-details"><span>זמינות ${candidate.score.availability}/45</span><span>סגנונות ${candidate.score.genres}/35</span><span>נסיעה ${candidate.score.travel}/20</span><span>עד ${candidate.score.max_travel_minutes} דק׳</span></div><div class="actions"><a class="secondary" href="${escapeHtml(candidate.booking_url)}" target="_blank" rel="noopener">בדיקת מושבים באתר הקולנוע</a><button class="vote ${candidate.my_vote == 1 ? 'active' : ''}" data-vote="1" data-id="${candidate.id}">👍 ${candidate.votes.yes_votes || 0}</button><button class="vote ${candidate.my_vote == -1 ? 'active' : ''}" data-vote="-1" data-id="${candidate.id}">👎 ${candidate.votes.no_votes || 0}</button>${candidate.seats_checked == 1 ? '<span class="seats">מישהו אישר שיש מקומות</span>' : `<button class="vote" data-seats="${candidate.id}">מצאתי מקומות</button>`}${isOrganizer ? `<button class="vote delete-candidate" data-delete="${candidate.id}">מחיקת הקרנה</button>` : ''}</div></article>`).join('');
+  target.innerHTML = candidates.map((candidate, index) => `<article class="recommendation ${index === 0 ? 'top' : ''}"><p class="match-label">${candidate.score.total >= 75 ? 'התאמה גבוהה לקבוצה' : candidate.score.total >= 50 ? 'התאמה טובה לקבוצה' : 'התאמה חלקית לקבוצה'}</p><p class="eyebrow">${escapeHtml(candidate.network)} · ${escapeHtml(candidate.cinema_city)}</p><h3>${escapeHtml(candidate.movie_title)}</h3><p>${escapeHtml(candidate.cinema_name)} · ${candidate.show_date} · ${String(candidate.show_time).slice(0,5)}</p><p>${candidate.genres.map(escapeHtml).join(' · ') || 'ללא סגנונות'}</p><div class="score-details"><span>${candidate.score.available}/${candidate.score.participant_count} חברים זמינים</span><span>${candidate.score.genres >= 24 ? 'מתאים לרוב הטעמים' : 'מתאים לחלק מהטעמים'}</span><span>הנסיעה הארוכה ביותר: ${candidate.score.max_travel_minutes} דק׳</span></div><div class="actions"><a class="secondary" href="${escapeHtml(cinemaSearchUrl(candidate))}" target="_blank" rel="noopener">חיפוש והזמנת מושבים</a><button class="vote ${candidate.my_vote == 1 ? 'active' : ''}" data-vote="1" data-id="${candidate.id}">👍 ${candidate.votes.yes_votes || 0}</button><button class="vote ${candidate.my_vote == -1 ? 'active' : ''}" data-vote="-1" data-id="${candidate.id}">👎 ${candidate.votes.no_votes || 0}</button>${candidate.seats_checked == 1 ? '<span class="seats">מישהו אישר שיש מקומות</span>' : `<button class="vote" data-seats="${candidate.id}">מצאתי מקומות</button>`}${isOrganizer ? `<button class="vote delete-candidate" data-delete="${candidate.id}">מחיקת הקרנה</button>` : ''}</div></article>`).join('');
   target.querySelectorAll('[data-vote]').forEach(button => button.addEventListener('click', async () => { try { await api('vote', {method:'POST', query:{token}, body:JSON.stringify({candidate_id:Number(button.dataset.id),vote:Number(button.dataset.vote)})}); renderEvent(token); } catch (error) { alert(error.message); } }));
   target.querySelectorAll('[data-seats]').forEach(button => button.addEventListener('click', async () => { try { await api('seats-checked', {method:'POST', query:{token}, body:JSON.stringify({candidate_id:Number(button.dataset.seats)})}); renderEvent(token); } catch (error) { alert(error.message); } }));
   target.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { if (!confirm('למחוק את ההקרנה?')) return; try { await api('candidate-delete', {method:'POST', query:{token}, body:JSON.stringify({candidate_id:Number(button.dataset.delete)})}); renderEvent(token); } catch (error) { alert(error.message); } }));
+}
+
+function cinemaSearchUrl(candidate) {
+  if (candidate.network === 'Cinema City') return `https://www.cinema-city.co.il/search?q=${encodeURIComponent(candidate.movie_title)}`;
+  const domain = candidate.network === 'HOT Cinema' ? 'hotcinema.co.il' : 'movieland.co.il';
+  return `https://www.google.com/search?q=${encodeURIComponent(`site:${domain} ${candidate.movie_title}`)}`;
 }
 
 document.addEventListener('click', event => { const opener = event.target.closest('[data-open]'); if (!opener) return; if (opener.dataset.open === 'home') renderHome(); if (opener.dataset.open === 'auth') renderAuth('login'); });
