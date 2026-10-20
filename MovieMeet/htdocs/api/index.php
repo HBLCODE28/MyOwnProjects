@@ -9,7 +9,7 @@ require_once __DIR__ . '/lib.php';
 
 try {
     $dbh = db();
-    $action = cleanText($_GET['action'] ?? '', 40);
+    $action = cleanText($_GET['action'] ?? $_SERVER['HTTP_X_MOVIEMEET_ACTION'] ?? '', 40);
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
     if ('register' === $action && 'POST' === $method) {

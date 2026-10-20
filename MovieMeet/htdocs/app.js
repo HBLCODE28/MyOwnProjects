@@ -12,12 +12,14 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character =>
 
 async function api(action, options = {}) {
   const headers = {...(options.headers || {})};
+  headers['X-MovieMeet-Action'] = action;
   if (getToken()) {
     headers.Authorization = `Bearer ${getToken()}`;
     headers['X-Auth-Token'] = getToken();
   }
   if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
-  const response = await fetch(`${API}?${new URLSearchParams({action, ...(options.query || {})})}`, {...options, headers});
+  const query = new URLSearchParams(options.query || {});
+  const response = await fetch(query.size ? `${API}?${query}` : API, {...options, headers});
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const code = payload.code ? ` (${payload.code})` : '';
