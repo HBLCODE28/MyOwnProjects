@@ -1,7 +1,10 @@
 <?php
 declare(strict_types=1);
 $configPath = __DIR__ . '/config.php';
-if (is_file($configPath)) require_once $configPath;
+if (is_file($configPath)) {
+    $config = require $configPath;
+    $GLOBALS['moviemeetConfig'] = is_array($config) ? $config : [];
+}
 require_once __DIR__ . '/lib.php';
 
 try {

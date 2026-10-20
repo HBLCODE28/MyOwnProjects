@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 function envValue(string $name, string $default = ''): string {
-    $value = getenv($name);
+    $config = $GLOBALS['moviemeetConfig'] ?? [];
+    $value = is_array($config) && array_key_exists($name, $config) ? $config[$name] : getenv($name);
     return false === $value ? $default : trim((string)$value);
 }
 
