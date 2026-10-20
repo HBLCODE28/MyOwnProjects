@@ -127,6 +127,18 @@ try {
         respond(['ok' => true], 201);
     }
 
+    if ('candidate-delete' === $action && 'POST' === $method) {
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
+        $user = requireUser($dbh);
+        if ((int)$event['organizer_id'] !== (int)$user['id']) respond(['error' => 'רק המארגן יכול למחוק הקרנה'], 403);
+        $candidateId = (int)(body()['candidate_id'] ?? 0);
+        if (!$candidateId) respond(['error' => 'הקרנה לא תקינה'], 422);
+        $stmt = $dbh->prepare('DELETE FROM mm_candidates WHERE id=? AND event_id=?');
+        $stmt->execute([$candidateId, $event['id']]);
+        if (!$stmt->rowCount()) respond(['error' => 'ההקרנה לא נמצאה'], 404);
+        respond(['ok' => true]);
+    }
+
     if ('vote' === $action && 'POST' === $method) {
         $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
         $user = requireUser($dbh);

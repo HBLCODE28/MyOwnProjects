@@ -32,6 +32,6 @@
     <section><div class="section-heading"><div><p class="eyebrow">הצעות מדורגות</p><h2>מה הכי מתאים לכולם?</h2></div><span id="participantCount" class="pill"></span></div><div id="recommendations" class="recommendations"></div></section>
     <section class="card"><h2>מי כבר מילא?</h2><ul id="participantList" class="participant-list"></ul></section>
   </template>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
