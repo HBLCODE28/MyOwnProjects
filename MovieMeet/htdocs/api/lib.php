@@ -35,6 +35,10 @@ function ensureSchema(PDO $dbh): void {
     $dbh->exec("CREATE TABLE IF NOT EXISTS mm_cinemas (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, network VARCHAR(50) NOT NULL, name VARCHAR(100) NOT NULL, city VARCHAR(80) NOT NULL, latitude DECIMAL(10,7) NOT NULL, longitude DECIMAL(10,7) NOT NULL, booking_url VARCHAR(500) NOT NULL, UNIQUE KEY mm_cinema_name (network,name)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $dbh->exec("CREATE TABLE IF NOT EXISTS mm_candidates (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, event_id INT UNSIGNED NOT NULL, cinema_id INT UNSIGNED NOT NULL, tmdb_id INT NULL, movie_title VARCHAR(180) NOT NULL, poster_path VARCHAR(300) NULL, genres JSON NOT NULL, show_date DATE NOT NULL, show_time TIME NOT NULL, booking_url VARCHAR(500) NOT NULL, seats_checked TINYINT(1) NOT NULL DEFAULT 0, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT mm_candidates_event FOREIGN KEY(event_id) REFERENCES mm_events(id) ON DELETE CASCADE, CONSTRAINT mm_candidates_cinema FOREIGN KEY(cinema_id) REFERENCES mm_cinemas(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $dbh->exec("CREATE TABLE IF NOT EXISTS mm_votes (participant_id INT UNSIGNED NOT NULL, candidate_id INT UNSIGNED NOT NULL, vote TINYINT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(participant_id,candidate_id), CONSTRAINT mm_votes_participant FOREIGN KEY(participant_id) REFERENCES mm_participants(id) ON DELETE CASCADE, CONSTRAINT mm_votes_candidate FOREIGN KEY(candidate_id) REFERENCES mm_candidates(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    try { $dbh->exec('ALTER TABLE mm_events ADD COLUMN manage_token CHAR(64) NULL UNIQUE'); } catch (PDOException) { }
+    try { $dbh->exec('ALTER TABLE mm_participants ADD COLUMN participant_token CHAR(64) NULL UNIQUE'); } catch (PDOException) { }
+    try { $dbh->exec('ALTER TABLE mm_users ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0'); } catch (PDOException) { }
+    $dbh->exec('UPDATE mm_users SET is_admin=1 ORDER BY id ASC LIMIT 1');
     $seed = [
         ['Cinema City','סינמה סיטי גלילות','רמת השרון',32.1465,34.8392,'https://www.cinema-city.co.il/'],
         ['Cinema City','סינמה סיטי ראשון לציון','ראשון לציון',31.9707,34.7894,'https://www.cinema-city.co.il/'],
@@ -77,10 +81,13 @@ function currentUser(PDO $dbh): ?array {
     $customToken = (string)($_SERVER['HTTP_X_AUTH_TOKEN'] ?? '');
     $token = $headerToken ?: (preg_match('/^[a-f0-9]{64}$/i', $customToken) ? $customToken : '');
     if ('' === $token) return null;
-    $stmt = $dbh->prepare('SELECT u.id,u.name,u.email FROM mm_sessions s JOIN mm_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>UTC_TIMESTAMP()');
+    $stmt = $dbh->prepare('SELECT u.id,u.name,u.email,u.is_admin FROM mm_sessions s JOIN mm_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>UTC_TIMESTAMP()');
     $stmt->execute([$token]);
     return $stmt->fetch() ?: null;
 }
+
+function eventManager(array $event): bool { return !empty($event['manage_token']) && hash_equals((string)$event['manage_token'], (string)($_SERVER['HTTP_X_MOVIEMEET_MANAGE'] ?? '')); }
+function participantByToken(PDO $dbh, int $eventId): ?array { $token = (string)($_SERVER['HTTP_X_MOVIEMEET_PARTICIPANT'] ?? ''); if (!preg_match('/^[a-f0-9]{64}$/i', $token)) return null; $stmt = $dbh->prepare('SELECT * FROM mm_participants WHERE event_id=? AND participant_token=?'); $stmt->execute([$eventId, $token]); return $stmt->fetch() ?: null; }
 
 function requireUser(PDO $dbh): array {
     $user = currentUser($dbh);

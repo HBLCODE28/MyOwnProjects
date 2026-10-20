@@ -10,11 +10,18 @@ const GENRES = ['אקשן','אנימציה','הרפתקאות','דרמה','מד�
 const app = document.querySelector('#app');
 const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
 const setToken = token => localStorage.setItem(TOKEN_KEY, token);
+const manageKey = token => `moviemeeet_manage_${token}`;
+const participantKey = token => `moviemeeet_participant_${token}`;
 const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[character]));
 
 async function api(action, options = {}) {
   const headers = {...(options.headers || {})};
   headers['X-MovieMeet-Action'] = action;
+  if (options.query?.token) {
+    const manager = localStorage.getItem(manageKey(options.query.token)); const participant = localStorage.getItem(participantKey(options.query.token));
+    if (manager) headers['X-MovieMeet-Manage'] = manager;
+    if (participant) headers['X-MovieMeet-Participant'] = participant;
+  }
   if (getToken()) {
     headers.Authorization = `Bearer ${getToken()}`;
     headers['X-Auth-Token'] = getToken();
@@ -36,7 +43,7 @@ function today() { return new Date().toISOString().slice(0, 10); }
 
 async function renderHeader() {
   const area = document.querySelector('#accountArea');
-  if (!getToken()) { signedInUser = null; area.innerHTML = '<button class="secondary header-button" data-open="auth">כניסה / הרשמה</button>'; return; }
+  if (!getToken()) { signedInUser = null; area.innerHTML = '<button class="secondary header-button" data-open="auth">ניהול</button>'; return; }
   try {
     const user = signedInUser || (await api('me')).user;
     if (!user) throw new Error('Not signed in');
@@ -49,7 +56,7 @@ async function renderHeader() {
 function renderHome() {
   currentEvent = null;
   setTemplate('homeTemplate');
-  document.querySelector('[data-open="create"]').addEventListener('click', () => getToken() ? renderCreate() : renderAuth('register'));
+  document.querySelector('[data-open="create"]').addEventListener('click', renderCreate);
   if (getToken()) loadHomeMeetings();
 }
 
@@ -57,7 +64,8 @@ async function loadHomeMeetings() {
   try {
     const {user, meetings} = await api('meetings');
     document.querySelector('#homeProfile').classList.remove('hidden');
-    document.querySelector('#homeProfileText').textContent = `${user.name} · ${user.email}`;
+    const stats = user.is_admin ? await api('admin-stats') : null;
+    document.querySelector('#homeProfileText').textContent = stats ? `לוח ניהול · ${stats.events} מפגשים · ${stats.participants} משתתפים · ${stats.candidates} הקרנות` : `${user.name} · ${user.email}`;
     const section = document.querySelector('#myMeetingsSection'); section.classList.remove('hidden');
     document.querySelector('#myMeetings').innerHTML = meetings.length ? meetings.map(meeting => `<article class="meeting-card"><div><strong>${escapeHtml(meeting.name)}</strong><p>${meeting.date_start} עד ${meeting.date_end}</p></div><button class="secondary" data-meeting="${meeting.token}">פתיחת מפגש</button></article>`).join('') : '<p>עדיין אין מפגשים. אפשר ליצור את הראשון.</p>';
     document.querySelectorAll('[data-meeting]').forEach(button => button.addEventListener('click', () => { history.pushState({}, '', `?event=${button.dataset.meeting}`); renderEvent(button.dataset.meeting); }));
@@ -70,12 +78,11 @@ function renderAuth(mode = 'login') {
   const title = document.querySelector('#authTitle');
   const name = document.querySelector('#authName');
   const switchButton = document.querySelector('#authSwitch');
-  title.textContent = mode === 'login' ? 'כניסה לחשבון' : 'יצירת חשבון';
+  title.textContent = 'כניסת מנהל';
   name.closest('label').classList.toggle('hidden', mode === 'login');
   name.required = mode !== 'login';
-  document.querySelector('#authSubmit').textContent = mode === 'login' ? 'כניסה' : 'יצירת חשבון';
-  switchButton.textContent = mode === 'login' ? 'אין חשבון? הרשמה' : 'כבר יש חשבון? כניסה';
-  switchButton.addEventListener('click', () => renderAuth(mode === 'login' ? 'register' : 'login'));
+  document.querySelector('#authSubmit').textContent = 'כניסת מנהל';
+  switchButton.classList.add('hidden');
   document.querySelector('[data-open="home"]').addEventListener('click', renderHome);
   document.querySelector('#authSubmit').addEventListener('click', async () => {
     try {
@@ -99,6 +106,7 @@ function renderCreate() {
     try {
       const form = new FormData(event.currentTarget);
       const response = await api('meeting-create', {method:'POST', body:JSON.stringify(Object.fromEntries(form))});
+      localStorage.setItem(manageKey(response.token), response.manage_token);
       history.pushState({}, '', `?event=${response.token}`); renderEvent(response.token);
     } catch (error) { showError('createError', error); }
   });
@@ -166,7 +174,8 @@ async function joinEvent(event) {
     const availability = [...document.querySelectorAll('.window-row')].map(row => ({date:row.querySelector('[name="window_date"]').value,start:row.querySelector('[name="window_start"]').value,end:row.querySelector('[name="window_end"]').value})).filter(window => window.date && window.start && window.end && window.start < window.end);
     const genres = JSON.parse(String(form.get('genres') || '[]'));
     const dislikedGenres = JSON.parse(String(form.get('disliked_genres') || '[]'));
-    await api('join', {method:'POST', query:{token:currentEvent.event.token}, body:JSON.stringify({name:form.get('name'),city:form.get('city'),genres,disliked_genres:dislikedGenres,availability})});
+    const response = await api('join', {method:'POST', query:{token:currentEvent.event.token}, body:JSON.stringify({name:form.get('name'),city:form.get('city'),genres,disliked_genres:dislikedGenres,availability})});
+    localStorage.setItem(participantKey(currentEvent.event.token), response.participant_token);
     renderEvent(currentEvent.event.token);
   } catch (error) { showError('joinError', error); }
 }
