@@ -50,7 +50,7 @@ try {
         } elseif ($local) {
             $rows = $local;
         }
-        respond(['cinemas' => $rows, 'nearby' => (bool)($city && !$local && cityCoordinates($city))]);
+        respond(['cinemas' => $rows, 'exact' => (bool)$local, 'nearby' => (bool)($city && !$local && cityCoordinates($city))]);
     }
 
     if ('meeting-create' === $action && 'POST' === $method) {
@@ -87,7 +87,7 @@ try {
             if ($myParticipant) { $voteStmt = $dbh->prepare('SELECT vote FROM mm_votes WHERE participant_id=? AND candidate_id=?'); $voteStmt->execute([$myParticipant['id'], $candidate['id']]); $candidate['my_vote'] = $voteStmt->fetchColumn() ?: null; }
         }
         usort($candidates, static fn(array $a, array $b): int => $b['score']['total'] <=> $a['score']['total']);
-        respond(['event' => ['token' => $event['token'], 'name' => $event['name'], 'date_start' => $event['date_start'], 'date_end' => $event['date_end'], 'is_organizer' => $user && (int)$user['id'] === (int)$event['organizer_id']], 'participants' => $participants, 'candidates' => $candidates, 'my_participant' => $myParticipant ? ['id' => (int)$myParticipant['id'], 'name' => $myParticipant['name'], 'city' => $myParticipant['city'], 'genres' => jsonList($myParticipant['genres']), 'disliked_genres' => jsonList($myParticipant['disliked_genres'] ?? null)] : null]);
+        respond(['event' => ['token' => $event['token'], 'name' => $event['name'], 'date_start' => $event['date_start'], 'date_end' => $event['date_end'], 'is_organizer' => $user && (int)$user['id'] === (int)$event['organizer_id']], 'participants' => $participants, 'candidates' => $candidates, 'my_participant' => $myParticipant ? ['id' => (int)$myParticipant['id'], 'name' => $myParticipant['name'], 'city' => $myParticipant['city'], 'availability' => jsonList($myParticipant['availability']), 'genres' => jsonList($myParticipant['genres']), 'disliked_genres' => jsonList($myParticipant['disliked_genres'] ?? null)] : null]);
     }
 
     if ('join' === $action && 'POST' === $method) {

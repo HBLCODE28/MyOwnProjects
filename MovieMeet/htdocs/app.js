@@ -130,7 +130,9 @@ async function renderEvent(token) {
     document.querySelector('[name="city"]').value = data.my_participant.city || '';
   }
   document.querySelector('#copyLink').addEventListener('click', async () => { await navigator.clipboard?.writeText(location.href); document.querySelector('#copyLink').textContent = 'הקישור הועתק'; });
-  const windows = document.querySelector('#windows'); addWindow(windows, event.date_start);
+  const windows = document.querySelector('#windows');
+  const savedWindows = data.my_participant?.availability || [];
+  (savedWindows.length ? savedWindows : [{date:event.date_start,start:'19:00',end:'23:00'}]).forEach(window => addWindow(windows, window.date, window.start, window.end));
   document.querySelector('#addWindow').addEventListener('click', () => addWindow(windows, event.date_start));
   document.querySelector('#joinForm').addEventListener('submit', joinEvent);
   document.querySelector('#organizerCard').classList.toggle('hidden', !event.is_organizer);
@@ -155,7 +157,7 @@ async function setupCandidateForm(token, event, city) {
   const response = await api('cinemas', {query:{city}}); cinemas = response.cinemas;
   const select = document.querySelector('#cinemaSelect');
   select.innerHTML = '<option value="">בחרו קולנוע</option>' + cinemas.map(cinema => `<option value="${cinema.id}">${escapeHtml(cinema.network)} — ${escapeHtml(cinema.name)}</option>`).join('');
-  document.querySelector('#cinemaNote').textContent = city ? (response.nearby ? `אין בית קולנוע ברשימה ב${city}; מוצגות האפשרויות הקרובות ביותר.` : `מוצגים בתי קולנוע ב${city}.`) : 'שמרו את עיר המוצא כדי לקבל בתי קולנוע קרובים.';
+  document.querySelector('#cinemaNote').textContent = city ? (response.exact ? `מוצגים בתי קולנוע ב${city}.` : response.nearby ? `אין בית קולנוע ברשימה ב${city}; מוצגות האפשרויות הקרובות ביותר.` : `לא נמצאה התאמת מרחק ל${city}; מוצגים כל בתי הקולנוע.`) : 'שמרו את עיר המוצא כדי לקבל בתי קולנוע קרובים.';
   const form = document.querySelector('#candidateForm');
   form.querySelector('[name="show_date"]').min = event.date_start; form.querySelector('[name="show_date"]').max = event.date_end; form.querySelector('[name="show_date"]').value = event.date_start;
   document.querySelector('#showTime').innerHTML = `<option value="">בחרו שעה</option>${timeOptions('20:00')}`;
