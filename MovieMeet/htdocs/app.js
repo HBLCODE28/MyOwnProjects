@@ -3,6 +3,7 @@ const TOKEN_KEY = 'moviemeeet_token';
 let authMode = 'login';
 let currentEvent = null;
 let cinemas = [];
+let signedInUser = null;
 
 const app = document.querySelector('#app');
 const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
@@ -11,7 +12,10 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character =>
 
 async function api(action, options = {}) {
   const headers = {...(options.headers || {})};
-  if (getToken()) headers.Authorization = `Bearer ${getToken()}`;
+  if (getToken()) {
+    headers.Authorization = `Bearer ${getToken()}`;
+    headers['X-Auth-Token'] = getToken();
+  }
   if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
   const response = await fetch(`${API}?${new URLSearchParams({action, ...(options.query || {})})}`, {...options, headers});
   const payload = await response.json().catch(() => ({}));
@@ -25,11 +29,13 @@ function today() { return new Date().toISOString().slice(0, 10); }
 
 async function renderHeader() {
   const area = document.querySelector('#accountArea');
-  if (!getToken()) { area.innerHTML = '<button class="text-button" data-open="auth">כניסה / הרשמה</button>'; return; }
+  if (!getToken()) { signedInUser = null; area.innerHTML = '<button class="secondary header-button" data-open="auth">כניסה / הרשמה</button>'; return; }
   try {
-    const {user} = await api('me');
-    area.innerHTML = user ? `<span>${escapeHtml(user.name)}</span> <button id="logout" class="text-button">יציאה</button>` : '<button class="text-button" data-open="auth">כניסה / הרשמה</button>';
-    document.querySelector('#logout')?.addEventListener('click', () => { localStorage.removeItem(TOKEN_KEY); renderHeader(); renderHome(); });
+    const user = signedInUser || (await api('me')).user;
+    if (!user) throw new Error('Not signed in');
+    signedInUser = user;
+    area.innerHTML = `<span class="account-name">${escapeHtml(user.name)}</span><button id="logout" class="secondary header-button">יציאה</button>`;
+    document.querySelector('#logout')?.addEventListener('click', () => { localStorage.removeItem(TOKEN_KEY); signedInUser = null; renderHeader(); renderHome(); });
   } catch { localStorage.removeItem(TOKEN_KEY); renderHeader(); }
 }
 
@@ -57,7 +63,7 @@ function renderAuth(mode = 'login') {
       const payload = {email: document.querySelector('#authEmail').value.trim(), password: document.querySelector('#authPassword').value};
       if (mode === 'register') payload.name = name.value.trim();
       const response = await api(mode, {method:'POST', body:JSON.stringify(payload)});
-      setToken(response.token); await renderHeader();
+      setToken(response.token); signedInUser = response.user || null; await renderHeader();
       const token = new URLSearchParams(location.search).get('event');
       token ? renderEvent(token) : renderCreate();
     } catch (error) { showError('authError', error); }

@@ -71,7 +71,9 @@ function randomToken(int $bytes = 16): string { return bin2hex(random_bytes($byt
 
 function currentUser(PDO $dbh): ?array {
     $header = (string)($_SERVER['HTTP_AUTHORIZATION'] ?? '');
-    $token = preg_match('/^Bearer\s+([a-f0-9]{64})$/i', $header, $matches) ? $matches[1] : '';
+    $headerToken = preg_match('/^Bearer\s+([a-f0-9]{64})$/i', $header, $matches) ? $matches[1] : '';
+    $customToken = (string)($_SERVER['HTTP_X_AUTH_TOKEN'] ?? '');
+    $token = $headerToken ?: (preg_match('/^[a-f0-9]{64}$/i', $customToken) ? $customToken : '');
     if ('' === $token) return null;
     $stmt = $dbh->prepare('SELECT u.id,u.name,u.email FROM mm_sessions s JOIN mm_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>UTC_TIMESTAMP()');
     $stmt->execute([$token]);

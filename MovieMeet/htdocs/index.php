@@ -3,9 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#312e81">
+  <meta name="theme-color" content="#5fa8d3">
   <title>MovieMeet — קובעים סרט יחד</title>
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header class="site-header"><a class="brand" href="index.php">MovieMeet</a><div id="accountArea"></div></header>
@@ -27,6 +30,6 @@
     <section><div class="section-heading"><div><p class="eyebrow">הצעות מדורגות</p><h2>מה הכי מתאים לכולם?</h2></div><span id="participantCount" class="pill"></span></div><div id="recommendations" class="recommendations"></div></section>
     <section class="card"><h2>מי כבר מילא?</h2><ul id="participantList" class="participant-list"></ul></section>
   </template>
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
