@@ -1,6 +1,5 @@
 const API = 'api/index.php';
 const TOKEN_KEY = 'moviemeeet_token';
-let authMode = 'login';
 let currentEvent = null;
 let cinemas = [];
 let signedInUser = null;
@@ -63,35 +62,28 @@ function renderHome() {
 async function loadHomeMeetings() {
   try {
     const {user, meetings} = await api('meetings');
-    document.querySelector('#homeProfile').classList.remove('hidden');
     const stats = user.is_admin ? await api('admin-stats') : null;
-    document.querySelector('#homeProfileText').textContent = stats ? `לוח ניהול · ${stats.events} מפגשים · ${stats.participants} משתתפים · ${stats.candidates} הקרנות` : `${user.name} · ${user.email}`;
+    if (stats) {
+      document.querySelector('#homeProfile').classList.remove('hidden');
+      document.querySelector('#homeProfileText').textContent = `שלום ${user.name}, כאן אפשר לעקוב אחרי הפעילות באתר.`;
+      document.querySelector('#adminStats').innerHTML = `<div class="admin-stat"><strong>${Number(stats.events)}</strong><span>מפגשים</span></div><div class="admin-stat"><strong>${Number(stats.participants)}</strong><span>משתתפים</span></div><div class="admin-stat"><strong>${Number(stats.candidates)}</strong><span>הקרנות</span></div>`;
+    }
     const section = document.querySelector('#myMeetingsSection'); section.classList.remove('hidden');
     document.querySelector('#myMeetings').innerHTML = meetings.length ? meetings.map(meeting => `<article class="meeting-card"><div><strong>${escapeHtml(meeting.name)}</strong><p>${meeting.date_start} עד ${meeting.date_end}</p></div><button class="secondary" data-meeting="${meeting.token}">פתיחת מפגש</button></article>`).join('') : '<p>עדיין אין מפגשים. אפשר ליצור את הראשון.</p>';
     document.querySelectorAll('[data-meeting]').forEach(button => button.addEventListener('click', () => { history.pushState({}, '', `?event=${button.dataset.meeting}`); renderEvent(button.dataset.meeting); }));
   } catch { }
 }
 
-function renderAuth(mode = 'login') {
-  authMode = mode;
+function renderAuth() {
   setTemplate('authTemplate');
-  const title = document.querySelector('#authTitle');
-  const name = document.querySelector('#authName');
-  const switchButton = document.querySelector('#authSwitch');
-  title.textContent = 'כניסת מנהל';
-  name.closest('label').classList.toggle('hidden', mode === 'login');
-  name.required = mode !== 'login';
-  document.querySelector('#authSubmit').textContent = 'כניסת מנהל';
-  switchButton.classList.add('hidden');
   document.querySelector('[data-open="home"]').addEventListener('click', renderHome);
   document.querySelector('#authSubmit').addEventListener('click', async () => {
     try {
       const payload = {email: document.querySelector('#authEmail').value.trim(), password: document.querySelector('#authPassword').value};
-      if (mode === 'register') payload.name = name.value.trim();
-      const response = await api(mode, {method:'POST', body:JSON.stringify(payload)});
+      const response = await api('login', {method:'POST', body:JSON.stringify(payload)});
       setToken(response.token); signedInUser = response.user || null; await renderHeader();
       const token = new URLSearchParams(location.search).get('event');
-      token ? renderEvent(token) : renderCreate();
+      token ? renderEvent(token) : renderHome();
     } catch (error) { showError('authError', error); }
   });
 }
@@ -219,7 +211,7 @@ function cinemaSearchUrl(candidate) {
   return `https://www.google.com/search?q=${encodeURIComponent(`site:${domain} ${candidate.movie_title}`)}`;
 }
 
-document.addEventListener('click', event => { const opener = event.target.closest('[data-open]'); if (!opener) return; if (opener.dataset.open === 'home') renderHome(); if (opener.dataset.open === 'auth') renderAuth('login'); });
+document.addEventListener('click', event => { const opener = event.target.closest('[data-open]'); if (!opener) return; if (opener.dataset.open === 'home') renderHome(); if (opener.dataset.open === 'auth') renderAuth(); });
 window.addEventListener('popstate', () => { const token = new URLSearchParams(location.search).get('event'); token ? renderEvent(token) : renderHome(); });
 renderHeader();
 const initialToken = new URLSearchParams(location.search).get('event');

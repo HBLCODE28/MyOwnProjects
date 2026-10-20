@@ -34,6 +34,7 @@ try {
         $stmt->execute([$email]);
         $user = $stmt->fetch();
         if (!$user || !password_verify((string)($input['password'] ?? ''), $user['password_hash'])) respond(['error' => 'האימייל או הסיסמה אינם נכונים'], 401);
+        if (empty($user['is_admin'])) respond(['error' => 'הכניסה מיועדת למנהל האתר בלבד'], 403);
         $token = randomToken(32);
         $dbh->prepare('INSERT INTO mm_sessions(token,user_id,expires_at) VALUES(?,?,DATE_ADD(UTC_TIMESTAMP(), INTERVAL 30 DAY))')->execute([$token, $user['id']]);
         respond(['token' => $token, 'user' => ['id' => (int)$user['id'], 'name' => $user['name'], 'email' => $user['email']]]);
