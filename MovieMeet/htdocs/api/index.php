@@ -193,10 +193,10 @@ function apiErrorResponse(Throwable $error): array {
 function recommendationScore(array $candidate, array $participants): array {
     $count = max(1, count($participants));
     $showAt = $candidate['show_date'] . ' ' . substr($candidate['show_time'], 0, 5);
-    $available = 0; $genrePoints = 0; $travelMinutes = [];
+    $available = 0; $availableParticipants = []; $genrePoints = 0; $travelMinutes = [];
     foreach ($participants as $participant) {
         foreach ($participant['availability'] as $window) {
-            if ($window['date'] === $candidate['show_date'] && $window['start'] <= substr($candidate['show_time'], 0, 5) && $window['end'] >= substr($candidate['show_time'], 0, 5)) { $available++; break; }
+            if ($window['date'] === $candidate['show_date'] && $window['start'] <= substr($candidate['show_time'], 0, 5) && $window['end'] >= substr($candidate['show_time'], 0, 5)) { $available++; $availableParticipants[] = $participant['name']; break; }
         }
         $likes = array_map('textLower', $participant['genres']);
         $dislikes = array_map('textLower', $participant['disliked_genres'] ?? []);
@@ -209,5 +209,5 @@ function recommendationScore(array $candidate, array $participants): array {
     $genres = round(35 * $genrePoints / $count);
     $maxTravel = $travelMinutes ? max($travelMinutes) : 90;
     $travel = max(0, round(20 * (1 - min($maxTravel, 120) / 120)));
-    return ['total' => $availability + $genres + $travel, 'available' => $available, 'participant_count' => $count, 'availability' => $availability, 'genres' => $genres, 'travel' => $travel, 'max_travel_minutes' => $maxTravel, 'show_at' => $showAt];
+    return ['total' => $availability + $genres + $travel, 'available' => $available, 'available_participants' => $availableParticipants, 'participant_count' => $count, 'availability' => $availability, 'genres' => $genres, 'travel' => $travel, 'max_travel_minutes' => $maxTravel, 'show_at' => $showAt];
 }
