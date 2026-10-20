@@ -4,6 +4,8 @@ let authMode = 'login';
 let currentEvent = null;
 let cinemas = [];
 let signedInUser = null;
+const ISRAEL_CITIES = ['אבו גוש','אופקים','אור יהודה','אור עקיבא','אילת','אלעד','אריאל','אשדוד','אשקלון','באקה אל-גרבייה','באר יעקב','באר שבע','בית שאן','בית שמש','ביתר עילית','בני ברק','בת ים','גבעת שמואל','גבעתיים','דימונה','הוד השרון','הרצליה','חדרה','חולון','חיפה','חריש','טבריה','טייבה','טירה','טירת כרמל','טמרה','יבנה','יהוד-מונוסון','יוקנעם עילית','ירושלים','כפר יונה','כפר סבא','כפר קאסם','כרמיאל','לוד','מעלה אדומים','מגדל העמק','מודיעין-מכבים-רעות','מודיעין עילית','מגדל העמק','מעלה עירון','מעלות-תרשיחא','נהריה','נוף הגליל','נס ציונה','נצרת','נשר','נתיבות','נתניה','סחנין','עכו','עפולה','עראבה','ערד','פתח תקווה','צפת','קלנסווה','קריית אונו','קריית אתא','קריית ביאליק','קריית גת','קריית ים','קריית מוצקין','קריית מלאכי','קריית שמונה','קריית טבעון','ראש העין','ראשון לציון','רהט','רחובות','רמלה','רמת גן','רמת השרון','רעננה','שדרות','שוהם','טייבה','טירה','טמרה','תל אביב-יפו','תל מונד','אבן יהודה','אזור','אורנית','אילת השחר','אליכין','אפרת','באר טוביה','בנימינה-גבעת עדה','גדרה','גן יבנה','גן נר','גני תקווה','דליית אל-כרמל','זכרון יעקב','חצור הגלילית','חוף הכרמל','יסוד המעלה','כוכב יאיר צור יגאל','כפר ורדים','כפר תבור','כפר שמריהו','להבים','מבשרת ציון','מיתר','מזכרת בתיה','מטולה','מיתר','נוף איילון','נחף','נירית','סביון','עומר','עמנואל','פרדס חנה-כרכור','פרדסיה','קדימה-צורן','קצרין','קריית ארבע','קריית יערים','ראש פינה','רכסים','שיבלי-אום אל-גנם','שלומי','תל שבע'];
+const GENRES = ['אקשן','אנימציה','הרפתקאות','דרמה','מדע בדיוני','מתח','מוזיקה','משפחה','פשע','פנטזיה','קומדיה','רומנטיקה','תעודה','אימה'];
 
 const app = document.querySelector('#app');
 const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
@@ -90,10 +92,26 @@ function renderCreate() {
   });
 }
 
+function timeOptions(selected) { return Array.from({length:96}, (_, index) => { const value = `${String(Math.floor(index / 4)).padStart(2, '0')}:${String((index % 4) * 15).padStart(2, '0')}`; return `<option value="${value}"${value === selected ? ' selected' : ''}>${value}</option>`; }).join(''); }
 function addWindow(container, date = today(), start = '19:00', end = '23:00') {
   const row = document.createElement('div'); row.className = 'window-row';
-  row.innerHTML = `<input type="date" name="window_date" value="${date}" required><input type="time" name="window_start" value="${start}" required><input type="time" name="window_end" value="${end}" required><button class="remove-window" type="button" aria-label="הסרת חלון">×</button>`;
+  row.innerHTML = `<input type="date" name="window_date" value="${date}" required><select name="window_start" required>${timeOptions(start)}</select><select name="window_end" required>${timeOptions(end)}</select><button class="remove-window" type="button" aria-label="הסרת חלון">×</button>`;
   row.querySelector('.remove-window').addEventListener('click', () => row.remove()); container.append(row);
+}
+
+function setupGenres() {
+  const liked = new Set(); const disliked = new Set();
+  const render = (target, kind) => {
+    target.innerHTML = GENRES.map(genre => `<button class="genre-button ${kind}" type="button" data-genre="${genre}">${genre}</button>`).join('');
+    target.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
+      const genre = button.dataset.genre; const current = kind === 'disliked' ? disliked : liked; const other = kind === 'disliked' ? liked : disliked;
+      current.has(genre) ? current.delete(genre) : current.add(genre); other.delete(genre);
+      document.querySelector('[name="genres"]').value = JSON.stringify([...liked]);
+      document.querySelector('[name="disliked_genres"]').value = JSON.stringify([...disliked]);
+      document.querySelectorAll(`[data-genre="${genre}"]`).forEach(item => item.classList.toggle('selected', (item.classList.contains('disliked') ? disliked : liked).has(genre)));
+    }));
+  };
+  render(document.querySelector('#likedGenres'), 'liked'); render(document.querySelector('#dislikedGenres'), 'disliked');
 }
 
 async function renderEvent(token) {
@@ -105,12 +123,18 @@ async function renderEvent(token) {
   document.querySelector('#eventName').textContent = event.name;
   document.querySelector('#eventDates').textContent = `${event.date_start} עד ${event.date_end}`;
   document.querySelector('#participantCount').textContent = `${participants.length} משתתפים`;
+  document.querySelector('#israelCities').innerHTML = [...new Set(ISRAEL_CITIES)].sort((first, second) => first.localeCompare(second, 'he')).map(city => `<option value="${city}">`).join('');
+  setupGenres();
+  if (data.my_participant) {
+    document.querySelector('[name="name"]').value = data.my_participant.name || '';
+    document.querySelector('[name="city"]').value = data.my_participant.city || '';
+  }
   document.querySelector('#copyLink').addEventListener('click', async () => { await navigator.clipboard?.writeText(location.href); document.querySelector('#copyLink').textContent = 'הקישור הועתק'; });
   const windows = document.querySelector('#windows'); addWindow(windows, event.date_start);
   document.querySelector('#addWindow').addEventListener('click', () => addWindow(windows, event.date_start));
   document.querySelector('#joinForm').addEventListener('submit', joinEvent);
   document.querySelector('#organizerCard').classList.toggle('hidden', !event.is_organizer);
-  if (event.is_organizer) setupCandidateForm(token, event);
+  if (event.is_organizer) setupCandidateForm(token, event, data.my_participant?.city || '');
   renderParticipants(participants);
   renderRecommendations(candidates, token);
 }
@@ -120,38 +144,21 @@ async function joinEvent(event) {
   try {
     const form = new FormData(event.currentTarget);
     const availability = [...document.querySelectorAll('.window-row')].map(row => ({date:row.querySelector('[name="window_date"]').value,start:row.querySelector('[name="window_start"]').value,end:row.querySelector('[name="window_end"]').value})).filter(window => window.date && window.start && window.end && window.start < window.end);
-    const genres = String(form.get('genres') || '').split(',').map(item => item.trim()).filter(Boolean);
-    await api('join', {method:'POST', query:{token:currentEvent.event.token}, body:JSON.stringify({name:form.get('name'),city:form.get('city'),genres,availability})});
+    const genres = JSON.parse(String(form.get('genres') || '[]'));
+    const dislikedGenres = JSON.parse(String(form.get('disliked_genres') || '[]'));
+    await api('join', {method:'POST', query:{token:currentEvent.event.token}, body:JSON.stringify({name:form.get('name'),city:form.get('city'),genres,disliked_genres:dislikedGenres,availability})});
     renderEvent(currentEvent.event.token);
   } catch (error) { showError('joinError', error); }
 }
 
-async function setupCandidateForm(token, event) {
-  if (!cinemas.length) cinemas = (await api('cinemas')).cinemas;
+async function setupCandidateForm(token, event, city) {
+  const response = await api('cinemas', {query:{city}}); cinemas = response.cinemas;
   const select = document.querySelector('#cinemaSelect');
   select.innerHTML = '<option value="">בחרו קולנוע</option>' + cinemas.map(cinema => `<option value="${cinema.id}">${escapeHtml(cinema.network)} — ${escapeHtml(cinema.name)}</option>`).join('');
+  document.querySelector('#cinemaNote').textContent = city ? (response.nearby ? `אין בית קולנוע ברשימה ב${city}; מוצגות האפשרויות הקרובות ביותר.` : `מוצגים בתי קולנוע ב${city}.`) : 'שמרו את עיר המוצא כדי לקבל בתי קולנוע קרובים.';
   const form = document.querySelector('#candidateForm');
   form.querySelector('[name="show_date"]').min = event.date_start; form.querySelector('[name="show_date"]').max = event.date_end; form.querySelector('[name="show_date"]').value = event.date_start;
-  let movieSearchTimer = null;
-  document.querySelector('#movieSearch').addEventListener('input', input => {
-    clearTimeout(movieSearchTimer);
-    const query = input.target.value.trim();
-    movieSearchTimer = setTimeout(async () => {
-      const results = document.querySelector('#movieResults');
-      if (query.length < 2) { results.classList.add('hidden'); return; }
-      try {
-        const response = await api('movies', {query:{q:query}});
-        results.innerHTML = response.movies.map(movie => `<button type="button" data-id="${movie.id}" data-poster="${escapeHtml(movie.poster_path)}" data-title="${escapeHtml(movie.title)}">${escapeHtml(movie.title)}</button>`).join('') || `<span>${escapeHtml(response.notice || 'לא נמצאו סרטים')}</span>`;
-        results.classList.remove('hidden');
-        results.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
-          form.querySelector('[name="movie_title"]').value = button.dataset.title;
-          form.querySelector('[name="tmdb_id"]').value = button.dataset.id;
-          form.querySelector('[name="poster_path"]').value = button.dataset.poster;
-          results.classList.add('hidden');
-        }));
-      } catch { results.classList.add('hidden'); }
-    }, 350);
-  });
+  document.querySelector('#showTime').innerHTML = `<option value="">בחרו שעה</option>${timeOptions('20:00')}`;
   form.addEventListener('submit', async submit => {
     submit.preventDefault();
     try {
