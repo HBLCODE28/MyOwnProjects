@@ -115,8 +115,14 @@ try {
         $dislikedGenres = array_values(array_filter(array_map(static fn($genre): string => cleanText($genre, 40), $input['disliked_genres'] ?? [])));
         if ('' === $name || '' === $city || !$availability) respond(['error' => 'יש למלא שם, עיר ולפחות חלון זמן אחד'], 422);
         $participant = participantByToken($dbh, (int)$event['id']); $participantToken = $participant['participant_token'] ?? randomToken(32);
-        if ($participant) { $stmt = $dbh->prepare('UPDATE mm_participants SET name=?,city=?,availability=?,genres=?,disliked_genres=? WHERE id=?'); $stmt->execute([$name,$city,json_encode($availability),json_encode($genres),json_encode($dislikedGenres),$participant['id']]); }
-        else { $stmt = $dbh->prepare('INSERT INTO mm_participants(event_id,name,city,availability,genres,disliked_genres,participant_token) VALUES(?,?,?,?,?,?,?)'); $stmt->execute([$event['id'],$name,$city,json_encode($availability),json_encode($genres),json_encode($dislikedGenres),$participantToken]); }
+        if ($participant) { $stmt = $dbh->prepare('UPDATE mm_participants SET city=?,availability=?,genres=?,disliked_genres=? WHERE id=?'); $stmt->execute([$city,json_encode($availability),json_encode($genres),json_encode($dislikedGenres),$participant['id']]); }
+        else {
+            $existing = $dbh->prepare('SELECT id FROM mm_participants WHERE event_id=? AND name=? LIMIT 1');
+            $existing->execute([$event['id'], $name]);
+            if ($existing->fetch()) respond(['error' => 'השם הזה כבר מילא את ההעדפות למפגש. כל משתתף יכול לענות פעם אחת בלבד.'], 409);
+            try { $stmt = $dbh->prepare('INSERT INTO mm_participants(event_id,name,city,availability,genres,disliked_genres,participant_token) VALUES(?,?,?,?,?,?,?)'); $stmt->execute([$event['id'],$name,$city,json_encode($availability),json_encode($genres),json_encode($dislikedGenres),$participantToken]); }
+            catch (PDOException) { respond(['error' => 'השם הזה כבר מילא את ההעדפות למפגש. כל משתתף יכול לענות פעם אחת בלבד.'], 409); }
+        }
         respond(['ok' => true, 'participant_token' => $participantToken]);
     }
 

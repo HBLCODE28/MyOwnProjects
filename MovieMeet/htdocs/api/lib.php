@@ -37,6 +37,7 @@ function ensureSchema(PDO $dbh): void {
     $dbh->exec("CREATE TABLE IF NOT EXISTS mm_votes (participant_id INT UNSIGNED NOT NULL, candidate_id INT UNSIGNED NOT NULL, vote TINYINT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(participant_id,candidate_id), CONSTRAINT mm_votes_participant FOREIGN KEY(participant_id) REFERENCES mm_participants(id) ON DELETE CASCADE, CONSTRAINT mm_votes_candidate FOREIGN KEY(candidate_id) REFERENCES mm_candidates(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     try { $dbh->exec('ALTER TABLE mm_events ADD COLUMN manage_token CHAR(64) NULL UNIQUE'); } catch (PDOException) { }
     try { $dbh->exec('ALTER TABLE mm_participants ADD COLUMN participant_token CHAR(64) NULL UNIQUE'); } catch (PDOException) { }
+    try { $dbh->exec('ALTER TABLE mm_participants ADD UNIQUE KEY mm_participant_event_name (event_id,name)'); } catch (PDOException) { }
     try { $dbh->exec('ALTER TABLE mm_users ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0'); } catch (PDOException) { }
     $dbh->exec('UPDATE mm_users SET is_admin=1 ORDER BY id ASC LIMIT 1');
     $seed = [
