@@ -156,7 +156,17 @@ try {
     respond(['error' => 'הפעולה לא נמצאה'], 404);
 } catch (Throwable $error) {
     error_log('MovieMeet API error: ' . $error->getMessage());
-    respond(['error' => 'אירעה שגיאת שרת. נסו שוב בעוד רגע.'], 500);
+    respond(apiErrorResponse($error), 500);
+}
+
+function apiErrorResponse(Throwable $error): array {
+    $message = $error->getMessage();
+    if (str_contains($message, 'Database is not configured')) return ['error' => 'חסרים פרטי מסד הנתונים בקובץ config.php.', 'code' => 'DATABASE_CONFIG'];
+    if (str_contains($message, 'Unknown database')) return ['error' => 'שם מסד הנתונים לא נמצא. יש לבדוק את MOVIEMEET_DB_NAME.', 'code' => 'DATABASE_NOT_FOUND'];
+    if (str_contains($message, 'Access denied')) return ['error' => 'שם המשתמש, הסיסמה או ההרשאות למסד הנתונים אינם תקינים.', 'code' => 'DATABASE_ACCESS'];
+    if (str_contains($message, 'Connection refused') || str_contains($message, 'getaddrinfo') || str_contains($message, 'No route to host')) return ['error' => 'לא ניתן להתחבר לשרת מסד הנתונים. יש לבדוק את MOVIEMEET_DB_HOST.', 'code' => 'DATABASE_CONNECTION'];
+    if (str_contains($message, "doesn't exist") || str_contains($message, 'Base table or view not found')) return ['error' => 'טבלאות MovieMeet חסרות במסד הנתונים. יש להריץ את DATABASE_SETUP.txt ב־phpMyAdmin.', 'code' => 'DATABASE_TABLES'];
+    return ['error' => 'אירעה שגיאת שרת. נסו שוב בעוד רגע.', 'code' => 'SERVER_ERROR'];
 }
 
 function recommendationScore(array $candidate, array $participants): array {
