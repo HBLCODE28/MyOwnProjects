@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-21 - Fix SharedCart kitchen photo uploads for group members
+
+- Sent the kitchen group and area identifiers in the upload URL instead of relying on multipart form fields, so approved shared-group members retain their existing member-only upload permission on PHP/CGI hosts.
+- Updated the application script cache version so browsers receive the fix.
+- Backup: Git commit pending user approval.
+
 ## 2026-10-21 - Adapt Machberet Ptucha for InfinityFree
 
 - Added a deployable PHP/MySQL version under `machberet-ptucha/infinityfree/htdocs` with public summaries, anonymous requests, secure administrator login and protected file uploads.

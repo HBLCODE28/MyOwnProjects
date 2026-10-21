@@ -2939,13 +2939,12 @@ function hideKitchenCamera() {
 
 function uploadKitchenImage(file, areaCode) {
     if (!file || !areaCode || !currentGroupId) return;
+    const groupId = Number(currentGroupId);
     const formData = new FormData();
-    formData.append('group_id', String(currentGroupId));
-    formData.append('area', areaCode);
     formData.append('image', file, file.name || 'kitchen-photo.jpg');
     hideKitchenCamera();
     $('#kitchenStatus').text(uiText('מעלה תמונה…', 'Uploading image…'));
-    apiUpload('POST', '/kitchen', formData)
+    apiUpload('POST', `/kitchen?group_id=${encodeURIComponent(groupId)}&area=${encodeURIComponent(areaCode)}`, formData)
         .done(() => loadKitchen())
         .fail(xhr => $('#kitchenStatus').text(apiErr(xhr)));
 }
