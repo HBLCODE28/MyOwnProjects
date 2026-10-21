@@ -183,7 +183,7 @@ async function renderEvent(token) {
   }));
   document.querySelectorAll('.event-pane').forEach(pane => pane.classList.toggle('hidden', pane.dataset.pane !== 'suggestions'));
   document.querySelector('#organizerCard').classList.toggle('hidden', !event.is_organizer);
-  if (event.is_organizer) setupCandidateForm(token, event, data.my_participant?.city || '');
+  if (event.is_organizer) setupCandidateForm(token, event, data.cinema_options || {cinemas: []}, data.my_participant?.city || '');
   renderParticipants(participants);
   renderRecommendations(candidates, token, event.is_organizer);
 }
@@ -201,18 +201,12 @@ async function joinEvent(event) {
   } catch (error) { showError('joinError', error); }
 }
 
-async function setupCandidateForm(token, event, city) {
+function setupCandidateForm(token, event, response, city) {
   const select = document.querySelector('#cinemaSelect');
-  try {
-    const response = await api('cinemas', {query:{city}}); cinemas = response.cinemas;
-    select.innerHTML = '<option value="">בחרו קולנוע</option>' + cinemas.map(cinema => `<option value="${cinema.id}">${escapeHtml(cinema.network)} — ${escapeHtml(cinema.name)}</option>`).join('');
-    document.querySelector('#cinemaNote').textContent = city ? (response.exact ? `מוצגים בתי קולנוע ב${city}.` : response.nearby ? `אין בית קולנוע ברשימה ב${city}; מוצגות האפשרויות הקרובות ביותר.` : `לא נמצאה התאמת מרחק ל${city}; מוצגים כל בתי הקולנוע.`) : 'שמרו את עיר המוצא כדי לקבל בתי קולנוע קרובים.';
-  } catch (error) {
-    select.innerHTML = '<option value="">לא ניתן לטעון בתי קולנוע</option>';
-    select.disabled = true;
-    document.querySelector('#cinemaNote').textContent = error.message;
-    return;
-  }
+  cinemas = response.cinemas || [];
+  select.innerHTML = '<option value="">בחרו קולנוע</option>' + cinemas.map(cinema => `<option value="${cinema.id}">${escapeHtml(cinema.network)} — ${escapeHtml(cinema.name)}</option>`).join('');
+  select.disabled = !cinemas.length;
+  document.querySelector('#cinemaNote').textContent = cinemas.length ? (city ? (response.exact ? `מוצגים בתי קולנוע ב${city}.` : response.nearby ? `אין בית קולנוע ברשימה ב${city}; מוצגות האפשרויות הקרובות ביותר.` : `לא נמצאה התאמת מרחק ל${city}; מוצגים כל בתי הקולנוע.`) : 'מוצגים כל בתי הקולנוע.') : 'לא נמצאו בתי קולנוע. נסו לרענן את העמוד.';
   const form = document.querySelector('#candidateForm');
   form.querySelector('[name="show_date"]').min = event.date_start; form.querySelector('[name="show_date"]').max = event.date_end; form.querySelector('[name="show_date"]').value = event.date_start;
   document.querySelector('#showTime').innerHTML = `<option value="">בחרו שעה</option>${timeOptions('20:00')}`;

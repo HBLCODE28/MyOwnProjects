@@ -121,6 +121,19 @@ function eventByToken(PDO $dbh, string $token): array {
     return $event;
 }
 
+function cinemasForCity(PDO $dbh, string $city): array {
+    $rows = $dbh->query('SELECT id,network,name,city,latitude,longitude,booking_url FROM mm_cinemas ORDER BY network,name')->fetchAll();
+    $local = array_values(array_filter($rows, static fn(array $cinema): bool => textLower($cinema['city']) === textLower($city)));
+    if ($city && !$local && cityCoordinates($city)) {
+        $origin = cityCoordinates($city);
+        usort($rows, static fn(array $first, array $second): int => minutesBetween($origin[0], $origin[1], (float)$first['latitude'], (float)$first['longitude']) <=> minutesBetween($origin[0], $origin[1], (float)$second['latitude'], (float)$second['longitude']));
+        $rows = array_slice($rows, 0, 5);
+    } elseif ($local) {
+        $rows = $local;
+    }
+    return ['cinemas' => $rows, 'exact' => (bool)$local, 'nearby' => (bool)($city && !$local && cityCoordinates($city))];
+}
+
 function participantFor(PDO $dbh, int $eventId, ?int $userId): ?array {
     if (!$userId) return null;
     $stmt = $dbh->prepare('SELECT * FROM mm_participants WHERE event_id=? AND user_id=?');

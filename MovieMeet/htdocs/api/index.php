@@ -56,17 +56,8 @@ try {
     }
 
     if ('cinemas' === $action) {
-        $rows = $dbh->query('SELECT id,network,name,city,latitude,longitude,booking_url FROM mm_cinemas ORDER BY network,name')->fetchAll();
         $city = cleanText($_GET['city'] ?? '', 80);
-        $local = array_values(array_filter($rows, static fn(array $cinema): bool => textLower($cinema['city']) === textLower($city)));
-        if ($city && !$local && cityCoordinates($city)) {
-            $origin = cityCoordinates($city);
-            usort($rows, static fn(array $first, array $second): int => minutesBetween($origin[0], $origin[1], (float)$first['latitude'], (float)$first['longitude']) <=> minutesBetween($origin[0], $origin[1], (float)$second['latitude'], (float)$second['longitude']));
-            $rows = array_slice($rows, 0, 5);
-        } elseif ($local) {
-            $rows = $local;
-        }
-        respond(['cinemas' => $rows, 'exact' => (bool)$local, 'nearby' => (bool)($city && !$local && cityCoordinates($city))]);
+        respond(cinemasForCity($dbh, $city));
     }
 
     if ('meeting-create' === $action && 'POST' === $method) {
@@ -103,7 +94,8 @@ try {
             if ($myParticipant) { $voteStmt = $dbh->prepare('SELECT vote FROM mm_votes WHERE participant_id=? AND candidate_id=?'); $voteStmt->execute([$myParticipant['id'], $candidate['id']]); $candidate['my_vote'] = $voteStmt->fetchColumn() ?: null; }
         }
         usort($candidates, static fn(array $a, array $b): int => $b['score']['total'] <=> $a['score']['total']);
-        respond(['event' => ['token' => $event['token'], 'name' => $event['name'], 'date_start' => $event['date_start'], 'date_end' => $event['date_end'], 'is_organizer' => eventManager($event)], 'participants' => $participants, 'candidates' => $candidates, 'my_participant' => $myParticipant ? ['id' => (int)$myParticipant['id'], 'name' => $myParticipant['name'], 'city' => $myParticipant['city'], 'availability' => jsonList($myParticipant['availability']), 'genres' => jsonList($myParticipant['genres']), 'disliked_genres' => jsonList($myParticipant['disliked_genres'] ?? null)] : null]);
+        $cinemaOptions = cinemasForCity($dbh, (string)($myParticipant['city'] ?? ''));
+        respond(['event' => ['token' => $event['token'], 'name' => $event['name'], 'date_start' => $event['date_start'], 'date_end' => $event['date_end'], 'is_organizer' => eventManager($event)], 'participants' => $participants, 'candidates' => $candidates, 'cinema_options' => $cinemaOptions, 'my_participant' => $myParticipant ? ['id' => (int)$myParticipant['id'], 'name' => $myParticipant['name'], 'city' => $myParticipant['city'], 'availability' => jsonList($myParticipant['availability']), 'genres' => jsonList($myParticipant['genres']), 'disliked_genres' => jsonList($myParticipant['disliked_genres'] ?? null)] : null]);
     }
 
     if ('join' === $action && 'POST' === $method) {
