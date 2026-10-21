@@ -220,6 +220,7 @@ function setupCandidateForm(token, event, response, city) {
   document.querySelector('#cinemaNote').textContent = cinemas.length ? (city ? (response.exact ? `מוצגים בתי קולנוע ב${city}.` : response.nearby ? `אין בית קולנוע ברשימה ב${city}; מוצגות האפשרויות הקרובות ביותר.` : `לא נמצאה התאמת מרחק ל${city}; מוצגים כל בתי הקולנוע.`) : 'מוצגים כל בתי הקולנוע.') : 'לא נמצאו בתי קולנוע. נסו לרענן את העמוד.';
   const form = document.querySelector('#candidateForm');
   form.querySelector('[name="show_date"]').min = event.date_start; form.querySelector('[name="show_date"]').max = event.date_end; form.querySelector('[name="show_date"]').value = event.date_start;
+  form.querySelector('#showTime').innerHTML = `<option value="">בחירת שעה</option>${timeOptions('20:00')}`;
   form.addEventListener('submit', async submit => {
     submit.preventDefault();
     try {
