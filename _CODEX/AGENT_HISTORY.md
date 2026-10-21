@@ -1,0 +1,329 @@
+# Agent History
+
+## 2026-10-21 - Adapt Machberet Ptucha for InfinityFree
+
+- Added a deployable PHP/MySQL version under `machberet-ptucha/infinityfree/htdocs` with public summaries, anonymous requests, secure administrator login and protected file uploads.
+- Added the MySQL schema, deployment instructions, configuration template and Apache protection rules.
+- Backup: Git commit.
+
+## 2026-10-21 - Create Machberet Ptucha
+
+- Created the new Hebrew RTL “מחברת פתוחה” summaries site with search, school-subject and grade filtering, and an anonymous visitor request form.
+- Added a separate, unlinked management interface for visitor requests and summary uploads.
+- Configured managed database and file-storage bindings for the new hosted Site.
+- Backup: Git commit pending user approval.
+
+## 2026-10-20 12:04 - Center SharedCart logout button
+
+- Moved the account logout button below the group-join area and centered it.
+- Backup: `MyOwnProjects-add-logout-for-users-without-groups-20261020-120159.zip`
+
+## 2026-10-20 12:01 - Add logout without groups
+
+- Added an account logout button to the groups screen, including when the user has no groups.
+- Backup: `MyOwnProjects-add-logout-for-users-without-groups-20261020-120159.zip`
+
+## 2026-10-19 21:28 - Move pending users to admin dashboard
+
+- Removed the pending-user summary from group management.
+- Added a pending join-request list with user and group names to the site administration dashboard.
+- Backup: `MyOwnProjects-move-pending-users-to-admin-dashboard-20261019-212800.zip`
+
+## 2026-10-19 21:26 - Show pending users in group management
+
+- Added a management-screen summary of users waiting for approval, with a direct button to the members approval screen.
+- Backup: `show-pending-users-in-group-management-20261019-212649.zip`
+
+## 2026-10-19 21:24 - Remove join-request email notifications
+
+- Removed manager email delivery and its direct-link support for join requests.
+- Kept in-app join requests and manager approval intact.
+- Backup: `MyOwnProjects-remove-manager-join-email-notifications-20261019-212437.zip`
+
+## 2026-10-19 21:20 - Add join-request email delivery fallback
+
+- Added a safe PHP mail fallback when SMTP delivery for a join-request notification fails.
+- Backup: `MyOwnProjects-add-join-email-delivery-fallback-now-20261019-212025.zip`
+
+## 2026-10-19 21:16 - Hide empty join requests and retry mail
+
+- Hide the join-requests block completely when no requests are pending.
+- Track successful manager notification delivery, so an existing pending request without a sent email is retried on its next join attempt.
+- Backup: `MyOwnProjects-hide-empty-requests-retry-manager-email-20261019-211633.zip`
+
+## 2026-10-19 21:11 - Email manager on new join request
+
+- Added an email notification for the group manager when a new join request is created.
+- The email includes the applicant name, group name, and a secure direct link to the group members screen.
+- Backup: `MyOwnProjects-email-manager-new-join-requests-now-20261019-211123.zip`
+
+## 2026-10-19 21:05 - Fix SharedCart QR detection and gallery picker
+
+- Removed the forced-camera attribute from the kitchen image picker so it opens the device gallery.
+- Improved QR camera scanning with native BarcodeDetector when available and resilient jsQR fallback with inverted-code support.
+- Backup: `MyOwnProjects-fix-qr-detection-and-gallery-picker-20261019-210559.zip`
+
+## 2026-10-19 21:01 - Fix SharedCart camera capture and QR scanning
+
+- Made the kitchen capture button retry camera startup before taking the photo.
+- Added local `jsQR` decoding for camera QR scans, independent of browser BarcodeDetector support.
+- Backup: `MyOwnProjects-fix-camera-capture-and-qr-scanner-20261019-210142.zip`
+
+## 2026-10-19 21:00 - Enable SharedCart browser camera permission
+
+- Changed the site Permissions Policy from blocking all camera access to allowing the site itself to request it.
+- Added an explicit HTTPS message when a browser cannot legally show its camera permission prompt.
+- Backup: `MyOwnProjects-enable-browser-camera-permission-now-20261019-210045.zip`
+
+## 2026-10-19 20:53 - Move join requests and add QR join
+
+- Moved group join approvals from group settings to the group-members screen.
+- Added a mobile camera QR scanner for joining existing groups, with a paste-link fallback.
+- Added pending join-request totals to the desktop admin dashboard overview.
+- Backup: `MyOwnProjects-move-requests-add-qr-join-20261019-205316.zip`
+
+## 2026-10-19 20:41 - Complete SharedCart secure sharing controls
+
+- Added explicit kitchen-camera permission and capture flow, with a device-image fallback.
+- Added mobile staple-item placement, staple help in the item menu, and creator-only staple deletion.
+- Added a link-or-QR sharing dialog with a group-name invitation message and local QR renderer.
+- Replaced short invite codes with 256-bit opaque, hashed, 24-hour links and added manager-approved join requests plus a waiting screen.
+- Backup: `MyOwnProjects-add-qr-camera-staple-controls-20261019-204152.zip`
+
+## 2026-10-19 20:04 - Add SharedCart fridge icon sprite symbol
+
+- Added the missing Tabler fridge symbol to the local icon sprite and cache-versioned both kitchen icon references.
+- Backup: `MyOwnProjects-add-fridge-symbol-tabler-sprite-20261019-200447.zip`
+
+## 2026-10-19 20:01 - Add SharedCart kitchen fridge heading icon
+
+- Added the existing Tabler fridge icon next to the kitchen-status heading and refreshed the stylesheet cache version.
+- Backup: `MyOwnProjects-add-kitchen-fridge-heading-icon-now-20261019-200121.zip`
+
+## 2026-10-19 19:58 - Remove SharedCart kitchen summary interface
+
+- Removed the kitchen summary button, modal, JavaScript handlers, and related styling until an AI service is connected.
+- Backup: `MyOwnProjects-remove-kitchen-summary-interface-now-20261019-195808.zip`
+
+## 2026-10-19 19:49 - SharedCart kitchen status and staple items
+
+- Added mobile-only kitchen-status areas with camera uploads, full-screen image viewing, 24-hour previous-image recovery, and area freshness states.
+- Added staple items to the shared list with a pale-red highlight and automatic completion reset after 24 hours.
+- Added a non-AI summary dialog that clearly states the smart summary requires an API connection.
+- Backup: `MyOwnProjects-add-kitchen-status-and-staples-20261019-194951.zip`
+
+## 2026-09-01 20:10 - Update shared project root instructions
+
+- Updated `/home/n/AGENTS.md` to treat `/mnt/VMSHARE/projects/MyOwnProjects` as the fixed project root.
+- Changed backup and history paths to use `/mnt/VMSHARE/projects/MyOwnProjects/_CODEX/`.
+- Kept child-project selection only for tasks that do not already identify a child folder.
+- Backup: `MyOwnProjects-update-project-root-in-docs-20260901-200236.zip`
+
+## 2026-09-01 20:16 - StreamLocal deployed QA blocked by live access
+
+- Project key: `p-9b67f541403bbb68`
+- Target child project: `streamlocal`
+- Run ID: `codex-streamlocal-qa-20260901T171653Z-240c0ec8`
+- Tasks checked: 284, 283, 282, 281, 356, 355, 354, 353, 352, 351, 350, 349, 334, 333, 332, 331, 330, 329, 328, 327
+- Outcome: all selected tasks were left `ready_for_qa` with blocked QA notes because both deployed task URLs refused connection from this environment.
+- Evidence: `curl` probes to `http://127.0.0.1:17836/` and `http://10.219.146.2:17836/` failed with connection refused; the documented Supertasks preflight helper was not present at `/mnt/VMSHARE/projects/supertasks/_CODEX/scripts/supertasks_agent_preflight.php`.
+
+## 2026-09-01 20:26 - StreamLocal deployed QA rerun blocked by live access
+
+- Project key: `p-9b67f541403bbb68`
+- Target child project: `streamlocal`
+- Run ID: `codex-streamlocal-qa-20260901T172558Z-ec9889c8`
+- Tasks checked: 284, 283, 282, 281, 356, 355, 354, 353, 352, 351, 350, 349, 334, 333, 332, 331, 330, 329, 328, 327
+- Trace guard: `t3-hi-tv` matched task technical context and local `frontend/dist/index.html`.
+- Outcome: all selected tasks were left `ready_for_qa` with fresh blocked QA notes because both deployed task URLs refused connection from this environment.
+- Evidence: `curl` probes to `http://127.0.0.1:17836/` and `http://10.219.146.2:17836/` failed with connection refused; Playwright browser verification could not start because the `playwright` Node module was unavailable in the configured `NODE_PATH`.
+
+## 2026-10-20 - Update SharedCart profile and list loading
+
+- Replaced the profile navigation arrow with a Tabler chevron and added cache versions for the changed assets.
+- Prevented stale item-list responses from replacing newer results with an empty list.
+- Backup: `MyOwnProjects-change-profile-arrow-icon-now-20261020-120532.zip`
+
+## 2026-10-20 - Fix SharedCart account state and profile icons
+
+- Prevented profile responses from a previous account session from overriding the newly signed-in account.
+- Cleared account identity details on logout, removed the profile icon background, and added a Tabler QR icon to sharing.
+- Backup: `MyOwnProjects-fix-account-state-after-logout-now-20261020-123138.zip`
+
+## 2026-10-20 - Simplify SharedCart home profile access
+
+- Hid the header profile button on the home/groups screen so only the larger profile button remains.
+- Removed the background from the home profile icon and updated cache versions.
+- Backup: `MyOwnProjects-hide-header-profile-on-home-now-20261020-124015.zip`
+
+## 2026-10-20 - Add SharedCart about dialog and server error logging
+
+- Added the mobile-friendly "מי אנחנו" dialog on the sign-in screen.
+- Added central logging for unexpected server responses and surfaced them in the admin system-error views.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Create MovieMeet
+
+- Created a PHP + MySQL application for coordinating cinema meetups through secure event links.
+- Added optional accounts, availability windows, genre preferences, cinema candidates, ranking, voting, TMDb lookup, and Google Maps travel-time support with a fallback estimate.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Refine MovieMeet design and session handling
+
+- Matched the MovieMeet interface to SharedCart with the Heebo font, pastel blue palette, rounded cards, and consistent buttons.
+- Added a secure `X-Auth-Token` fallback for PHP hosts that do not pass the standard Authorization header, preventing logged-in users from appearing logged out.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Polish MovieMeet wording and sign-in form
+
+- Replaced all user-facing occurrences of "סוגות" with "סגנונות".
+- Added clear spacing between the sign-in and registration buttons.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Add MovieMeet database setup script
+
+- Added a phpMyAdmin-ready SQL setup file for the MovieMeet database, tables, and cinema seed data.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Add MovieMeet database error diagnostics
+
+- Added safe, actionable API error codes for database configuration, connection, access, and missing-table failures.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Surface MovieMeet diagnostic codes
+
+- Updated the client to show safe API diagnostic codes below registration and sign-in errors.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Support InfinityFree database configuration
+
+- Replaced environment-variable configuration with a returned PHP configuration array because InfinityFree disables putenv().
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Avoid MovieMeet browser request blocking
+
+- Renamed API meeting actions to avoid browser content blockers and added a MovieMeet favicon.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Space MovieMeet account controls
+
+- Added visual separation between the signed-in user name and logout button.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Move MovieMeet API actions to headers
+
+- Removed API action names from request URLs to avoid browser content-blocker false positives.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Improve MovieMeet preference and cinema forms
+
+- Added searchable city input, like/dislike genre buttons, 24-hour time selectors, and city-aware cinema suggestions.
+- Removed the TMDb movie-search control and endpoint from the candidate flow.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Preserve MovieMeet windows and nearby cinema results
+
+- Restored every saved availability window after a reload and added Bat Yam to cinema distance matching.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Allow MovieMeet organizers to delete screenings
+
+- Added a confirmed delete action for screenings, limited and enforced server-side for the meeting organizer.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Redesign MovieMeet cinema flow
+
+- Added personal meeting dashboard, mobile-friendly event tabs, cinema-search booking links, and plain-language recommendation explanations.
+- Applied the Void/Night/Velvet cinema visual palette with a free Unsplash theater-seats background.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Convert MovieMeet to guest-first access
+
+- Removed public registration, added private browser-held management and participant tokens, and promoted the first existing account to the sole administrator.
+- Added an admin dashboard summary for meetings, participants, and screenings.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Refresh MovieMeet application cache
+
+- Bumped the JavaScript asset version so browsers load the latest guest-first and dashboard interface after deployment.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Complete MovieMeet guest access and dashboard
+
+- Removed remaining public account language and made the event flow explicitly guest-only.
+- Restricted account login to the sole administrator and added a compact management dashboard with meeting, participant, and screening totals.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Clarify recommendations and protect participant responses
+
+- Rewrote recommendation labels in plain language and removed the unnecessary guest-account message.
+- Locked a participant name after the first response and added server-side unique-name protection per meeting.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Improve MovieMeet recommendation readability
+
+- Replaced the crowded low-contrast recommendation tags with high-contrast labeled information cards that stack on phones.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Add MovieMeet poster lookup
+
+- Removed light backgrounds from recommendation detail text and kept all detail content on the dark card surface.
+- Added server-side TMDb movie-poster lookup and display for new and existing screening suggestions.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Remove MovieMeet API-key dependencies
+
+- Removed the TMDb poster integration and its token requirement.
+- Replaced Google Maps travel-time lookup with keyless OSRM road routing, retaining local distance estimation as an outage fallback.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Restore MovieMeet cinema selection responsiveness
+
+- Kept cinema-list sorting local and immediate instead of making route requests before rendering the selector.
+- Added a visible failure state when the cinema list cannot load.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-20 - Show available MovieMeet participants
+
+- Added a compact avatar stack with participant initials and a clear available-friends count on each screening recommendation.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-21 - Prevent repeated MovieMeet preference entries
+
+- Hide the preference form after a participant submits it and show a clear completion message instead.
+- Persist the anonymous participant token in an HttpOnly cookie so clearing local browser storage does not create another entry on the same device.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-21 - Improve MovieMeet date and availability selection
+
+- Open the native calendar picker when selecting meeting, screening, or availability dates.
+- Make added availability windows choose a random unused date/time combination within the meeting range.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-21 - Stabilize MovieMeet cinema selection
+
+- Include the filtered cinema list in the existing meeting response, removing the separate request that could leave the cinema selector empty after adding a screening.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-21 - Complete MovieMeet review fixes
+
+- Made screening time use the device time picker and loaded cinema choices with the meeting data.
+- Replaced availability avatars with a pulsing green availability indicator and count.
+- Added per-screening creator ownership, creator-only secure link renewal, expiring share links, and a palette-matched favicon.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-21 - Polish MovieMeet visual hierarchy
+
+- Added a cinema-ticket-style brand mark, a compact meeting progress indicator, and a highlighted leading recommendation card.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-21 - Make MovieMeet progress navigation interactive
+
+- Replaced duplicate event navigation buttons with the progress steps themselves.
+- Added keyboard navigation with right/left arrows, Home, and End.
+- Backup: Git commit only, per the project backup policy.
+
+## 2026-10-21 - Use 24-hour MovieMeet screening times
+
+- Replaced the browser-native screening time control with fixed 24-hour choices from `00:00` through `23:45`.
+- Backup: Git commit only, per the project backup policy.
