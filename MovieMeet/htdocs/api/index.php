@@ -66,15 +66,23 @@ try {
         $start = cleanText($input['date_start'] ?? '', 10);
         $end = cleanText($input['date_end'] ?? '', 10);
         if ('' === $name || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end) || $end < $start) respond(['error' => 'יש למלא שם וטווח תאריכים תקין'], 422);
-        $token = randomToken(16);
+        $token = randomToken(16); $shareToken = randomToken(32);
         $manager = randomToken(32); $adminId = (int)$dbh->query('SELECT id FROM mm_users ORDER BY id LIMIT 1')->fetchColumn();
         if (!$adminId) respond(['error' => 'יש להגדיר מנהל מערכת פעם אחת לפני יצירת מפגש'], 503);
-        $dbh->prepare('INSERT INTO mm_events(token,manage_token,organizer_id,name,date_start,date_end) VALUES(?,?,?,?,?,?)')->execute([$token, $manager, $adminId, $name, $start, $end]);
-        respond(['token' => $token, 'manage_token' => $manager], 201);
+        $dbh->prepare('INSERT INTO mm_events(token,manage_token,share_token,share_expires_at,organizer_id,name,date_start,date_end) VALUES(?,?,?,DATE_ADD(UTC_TIMESTAMP(), INTERVAL 7 DAY),?,?,?,?)')->execute([$token, $manager, $shareToken, $adminId, $name, $start, $end]);
+        respond(['token' => $token, 'link_token' => $shareToken, 'manage_token' => $manager], 201);
+    }
+
+    if ('share-link' === $action && 'POST' === $method) {
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 64));
+        if (!eventManager($event)) respond(['error' => 'רק יוצר המפגש יכול להעתיק קישור'], 403);
+        $shareToken = randomToken(32);
+        $dbh->prepare('UPDATE mm_events SET share_token=?,share_expires_at=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 7 DAY) WHERE id=?')->execute([$shareToken, $event['id']]);
+        respond(['token' => $shareToken]);
     }
 
     if ('meeting' === $action) {
-        $token = cleanText($_GET['token'] ?? '', 32);
+        $token = cleanText($_GET['token'] ?? '', 64);
         $event = eventByToken($dbh, $token);
         $participantsStmt = $dbh->prepare('SELECT id,name,city,availability,genres,disliked_genres FROM mm_participants WHERE event_id=? ORDER BY created_at');
         $participantsStmt->execute([$event['id']]);
@@ -92,14 +100,15 @@ try {
             $candidate['votes'] = $voteStmt->fetch() ?: ['yes_votes' => 0, 'no_votes' => 0];
             $candidate['my_vote'] = null;
             if ($myParticipant) { $voteStmt = $dbh->prepare('SELECT vote FROM mm_votes WHERE participant_id=? AND candidate_id=?'); $voteStmt->execute([$myParticipant['id'], $candidate['id']]); $candidate['my_vote'] = $voteStmt->fetchColumn() ?: null; }
+            $candidate['can_delete'] = !empty($candidate['creator_token']) && (hash_equals((string)$candidate['creator_token'], (string)($_SERVER['HTTP_X_MOVIEMEET_MANAGE'] ?? '')) || ($myParticipant && hash_equals((string)$candidate['creator_token'], (string)$myParticipant['participant_token'])));
         }
         usort($candidates, static fn(array $a, array $b): int => $b['score']['total'] <=> $a['score']['total']);
         $cinemaOptions = cinemasForCity($dbh, (string)($myParticipant['city'] ?? ''));
-        respond(['event' => ['token' => $event['token'], 'name' => $event['name'], 'date_start' => $event['date_start'], 'date_end' => $event['date_end'], 'is_organizer' => eventManager($event)], 'participants' => $participants, 'candidates' => $candidates, 'cinema_options' => $cinemaOptions, 'my_participant' => $myParticipant ? ['id' => (int)$myParticipant['id'], 'name' => $myParticipant['name'], 'city' => $myParticipant['city'], 'availability' => jsonList($myParticipant['availability']), 'genres' => jsonList($myParticipant['genres']), 'disliked_genres' => jsonList($myParticipant['disliked_genres'] ?? null)] : null]);
+        respond(['event' => ['token' => $token, 'name' => $event['name'], 'date_start' => $event['date_start'], 'date_end' => $event['date_end'], 'is_organizer' => eventManager($event), 'can_add_candidate' => eventManager($event) || (bool)$myParticipant], 'participants' => $participants, 'candidates' => $candidates, 'cinema_options' => $cinemaOptions, 'my_participant' => $myParticipant ? ['id' => (int)$myParticipant['id'], 'name' => $myParticipant['name'], 'city' => $myParticipant['city'], 'availability' => jsonList($myParticipant['availability']), 'genres' => jsonList($myParticipant['genres']), 'disliked_genres' => jsonList($myParticipant['disliked_genres'] ?? null)] : null]);
     }
 
     if ('join' === $action && 'POST' === $method) {
-        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 64));
         $input = body();
         $name = cleanText($input['name'] ?? '', 80);
         $city = cleanText($input['city'] ?? '', 80);
@@ -121,8 +130,10 @@ try {
     }
 
     if ('candidate-create' === $action && 'POST' === $method) {
-        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
-        if (!eventManager($event)) respond(['error' => 'רק יוצר המפגש יכול להוסיף הקרנה'], 403);
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 64));
+        $participant = participantByToken($dbh, (int)$event['id']);
+        $creatorToken = eventManager($event) ? (string)($_SERVER['HTTP_X_MOVIEMEET_MANAGE'] ?? '') : (string)($participant['participant_token'] ?? '');
+        if ('' === $creatorToken) respond(['error' => 'יש לשמור העדפות לפני הוספת הקרנה'], 403);
         $input = body();
         $cinemaId = (int)($input['cinema_id'] ?? 0);
         $title = cleanText($input['movie_title'] ?? '', 180);
@@ -132,15 +143,20 @@ try {
         $stmt = $dbh->prepare('SELECT booking_url FROM mm_cinemas WHERE id=?'); $stmt->execute([$cinemaId]); $url = (string)$stmt->fetchColumn();
         if ('' === $url) respond(['error' => 'הקולנוע לא נמצא'], 404);
         $genres = array_values(array_filter(array_map(static fn($genre): string => cleanText($genre, 40), $input['genres'] ?? [])));
-        $dbh->prepare('INSERT INTO mm_candidates(event_id,cinema_id,tmdb_id,movie_title,poster_path,genres,show_date,show_time,booking_url) VALUES(?,?,?,?,?,?,?,?,?)')->execute([$event['id'], $cinemaId, null, $title, null, json_encode($genres), $date, $time . ':00', $url]);
+        $dbh->prepare('INSERT INTO mm_candidates(event_id,cinema_id,tmdb_id,movie_title,poster_path,genres,show_date,show_time,booking_url,creator_token) VALUES(?,?,?,?,?,?,?,?,?,?)')->execute([$event['id'], $cinemaId, null, $title, null, json_encode($genres), $date, $time . ':00', $url, $creatorToken]);
         respond(['ok' => true], 201);
     }
 
     if ('candidate-delete' === $action && 'POST' === $method) {
-        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
-        if (!eventManager($event)) respond(['error' => 'רק יוצר המפגש יכול למחוק הקרנה'], 403);
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 64));
         $candidateId = (int)(body()['candidate_id'] ?? 0);
         if (!$candidateId) respond(['error' => 'הקרנה לא תקינה'], 422);
+        $owner = $dbh->prepare('SELECT creator_token FROM mm_candidates WHERE id=? AND event_id=?');
+        $owner->execute([$candidateId, $event['id']]);
+        $creatorToken = (string)$owner->fetchColumn();
+        $participant = participantByToken($dbh, (int)$event['id']);
+        $requestToken = eventManager($event) ? (string)($_SERVER['HTTP_X_MOVIEMEET_MANAGE'] ?? '') : (string)($participant['participant_token'] ?? '');
+        if ('' === $creatorToken || !hash_equals($creatorToken, $requestToken)) respond(['error' => 'רק מי שהוסיף את ההקרנה יכול למחוק אותה'], 403);
         $stmt = $dbh->prepare('DELETE FROM mm_candidates WHERE id=? AND event_id=?');
         $stmt->execute([$candidateId, $event['id']]);
         if (!$stmt->rowCount()) respond(['error' => 'ההקרנה לא נמצאה'], 404);
@@ -148,7 +164,7 @@ try {
     }
 
     if ('vote' === $action && 'POST' === $method) {
-        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 64));
         $participant = participantByToken($dbh, (int)$event['id']);
         if (!$participant) respond(['error' => 'יש לשמור את ההעדפות לפני הצבעה'], 403);
         $input = body(); $candidateId = (int)($input['candidate_id'] ?? 0); $vote = (int)($input['vote'] ?? 0);
@@ -159,7 +175,7 @@ try {
     }
 
     if ('seats-checked' === $action && 'POST' === $method) {
-        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 32));
+        $event = eventByToken($dbh, cleanText($_GET['token'] ?? '', 64));
         $participant = participantByToken($dbh, (int)$event['id']);
         if (!$participant) respond(['error' => 'יש לשמור את ההעדפות לפני אישור'], 403);
         $candidateId = (int)(body()['candidate_id'] ?? 0);

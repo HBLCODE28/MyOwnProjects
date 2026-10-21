@@ -36,8 +36,11 @@ function ensureSchema(PDO $dbh): void {
     $dbh->exec("CREATE TABLE IF NOT EXISTS mm_candidates (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, event_id INT UNSIGNED NOT NULL, cinema_id INT UNSIGNED NOT NULL, tmdb_id INT NULL, movie_title VARCHAR(180) NOT NULL, poster_path VARCHAR(300) NULL, genres JSON NOT NULL, show_date DATE NOT NULL, show_time TIME NOT NULL, booking_url VARCHAR(500) NOT NULL, seats_checked TINYINT(1) NOT NULL DEFAULT 0, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT mm_candidates_event FOREIGN KEY(event_id) REFERENCES mm_events(id) ON DELETE CASCADE, CONSTRAINT mm_candidates_cinema FOREIGN KEY(cinema_id) REFERENCES mm_cinemas(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $dbh->exec("CREATE TABLE IF NOT EXISTS mm_votes (participant_id INT UNSIGNED NOT NULL, candidate_id INT UNSIGNED NOT NULL, vote TINYINT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(participant_id,candidate_id), CONSTRAINT mm_votes_participant FOREIGN KEY(participant_id) REFERENCES mm_participants(id) ON DELETE CASCADE, CONSTRAINT mm_votes_candidate FOREIGN KEY(candidate_id) REFERENCES mm_candidates(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     try { $dbh->exec('ALTER TABLE mm_events ADD COLUMN manage_token CHAR(64) NULL UNIQUE'); } catch (PDOException) { }
+    try { $dbh->exec('ALTER TABLE mm_events ADD COLUMN share_token CHAR(64) NULL UNIQUE'); } catch (PDOException) { }
+    try { $dbh->exec('ALTER TABLE mm_events ADD COLUMN share_expires_at DATETIME NULL'); } catch (PDOException) { }
     try { $dbh->exec('ALTER TABLE mm_participants ADD COLUMN participant_token CHAR(64) NULL UNIQUE'); } catch (PDOException) { }
     try { $dbh->exec('ALTER TABLE mm_participants ADD UNIQUE KEY mm_participant_event_name (event_id,name)'); } catch (PDOException) { }
+    try { $dbh->exec('ALTER TABLE mm_candidates ADD COLUMN creator_token CHAR(64) NULL'); } catch (PDOException) { }
     try { $dbh->exec('ALTER TABLE mm_users ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0'); } catch (PDOException) { }
     $dbh->exec('UPDATE mm_users SET is_admin=1 ORDER BY id ASC LIMIT 1');
     $seed = [
@@ -114,8 +117,8 @@ function jsonList(mixed $value): array {
 }
 
 function eventByToken(PDO $dbh, string $token): array {
-    $stmt = $dbh->prepare('SELECT * FROM mm_events WHERE token=?');
-    $stmt->execute([$token]);
+    $stmt = $dbh->prepare('SELECT * FROM mm_events WHERE token=? OR (share_token=? AND (share_expires_at IS NULL OR share_expires_at>UTC_TIMESTAMP()))');
+    $stmt->execute([$token, $token]);
     $event = $stmt->fetch();
     if (!$event) respond(['error' => 'המפגש לא נמצא'], 404);
     return $event;
