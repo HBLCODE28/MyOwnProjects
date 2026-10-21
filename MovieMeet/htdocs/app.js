@@ -176,12 +176,22 @@ async function renderEvent(token) {
     document.querySelector('#joinForm').addEventListener('submit', joinEvent);
   }
   document.querySelector('#copyLink').addEventListener('click', async () => { await navigator.clipboard?.writeText(location.href); document.querySelector('#copyLink').textContent = 'הקישור הועתק'; });
-  document.querySelectorAll('[data-event-view]').forEach(button => button.addEventListener('click', () => {
+  const eventViewButtons = [...document.querySelectorAll('[data-event-view]')];
+  const showEventView = button => {
     const view = button.dataset.eventView;
     document.querySelectorAll('.event-pane').forEach(pane => pane.classList.toggle('hidden', pane.dataset.pane !== view));
-    document.querySelectorAll('[data-event-view]').forEach(tab => tab.classList.toggle('active', tab === button));
-    document.querySelectorAll('[data-progress]').forEach(step => step.classList.toggle('active', step.dataset.progress === view));
-  }));
+    eventViewButtons.forEach(tab => { const active = tab === button; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
+  };
+  eventViewButtons.forEach((button, index) => {
+    button.addEventListener('click', () => showEventView(button));
+    button.addEventListener('keydown', event => {
+      const nextIndex = event.key === 'ArrowRight' ? index + 1 : event.key === 'ArrowLeft' ? index - 1 : event.key === 'Home' ? 0 : event.key === 'End' ? eventViewButtons.length - 1 : null;
+      if (null === nextIndex) return;
+      event.preventDefault();
+      const next = eventViewButtons[(nextIndex + eventViewButtons.length) % eventViewButtons.length];
+      next.focus(); showEventView(next);
+    });
+  });
   document.querySelectorAll('.event-pane').forEach(pane => pane.classList.toggle('hidden', pane.dataset.pane !== 'suggestions'));
   document.querySelector('#organizerCard').classList.toggle('hidden', !event.is_organizer);
   if (event.is_organizer) setupCandidateForm(token, event, data.cinema_options || {cinemas: []}, data.my_participant?.city || '');
