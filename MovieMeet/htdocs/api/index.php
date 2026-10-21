@@ -124,6 +124,7 @@ try {
             try { $stmt = $dbh->prepare('INSERT INTO mm_participants(event_id,name,city,availability,genres,disliked_genres,participant_token) VALUES(?,?,?,?,?,?,?)'); $stmt->execute([$event['id'],$name,$city,json_encode($availability),json_encode($genres),json_encode($dislikedGenres),$participantToken]); }
             catch (PDOException) { respond(['error' => 'השם הזה כבר מילא את ההעדפות למפגש. כל משתתף יכול לענות פעם אחת בלבד.'], 409); }
         }
+        rememberParticipant((int)$event['id'], $participantToken);
         respond(['ok' => true, 'participant_token' => $participantToken]);
     }
 

@@ -88,7 +88,19 @@ function currentUser(PDO $dbh): ?array {
 }
 
 function eventManager(array $event): bool { return !empty($event['manage_token']) && hash_equals((string)$event['manage_token'], (string)($_SERVER['HTTP_X_MOVIEMEET_MANAGE'] ?? '')); }
-function participantByToken(PDO $dbh, int $eventId): ?array { $token = (string)($_SERVER['HTTP_X_MOVIEMEET_PARTICIPANT'] ?? ''); if (!preg_match('/^[a-f0-9]{64}$/i', $token)) return null; $stmt = $dbh->prepare('SELECT * FROM mm_participants WHERE event_id=? AND participant_token=?'); $stmt->execute([$eventId, $token]); return $stmt->fetch() ?: null; }
+function participantByToken(PDO $dbh, int $eventId): ?array {
+    $headerToken = (string)($_SERVER['HTTP_X_MOVIEMEET_PARTICIPANT'] ?? '');
+    $cookieToken = (string)($_COOKIE['moviemeet_participant_' . $eventId] ?? '');
+    $token = preg_match('/^[a-f0-9]{64}$/i', $headerToken) ? $headerToken : $cookieToken;
+    if (!preg_match('/^[a-f0-9]{64}$/i', $token)) return null;
+    $stmt = $dbh->prepare('SELECT * FROM mm_participants WHERE event_id=? AND participant_token=?');
+    $stmt->execute([$eventId, $token]);
+    return $stmt->fetch() ?: null;
+}
+
+function rememberParticipant(int $eventId, string $token): void {
+    setcookie('moviemeet_participant_' . $eventId, $token, ['expires' => time() + 31536000, 'path' => '/', 'secure' => !empty($_SERVER['HTTPS']) && 'off' !== $_SERVER['HTTPS'], 'httponly' => true, 'samesite' => 'Lax']);
+}
 
 function requireUser(PDO $dbh): array {
     $user = currentUser($dbh);

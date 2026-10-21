@@ -137,20 +137,24 @@ async function renderEvent(token) {
   document.querySelector('#eventDates').textContent = `${event.date_start} עד ${event.date_end}`;
   document.querySelector('#participantCount').textContent = `${participants.length} משתתפים`;
   document.querySelector('#israelCities').innerHTML = [...new Set(ISRAEL_CITIES)].sort((first, second) => first.localeCompare(second, 'he')).map(city => `<option value="${city}">`).join('');
-  setupGenres();
   if (data.my_participant) {
     const nameInput = document.querySelector('[name="name"]');
     nameInput.value = data.my_participant.name || '';
     nameInput.readOnly = true;
     document.querySelector('#nameLockHint').classList.remove('hidden');
     document.querySelector('[name="city"]').value = data.my_participant.city || '';
+    document.querySelector('#joinForm').classList.add('hidden');
+    const complete = document.querySelector('#joinComplete');
+    complete.textContent = `ההעדפות נשמרו בשם ${data.my_participant.name}. כבר מילאת את ההעדפות למפגש הזה.`;
+    complete.classList.remove('hidden');
+  } else {
+    setupGenres();
+    const windows = document.querySelector('#windows');
+    addWindow(windows, event.date_start);
+    document.querySelector('#addWindow').addEventListener('click', () => addWindow(windows, event.date_start));
+    document.querySelector('#joinForm').addEventListener('submit', joinEvent);
   }
   document.querySelector('#copyLink').addEventListener('click', async () => { await navigator.clipboard?.writeText(location.href); document.querySelector('#copyLink').textContent = 'הקישור הועתק'; });
-  const windows = document.querySelector('#windows');
-  const savedWindows = data.my_participant?.availability || [];
-  (savedWindows.length ? savedWindows : [{date:event.date_start,start:'19:00',end:'23:00'}]).forEach(window => addWindow(windows, window.date, window.start, window.end));
-  document.querySelector('#addWindow').addEventListener('click', () => addWindow(windows, event.date_start));
-  document.querySelector('#joinForm').addEventListener('submit', joinEvent);
   document.querySelectorAll('[data-event-view]').forEach(button => button.addEventListener('click', () => {
     const view = button.dataset.eventView;
     document.querySelectorAll('.event-pane').forEach(pane => pane.classList.toggle('hidden', pane.dataset.pane !== view));
