@@ -93,6 +93,8 @@ function renderCreate() {
   setTemplate('createTemplate');
   const start = document.querySelector('[name="date_start"]'); const end = document.querySelector('[name="date_end"]');
   start.min = end.min = today(); start.value = today(); end.value = today();
+  start.addEventListener('change', () => { end.min = start.value; if (end.value < start.value) end.value = start.value; });
+  enableCalendarPickers(app);
   document.querySelector('[data-open="home"]').addEventListener('click', renderHome);
   document.querySelector('#createForm').addEventListener('submit', async event => {
     event.preventDefault();
@@ -106,10 +108,28 @@ function renderCreate() {
 }
 
 function timeOptions(selected) { return Array.from({length:96}, (_, index) => { const value = `${String(Math.floor(index / 4)).padStart(2, '0')}:${String((index % 4) * 15).padStart(2, '0')}`; return `<option value="${value}"${value === selected ? ' selected' : ''}>${value}</option>`; }).join(''); }
-function addWindow(container, date = today(), start = '19:00', end = '23:00') {
+function enableCalendarPickers(root) {
+  root.querySelectorAll('input[type="date"]').forEach(input => input.addEventListener('click', () => { try { input.showPicker?.(); } catch { } }));
+}
+function addWindow(container, date = today(), start = '19:00', end = '23:00', minDate = '', maxDate = '') {
   const row = document.createElement('div'); row.className = 'window-row';
-  row.innerHTML = `<input type="date" name="window_date" value="${date}" required><select name="window_start" required>${timeOptions(start)}</select><select name="window_end" required>${timeOptions(end)}</select><button class="remove-window" type="button" aria-label="הסרת חלון">×</button>`;
+  row.innerHTML = `<input type="date" name="window_date" value="${date}" min="${minDate}" max="${maxDate}" required><select name="window_start" required>${timeOptions(start)}</select><select name="window_end" required>${timeOptions(end)}</select><button class="remove-window" type="button" aria-label="הסרת חלון">×</button>`;
   row.querySelector('.remove-window').addEventListener('click', () => row.remove()); container.append(row);
+  enableCalendarPickers(row);
+}
+function meetingDates(start, end) {
+  const dates = []; const cursor = new Date(`${start}T12:00:00`); const last = new Date(`${end}T12:00:00`);
+  while (cursor <= last) { dates.push(cursor.toISOString().slice(0, 10)); cursor.setDate(cursor.getDate() + 1); }
+  return dates;
+}
+function addRandomWindow(container, startDate, endDate) {
+  const slots = [['09:00','13:00'],['12:00','16:00'],['15:00','19:00'],['18:00','22:00'],['20:00','23:45']];
+  const used = new Set([...container.querySelectorAll('.window-row')].map(row => `${row.querySelector('[name="window_date"]').value}|${row.querySelector('[name="window_start"]').value}|${row.querySelector('[name="window_end"]').value}`));
+  const dates = meetingDates(startDate, endDate);
+  const unusedDates = dates.filter(date => ![...used].some(value => value.startsWith(`${date}|`)));
+  const choices = (unusedDates.length ? unusedDates : dates).flatMap(date => slots.map(([start, end]) => ({date, start, end})).filter(window => !used.has(`${window.date}|${window.start}|${window.end}`)));
+  const choice = choices[Math.floor(Math.random() * choices.length)];
+  if (choice) addWindow(container, choice.date, choice.start, choice.end, startDate, endDate);
 }
 
 function setupGenres() {
@@ -129,6 +149,7 @@ function setupGenres() {
 
 async function renderEvent(token) {
   setTemplate('eventTemplate');
+  enableCalendarPickers(app);
   const data = await api('meeting', {query:{token}}).catch(error => { app.innerHTML = `<section class="card"><h1>לא ניתן לפתוח את המפגש</h1><p class="form-error">${escapeHtml(error.message)}</p></section>`; return null; });
   if (!data) return;
   currentEvent = data;
@@ -150,8 +171,8 @@ async function renderEvent(token) {
   } else {
     setupGenres();
     const windows = document.querySelector('#windows');
-    addWindow(windows, event.date_start);
-    document.querySelector('#addWindow').addEventListener('click', () => addWindow(windows, event.date_start));
+    addWindow(windows, event.date_start, '19:00', '23:00', event.date_start, event.date_end);
+    document.querySelector('#addWindow').addEventListener('click', () => addRandomWindow(windows, event.date_start, event.date_end));
     document.querySelector('#joinForm').addEventListener('submit', joinEvent);
   }
   document.querySelector('#copyLink').addEventListener('click', async () => { await navigator.clipboard?.writeText(location.href); document.querySelector('#copyLink').textContent = 'הקישור הועתק'; });
