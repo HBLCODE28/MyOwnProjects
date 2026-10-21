@@ -1,0 +1,9 @@
+<?php
+// Copy to config.php and enter the MySQL details shown in InfinityFree's control panel.
+return [
+    'db_host' => 'sqlXXX.infinityfree.com', 'db_name' => 'if0_XXXXXXXX_db',
+    'db_user' => 'if0_XXXXXXXX', 'db_pass' => 'CHANGE_ME',
+    'admin_user' => 'admin',
+    // Create with: password_hash('your-long-password', PASSWORD_DEFAULT)
+    'admin_password_hash' => 'PASTE_A_PASSWORD_HASH_HERE',
+];
