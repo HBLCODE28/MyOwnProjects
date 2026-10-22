@@ -10,15 +10,23 @@ $dbh = getDb();
 
 const KITCHEN_AREAS = ['fridge_inside', 'fridge_door', 'vegetable_drawers', 'freezer', 'pantry'];
 
-function kitchenIsMember(PDO $dbh, int $groupId, int $userId): bool {
+function kitchenCanAccess(PDO $dbh, int $groupId, int $userId): bool {
     $stmt = $dbh->prepare(
         'SELECT 1
-           FROM group_members gm
-           JOIN `groups` g ON g.id = gm.group_id AND g.deleted_at IS NULL
-          WHERE gm.group_id = :group_id AND gm.user_id = :user_id
+          FROM `groups` g
+          LEFT JOIN group_members gm
+            ON gm.group_id = g.id
+           AND gm.user_id = :member_user_id
+         WHERE g.id = :group_id
+           AND g.deleted_at IS NULL
+           AND (gm.user_id IS NOT NULL OR g.created_by = :creator_user_id)
           LIMIT 1'
     );
-    $stmt->execute([':group_id' => $groupId, ':user_id' => $userId]);
+    $stmt->execute([
+        ':group_id' => $groupId,
+        ':member_user_id' => $userId,
+        ':creator_user_id' => $userId,
+    ]);
     return (bool)$stmt->fetch();
 }
 
@@ -42,7 +50,7 @@ function kitchenRestoreApprovedMembership(PDO $dbh, int $groupId, int $userId): 
     );
     $restore->execute([':group_id' => $groupId, ':user_id' => $userId]);
 
-    return kitchenIsMember($dbh, $groupId, $userId);
+    return kitchenCanAccess($dbh, $groupId, $userId);
 }
 
 function kitchenCleanExpiredPreviousImages(PDO $dbh, int $groupId): void {
@@ -67,7 +75,7 @@ function kitchenCleanExpiredPreviousImages(PDO $dbh, int $groupId): void {
 
 $groupId = (int)($_GET['group_id'] ?? $_POST['group_id'] ?? 0);
 if (!$groupId) jsonError('group_id required');
-if (!kitchenIsMember($dbh, $groupId, $uid) && !kitchenRestoreApprovedMembership($dbh, $groupId, $uid)) {
+if (!kitchenCanAccess($dbh, $groupId, $uid) && !kitchenRestoreApprovedMembership($dbh, $groupId, $uid)) {
     jsonError('Forbidden', 403);
 }
 kitchenCleanExpiredPreviousImages($dbh, $groupId);

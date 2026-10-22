@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-22 - Restore legacy SharedCart group-owner kitchen access
+
+- Allowed an active group creator to use the kitchen-photo route even when a legacy group is missing the creator's `group_members` row.
+- Kept access limited to the group creator, current members, or users with a separately approved join request.
+- Backup: Git commit.
+
 ## 2026-10-22 - Align SharedCart kitchen upload identity with the active account
 
 - Restored the active account's Bearer token on kitchen-image uploads; the API gives this token precedence over a possibly stale session cookie.
