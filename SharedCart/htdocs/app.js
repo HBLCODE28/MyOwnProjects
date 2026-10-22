@@ -290,12 +290,13 @@ const shareLinkRequests = new Map();
 
 // API
 function apiCall(method, endpoint, data) {
+    const token = getToken();
     const opts = {
         url: API + endpoint,
         method,
-        contentType: 'application/json',
-        headers: { Authorization: 'Bearer ' + getToken() }
+        contentType: 'application/json'
     };
+    if (token) opts.headers = { Authorization: 'Bearer ' + token };
     if (data !== undefined) opts.data = JSON.stringify(data);
     return $.ajax(opts).fail(xhr => {
         if (xhr.status === 401) handleUnauthorized();
@@ -303,14 +304,16 @@ function apiCall(method, endpoint, data) {
 }
 
 function apiUpload(method, endpoint, formData) {
-    return $.ajax({
+    const token = getToken();
+    const opts = {
         url: API + endpoint,
         method,
         data: formData,
         processData: false,
-        contentType: false,
-        headers: { Authorization: 'Bearer ' + getToken() }
-    }).fail(xhr => {
+        contentType: false
+    };
+    if (token) opts.headers = { Authorization: 'Bearer ' + token };
+    return $.ajax(opts).fail(xhr => {
         if (xhr.status === 401) handleUnauthorized();
     });
 }

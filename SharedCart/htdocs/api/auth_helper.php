@@ -64,47 +64,58 @@ function clearAuthSessionCookie(): void {
     unset($_COOKIE[AUTH_COOKIE_NAME]);
 }
 
-function requestAuthToken(): string {
+function requestAuthTokens(): array {
     $header = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
     if ('' === $header && function_exists('getallheaders')) {
         $headers = getallheaders();
         $header = $headers['Authorization'] ?? ($headers['authorization'] ?? '');
     }
+    $tokens = [];
     if (str_starts_with($header, 'Bearer ')) {
-        return trim(substr($header, 7));
+        $bearer = trim(substr($header, 7));
+        if ('' !== $bearer) $tokens[] = $bearer;
     }
-    return trim((string)($_COOKIE[AUTH_COOKIE_NAME] ?? ''));
+    $cookie = trim((string)($_COOKIE[AUTH_COOKIE_NAME] ?? ''));
+    if ('' !== $cookie && !in_array($cookie, $tokens, true)) $tokens[] = $cookie;
+    return $tokens;
+}
+
+function requestAuthToken(): string {
+    return requestAuthTokens()[0] ?? '';
 }
 
 function requireAuth(): array {
     // Validate Authorization header and return decoded JWT payload.
     // Input: none (reads from $_SERVER).
     // Output: payload array; exits with 401 on failure.
-    $token = requestAuthToken();
-    if ('' === $token) jsonError('Unauthorized', 401);
-
-    $payload = jwtDecode($token);
-    if (null === $payload || empty($payload['sub'])) jsonError('Unauthorized', 401);
-
+    $tokens = requestAuthTokens();
+    if (!$tokens) jsonError('Unauthorized', 401);
     $dbh = getDb();
     ensureAdminSchema($dbh);
-    $user = userAccessRow($dbh, (int)$payload['sub']);
-    if (!$user || !empty($user['deleted_at'])) jsonError('Account deleted', 403);
-    $tokenVersion = (int)($payload['ver'] ?? 0);
-    if ($tokenVersion !== (int)($user['token_version'] ?? 0)) jsonError('Session expired', 401);
-    if ((int)($user['is_blocked'] ?? 0) === 1) {
-        jsonOut([
-            'error' => 'Account temporarily blocked',
-            'blocked_until' => $user['blocked_until'],
-            'reason' => $user['blocked_reason'] ?: 'Policy violation',
-        ], 403);
+    foreach ($tokens as $token) {
+        $payload = jwtDecode($token);
+        if (null === $payload || empty($payload['sub'])) continue;
+
+        $user = userAccessRow($dbh, (int)$payload['sub']);
+        if (!$user || !empty($user['deleted_at'])) continue;
+        $tokenVersion = (int)($payload['ver'] ?? 0);
+        if ($tokenVersion !== (int)($user['token_version'] ?? 0)) continue;
+        if ((int)($user['is_blocked'] ?? 0) === 1) {
+            jsonOut([
+                'error' => 'Account temporarily blocked',
+                'blocked_until' => $user['blocked_until'],
+                'reason' => $user['blocked_reason'] ?: 'Policy violation',
+            ], 403);
+        }
+
+        $payload['role'] = (string)($user['role'] ?? 'user');
+        $payload['username'] = (string)($user['username'] ?? '');
+        $payload['email'] = (string)($user['email'] ?? '');
+        $payload['preferred_language'] = (string)($user['preferred_language'] ?? 'he');
+        return $payload;
     }
 
-    $payload['role'] = (string)($user['role'] ?? 'user');
-    $payload['username'] = (string)($user['username'] ?? '');
-    $payload['email'] = (string)($user['email'] ?? '');
-    $payload['preferred_language'] = (string)($user['preferred_language'] ?? 'he');
-    return $payload;
+    jsonError('Unauthorized', 401);
 }
 
 function requireAdmin(): array {

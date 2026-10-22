@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-22 - Make SharedCart authentication resilient to hosting header handling
+
+- Accepted a valid secure session cookie when a stale or unavailable Bearer header cannot be authenticated.
+- Kept valid Bearer authentication first, without allowing unauthenticated access.
+- Stopped sending an empty Authorization header and bumped the script cache version.
+- Backup: Git commit.
+
 ## 2026-10-22 - Handle expired SharedCart sessions safely
 
 - Routed API 401 responses to the sign-in screen, cleared the stale access token, and stopped authenticated polling.
