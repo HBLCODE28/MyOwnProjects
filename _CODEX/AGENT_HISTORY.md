@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-22 - Make SharedCart kitchen capture uploads compatible with mobile browsers
+
+- Removed the `File` constructor from the camera-capture path; the captured image blob is now uploaded directly, which avoids a pre-network failure in browsers with incomplete `File` support.
+- Added specific on-screen feedback when a photo, group, or kitchen area is unavailable, instead of silently skipping the upload; a failed canvas conversion now preserves the selected area for retry or gallery selection.
+- Updated the application script cache version.
+- Backup: Git commit.
+
 ## 2026-10-22 - Fix SharedCart kitchen uploads blocked by host authorization handling
 
 - Sent kitchen image uploads with the same-origin secure session cookie instead of a Bearer header, avoiding shared-host 403 rules that reject authenticated multipart requests.

@@ -2938,11 +2938,22 @@ function hideKitchenCamera() {
     if ($('#shareChoiceModal').hasClass('hidden')) $('body').removeClass('report-modal-open');
 }
 
-function uploadKitchenImage(file, areaCode) {
-    if (!file || !areaCode || !currentGroupId) return;
+function uploadKitchenImage(file, areaCode, fallbackName = '') {
+    if (!file) {
+        $('#kitchenStatus').text(uiText('לא התקבלה תמונה להעלאה. נסו לצלם שוב או לבחור תמונה מהמכשיר.', 'No image was received. Try taking or choosing a photo again.'));
+        return;
+    }
+    if (!areaCode || !currentGroupId) {
+        $('#kitchenStatus').text(uiText('לא ניתן לזהות את אזור המטבח. חזרו לרשימה ונסו שוב.', 'The kitchen area could not be identified. Return to the list and try again.'));
+        return;
+    }
     const groupId = Number(currentGroupId);
+    if (!Number.isInteger(groupId) || groupId < 1) {
+        $('#kitchenStatus').text(uiText('הקבוצה אינה זמינה כרגע. חזרו לרשימת הקבוצות ונסו שוב.', 'The group is unavailable right now. Return to the group list and try again.'));
+        return;
+    }
     const formData = new FormData();
-    formData.append('image', file, file.name || 'kitchen-photo.jpg');
+    formData.append('image', file, fallbackName || file.name || 'kitchen-photo.jpg');
     hideKitchenCamera();
     $('#kitchenStatus').text(uiText('מעלה תמונה…', 'Uploading image…'));
     apiUpload('POST', `/kitchen?group_id=${encodeURIComponent(groupId)}&area=${encodeURIComponent(areaCode)}`, formData, true)
@@ -2963,18 +2974,29 @@ function captureKitchenPhoto() {
         startKitchenCamera().then(() => setTimeout(captureKitchenPhoto, 150)).catch(() => {});
         return;
     }
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
     const areaCode = pendingKitchenArea;
-    pendingKitchenArea = null;
-    canvas.toBlob(blob => {
-        if (!blob) {
-            $('#kitchenCameraStatus').text(uiText('לא ניתן ליצור את התמונה. נסו שוב או בחרו תמונה מהמכשיר.', 'The photo could not be created. Try again or choose an image from the device.'));
-            return;
-        }
-        uploadKitchenImage(new File([blob], 'kitchen-photo.jpg', { type: 'image/jpeg' }), areaCode);
-    }, 'image/jpeg', .9);
+    const $captureButton = $('#btnKitchenCameraCapture').prop('disabled', true);
+    try {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas unavailable');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+            $captureButton.prop('disabled', false);
+            if (!blob) {
+                pendingKitchenArea = areaCode;
+                $('#kitchenCameraStatus').text(uiText('לא ניתן ליצור את התמונה. נסו שוב או בחרו תמונה מהמכשיר.', 'The photo could not be created. Try again or choose an image from the device.'));
+                return;
+            }
+            pendingKitchenArea = null;
+            uploadKitchenImage(blob, areaCode, 'kitchen-photo.jpg');
+        }, 'image/jpeg', .9);
+    } catch (error) {
+        $captureButton.prop('disabled', false);
+        pendingKitchenArea = areaCode;
+        $('#kitchenCameraStatus').text(uiText('לא ניתן להכין את התמונה להעלאה. נסו לבחור תמונה מהמכשיר.', 'The photo could not be prepared for upload. Try choosing an image from the device.'));
+    }
 }
 
 $('#btnKitchenCameraCapture').on('click', captureKitchenPhoto);
