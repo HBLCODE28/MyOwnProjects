@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-22 - Align SharedCart kitchen upload identity with the active account
+
+- Restored the active account's Bearer token on kitchen-image uploads; the API gives this token precedence over a possibly stale session cookie.
+- This makes the upload identity match the identity used to load the shared group and its kitchen screen.
+- Updated the application script cache version.
+- Backup: Git commit.
+
 ## 2026-10-22 - Make SharedCart kitchen capture uploads compatible with mobile browsers
 
 - Removed the `File` constructor from the camera-capture path; the captured image blob is now uploaded directly, which avoids a pre-network failure in browsers with incomplete `File` support.
