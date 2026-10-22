@@ -4,6 +4,8 @@ const API       = '/api';
 const TOKEN_KEY = 'cg_token';
 const LANGUAGE_KEY = 'cg_language';
 const POLL_MS   = 5000;
+const KITCHEN_CAPTURE_MAX_DIMENSION = 1280;
+const KITCHEN_CAPTURE_QUALITY = .76;
 
 
 const TABLER_SPRITE_URL = '/img/tabler-icons.svg';
@@ -2998,8 +3000,9 @@ function captureKitchenPhoto() {
     const areaCode = pendingKitchenArea;
     const $captureButton = $('#btnKitchenCameraCapture').prop('disabled', true);
     try {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        const scale = Math.min(1, KITCHEN_CAPTURE_MAX_DIMENSION / Math.max(video.videoWidth, video.videoHeight));
+        canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+        canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
         const context = canvas.getContext('2d');
         if (!context) throw new Error('Canvas unavailable');
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -3012,7 +3015,7 @@ function captureKitchenPhoto() {
             }
             pendingKitchenArea = null;
             uploadKitchenImage(blob, areaCode, 'kitchen-photo.jpg');
-        }, 'image/jpeg', .9);
+        }, 'image/jpeg', KITCHEN_CAPTURE_QUALITY);
     } catch (error) {
         $captureButton.prop('disabled', false);
         pendingKitchenArea = areaCode;

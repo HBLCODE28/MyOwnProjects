@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-22 - Reduce kitchen camera upload size
+
+- Resized kitchen camera captures to a maximum dimension of 1280 pixels and encoded them at a smaller JPEG quality before upload.
+- This prevents PHP/hosting upload-size limits from dropping the multipart image before the kitchen route can process it.
+- Bumped the application script cache version.
+- Backup: Git commit.
+
 ## 2026-10-22 - Make SharedCart authentication resilient to hosting header handling
 
 - Accepted a valid secure session cookie when a stale or unavailable Bearer header cannot be authenticated.
