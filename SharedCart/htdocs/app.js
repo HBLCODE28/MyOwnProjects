@@ -297,7 +297,9 @@ function apiCall(method, endpoint, data) {
         headers: { Authorization: 'Bearer ' + getToken() }
     };
     if (data !== undefined) opts.data = JSON.stringify(data);
-    return $.ajax(opts);
+    return $.ajax(opts).fail(xhr => {
+        if (xhr.status === 401) handleUnauthorized();
+    });
 }
 
 function apiUpload(method, endpoint, formData) {
@@ -308,6 +310,8 @@ function apiUpload(method, endpoint, formData) {
         processData: false,
         contentType: false,
         headers: { Authorization: 'Bearer ' + getToken() }
+    }).fail(xhr => {
+        if (xhr.status === 401) handleUnauthorized();
     });
 }
 
@@ -1021,6 +1025,22 @@ function clearToken() {
     shareLinkCache.clear();
     shareLinkRequests.clear();
 }
+
+function handleUnauthorized() {
+    if (!getToken()) return;
+
+    clearToken();
+    stopPoll();
+    currentGroupId = null;
+    currentGroupCanRename = false;
+    currentGroupName = '';
+    notificationsPanelOpen = false;
+    sessionStorage.removeItem('last_group');
+    $('#appHeader, #bottomNav, #btnNotifications, #notifBadge, #notifPanel').addClass('hidden');
+    $('#notifBadge').text('');
+    showScreen('screenAuth');
+    authErr(uiText('פג תוקף ההתחברות. יש להתחבר מחדש.', 'Your session has expired. Please sign in again.'));
+}
 function parseUserId(token) {
     try {
         let encoded = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -1179,9 +1199,8 @@ $('#formLogin').on('submit', event => {
             updateAdminDashboardButton();
             if (res.language) currentLanguage = res.language === 'en' ? 'en' : 'he';
             applyMainLanguage();
-            loadCurrentProfile().always(() => {
-                redeemPendingInvite() || loadGroups();
-            });
+            loadCurrentProfile()
+                .done(() => redeemPendingInvite() || loadGroups());
         })
         .fail(xhr => authErr(apiErr(xhr)))
         .always(() => $button.prop('disabled', false));
@@ -1281,9 +1300,8 @@ $('#btnRegister').on('click', () => {
             if (res.language) currentLanguage = res.language === 'en' ? 'en' : 'he';
             $('#regUsername, #regEmail, #regPassword, #regPasswordConfirm').val('');
             applyMainLanguage();
-            loadCurrentProfile().always(() => {
-                redeemPendingInvite() || loadGroups();
-            });
+            loadCurrentProfile()
+                .done(() => redeemPendingInvite() || loadGroups());
         })
         .fail(xhr => authErr(apiErr(xhr)))
         .always(() => $button.prop('disabled', false).text(uiText('הרשמה', 'Register')));
@@ -2263,6 +2281,7 @@ function loadNotifications() {
 }
 
 function renderNotifs(notifications) {
+    notifications = Array.isArray(notifications) ? notifications : [];
     const unread = notifications.filter(notification => !Number(notification.is_read));
     $('#notifBadge').text(unread.length).toggleClass('hidden', !unread.length);
 
@@ -3357,12 +3376,13 @@ $(function () {
     const authToken = getToken();
     if (authToken) {
         currentUserId = parseUserId(authToken);
-        loadCurrentProfile().always(() => {
-            if (!redeemPendingInvite()) {
-                sessionStorage.removeItem('last_group');
-                loadGroups();
-            }
-        });
+        loadCurrentProfile()
+            .done(() => {
+                if (!redeemPendingInvite()) {
+                    sessionStorage.removeItem('last_group');
+                    loadGroups();
+                }
+            });
     } else {
         showScreen('screenAuth');
     }

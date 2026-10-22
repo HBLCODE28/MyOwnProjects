@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-22 - Handle expired SharedCart sessions safely
+
+- Routed API 401 responses to the sign-in screen, cleared the stale access token, and stopped authenticated polling.
+- Prevented a non-array notification response from crashing the frontend.
+- Bumped the application script cache version so the browser loads the fix.
+- Backup: Git commit.
+
 ## 2026-10-22 - Restore legacy SharedCart group-owner kitchen access
 
 - Allowed an active group creator to use the kitchen-photo route even when a legacy group is missing the creator's `group_members` row.
