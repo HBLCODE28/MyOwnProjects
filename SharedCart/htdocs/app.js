@@ -300,15 +300,16 @@ function apiCall(method, endpoint, data) {
     return $.ajax(opts);
 }
 
-function apiUpload(method, endpoint, formData) {
-    return $.ajax({
+function apiUpload(method, endpoint, formData, useSessionCookie = false) {
+    const options = {
         url: API + endpoint,
         method,
         data: formData,
         processData: false,
-        contentType: false,
-        headers: { Authorization: 'Bearer ' + getToken() }
-    });
+        contentType: false
+    };
+    if (!useSessionCookie) options.headers = { Authorization: 'Bearer ' + getToken() };
+    return $.ajax(options);
 }
 
 const nativeAlert = window.alert.bind(window);
@@ -2944,7 +2945,7 @@ function uploadKitchenImage(file, areaCode) {
     formData.append('image', file, file.name || 'kitchen-photo.jpg');
     hideKitchenCamera();
     $('#kitchenStatus').text(uiText('מעלה תמונה…', 'Uploading image…'));
-    apiUpload('POST', `/kitchen?group_id=${encodeURIComponent(groupId)}&area=${encodeURIComponent(areaCode)}`, formData)
+    apiUpload('POST', `/kitchen?group_id=${encodeURIComponent(groupId)}&area=${encodeURIComponent(areaCode)}`, formData, true)
         .done(() => loadKitchen())
         .fail(xhr => $('#kitchenStatus').text(apiErr(xhr)));
 }

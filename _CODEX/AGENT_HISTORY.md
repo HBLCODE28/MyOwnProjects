@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-22 - Fix SharedCart kitchen uploads blocked by host authorization handling
+
+- Sent kitchen image uploads with the same-origin secure session cookie instead of a Bearer header, avoiding shared-host 403 rules that reject authenticated multipart requests.
+- Kept Bearer-token authentication for other API uploads and refreshed the application script cache version.
+- Backup: Git commit.
+
 ## 2026-10-22 - Repair SharedCart approved-member kitchen access
 
 - Restored a missing `group_members` record automatically when a user has an approved join request before accessing the kitchen-photo route.
