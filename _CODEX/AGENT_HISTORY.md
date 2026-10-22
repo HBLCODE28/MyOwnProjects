@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-22 - Repair SharedCart approved-member kitchen access
+
+- Restored a missing `group_members` record automatically when a user has an approved join request before accessing the kitchen-photo route.
+- The repair requires a valid, active group and approved user record, so pending or rejected invitees are not granted access.
+- Backup: Git commit pending user approval.
+
 ## 2026-10-21 - Fix SharedCart kitchen photo uploads for group members
 
 - Sent the kitchen group and area identifiers in the upload URL instead of relying on multipart form fields, so approved shared-group members retain their existing member-only upload permission on PHP/CGI hosts.

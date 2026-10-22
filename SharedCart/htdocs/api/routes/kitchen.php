@@ -22,6 +22,29 @@ function kitchenIsMember(PDO $dbh, int $groupId, int $userId): bool {
     return (bool)$stmt->fetch();
 }
 
+function kitchenRestoreApprovedMembership(PDO $dbh, int $groupId, int $userId): bool {
+    $approved = $dbh->prepare(
+        'SELECT 1
+           FROM group_join_requests r
+           JOIN `groups` g ON g.id = r.group_id AND g.deleted_at IS NULL
+           JOIN users u ON u.id = r.user_id AND u.deleted_at IS NULL
+          WHERE r.group_id = :group_id
+            AND r.user_id = :user_id
+            AND r.status = "approved"
+          LIMIT 1'
+    );
+    $approved->execute([':group_id' => $groupId, ':user_id' => $userId]);
+    if (!$approved->fetch()) return false;
+
+    $restore = $dbh->prepare(
+        'INSERT IGNORE INTO group_members (group_id, user_id)
+         VALUES (:group_id, :user_id)'
+    );
+    $restore->execute([':group_id' => $groupId, ':user_id' => $userId]);
+
+    return kitchenIsMember($dbh, $groupId, $userId);
+}
+
 function kitchenCleanExpiredPreviousImages(PDO $dbh, int $groupId): void {
     $stmt = $dbh->prepare(
         'SELECT id, previous_image_path
@@ -44,7 +67,9 @@ function kitchenCleanExpiredPreviousImages(PDO $dbh, int $groupId): void {
 
 $groupId = (int)($_GET['group_id'] ?? $_POST['group_id'] ?? 0);
 if (!$groupId) jsonError('group_id required');
-if (!kitchenIsMember($dbh, $groupId, $uid)) jsonError('Forbidden', 403);
+if (!kitchenIsMember($dbh, $groupId, $uid) && !kitchenRestoreApprovedMembership($dbh, $groupId, $uid)) {
+    jsonError('Forbidden', 403);
+}
 kitchenCleanExpiredPreviousImages($dbh, $groupId);
 
 if ('GET' === $method) {
