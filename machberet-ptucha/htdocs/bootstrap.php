@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 session_start();
+header('Content-Type: text/html; charset=UTF-8');
 $configFile = __DIR__ . '/config.php';
 if (!is_file($configFile)) { http_response_code(503); exit('יש להשלים את config.php לפני הפעלת האתר.'); }
 $config = require $configFile;
-try { $pdo = new PDO('mysql:host='.$config['db_host'].';dbname='.$config['db_name'].';charset=utf8mb4', $config['db_user'], $config['db_pass'], [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]); }
+try { $pdo = new PDO('mysql:host='.$config['db_host'].';dbname='.$config['db_name'].';charset=utf8mb4', $config['db_user'], $config['db_pass'], [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES=>false]); }
 catch (PDOException $e) { error_log('Database connection failed: '.$e->getMessage()); http_response_code(503); exit('האתר אינו זמין כרגע.'); }
 function e(string $value): string { return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function csrf(): string { if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(32)); return $_SESSION['csrf']; }

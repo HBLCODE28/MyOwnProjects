@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-23 - Refine Machberet Ptucha public site and management
+
+- Added a shared visual language across public pages: the “✦ מחברת פתוחה” header, navigation, footer, site icon, green summaries page, and accessible focus states.
+- Styled summary downloads as site buttons and added administrator-only, CSRF-protected summary deletion, including removal of the uploaded file.
+- Explicitly configured UTF-8 HTTP/database handling and added a one-time SQL upgrade for existing tables so new Hebrew content is stored correctly.
+- Backup: Git commit.
+
 ## 2026-10-22 - Reduce kitchen camera upload size
 
 - Resized kitchen camera captures to a maximum dimension of 1280 pixels and encoded them at a smaller JPEG quality before upload.
