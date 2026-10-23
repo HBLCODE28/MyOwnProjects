@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-23 - Correct Machberet Ptucha home header and encoding safeguards
+
+- Kept the home-page header on the paper background while retaining the distinct header colour elsewhere.
+- Made the site icon explicitly white and reinforced the MySQL UTF-8 connection initialization.
+- Backup: Git commit.
+
 ## 2026-10-23 - Refine Machberet Ptucha public site and management
 
 - Added a shared visual language across public pages: the “✦ מחברת פתוחה” header, navigation, footer, site icon, green summaries page, and accessible focus states.
