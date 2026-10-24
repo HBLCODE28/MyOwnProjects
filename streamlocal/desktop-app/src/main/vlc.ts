@@ -9,5 +9,5 @@ export async function importVlcHistory(files: MediaFile[]) {
   const text = await readFile(path, "utf8"); const mrl = text.match(/RecentsMRL=(.+)/)?.[1] || "";
   const entries = mrl.split(" ").map((value) => { try { return fileURLToPath(value.replace(/%20/g, " ")); } catch { return ""; } }).filter(Boolean);
   const ids = new Set(entries.map((entry) => files.find((file) => file.path.toLowerCase() === entry.toLowerCase())?.id).filter(Boolean));
-  return { imported: ids.size, ids: [...ids] };
+  return { imported: ids.size, ids: [...ids].filter((id): id is string => Boolean(id)) };
 }

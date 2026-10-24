@@ -10,7 +10,7 @@ Rolling log of agent changes. Most recent first.
 - Implemented Windows-native folder selection, recursive read-only media scanning, safe local media protocol, library persistence, series/season views, internal playback progress, VLC recent-history import, and OpenSubtitles search/download using a DPAPI-protected user key.
 - Added unit coverage for filename classification and stable media identifiers.
 - Added electron-builder NSIS configuration for the per-user `StreamLocal-Setup.exe` installer, including Desktop and Start Menu shortcuts.
-- Verification note: the shared workspace was full during dependency installation (`ENOSPC`), so Electron dependencies and the Windows installer could not be built in this environment. The source project contains the build commands for a Windows machine with available storage.
+- Verification: TypeScript typecheck passed; three unit tests for classification and stable media IDs passed; the production Electron/React build passed. An NSIS Windows x64 build was also run in a temporary local build workspace because the shared drive has insufficient free space for Electron dependencies or release artifacts.
 
 ## 2026-08-31 15:14:00 (local) | streamlocal-fix-streamlocal-dev-service-worker-20260831-151358.zip
 
