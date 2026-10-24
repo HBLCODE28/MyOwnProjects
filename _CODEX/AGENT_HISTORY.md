@@ -415,3 +415,11 @@
 - Added automatic preferred Hebrew and English subtitle selection, cached locally per title, while retaining a compact manual alternative picker.
 - Moved the close-player control away from the Windows window buttons and reduced system-notification duration to eight seconds.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Complete StreamLocal desktop visual delivery
+
+- Added real-time UI refresh and toast confirmation when automatic TMDb artwork sync finishes.
+- Added a horizontal TMDb backdrop to the home hero while retaining portrait artwork on movie and series cards.
+- Rebuilt and verified the final unpacked Windows application; the release `app.asar` checksum matches the completed build output.
+- Removed obsolete temporary Electron build outputs under `/tmp` after the build disk filled; no project source or active release was removed.
+- Backup: Git commit only, per the project backup policy.
