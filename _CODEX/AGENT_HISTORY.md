@@ -460,3 +460,9 @@
 - Unified the page background and navigation-header color across the public site.
 - Enforced the `utf8mb4` collation on the PHP/MySQL connection and clarified the one-time database encoding upgrade needed on existing installations.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Add summary viewing, downloads, and post-publication editing
+
+- Split the public summary action into separate inline viewing and forced-download links.
+- Added secure file-serving endpoints for published summaries and editable fields for already-published summaries in the admin panel, including optional file replacement.
+- Backup: Git commit only, per the project backup policy.
