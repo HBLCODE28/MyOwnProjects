@@ -442,3 +442,9 @@
 - Replaced TMDb artwork lookup with public TVmaze series artwork and Wikipedia/Wikimedia movie poster lookup.
 - Rebuilt, tested, packaged, and checksum-verified the updated Windows application.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Standardize Machberet Ptucha styling and Hebrew encoding
+
+- Unified the page background and navigation-header color across the public site.
+- Enforced the `utf8mb4` collation on the PHP/MySQL connection and clarified the one-time database encoding upgrade needed on existing installations.
+- Backup: Git commit only, per the project backup policy.
