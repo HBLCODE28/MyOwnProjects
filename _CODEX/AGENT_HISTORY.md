@@ -234,6 +234,12 @@
 - Added central logging for unexpected server responses and surfaced them in the admin system-error views.
 - Backup: Git commit only, per the project backup policy.
 
+## 2026-10-24 - Set Machberet Ptucha navigation header to white
+
+- Set the shared navigation header background to white on every page.
+- Set the shared page background to the home page green.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-20 - Create MovieMeet
 
 - Created a PHP + MySQL application for coordinating cinema meetups through secure event links.
