@@ -436,3 +436,9 @@
 - Added a manual poster-sync control and actionable no-result message for TMDb configuration or matching issues.
 - Rebuilt and verified the Windows release archive against the copied application archive.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Remove TMDb requirement for StreamLocal artwork
+
+- Replaced TMDb artwork lookup with public TVmaze series artwork and Wikipedia/Wikimedia movie poster lookup.
+- Rebuilt, tested, packaged, and checksum-verified the updated Windows application.
+- Backup: Git commit only, per the project backup policy.
