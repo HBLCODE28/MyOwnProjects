@@ -240,6 +240,12 @@
 - Set the shared page background to the home page green.
 - Backup: Git commit only, per the project backup policy.
 
+## 2026-10-24 - Improve Machberet Ptucha summary cards and filters
+
+- Removed the purple file-type panel and organized each card around its title, subject, grade, and optional description.
+- Added keyboard-accessible subject and grade filter links that show matching summaries.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-20 - Create MovieMeet
 
 - Created a PHP + MySQL application for coordinating cinema meetups through secure event links.
