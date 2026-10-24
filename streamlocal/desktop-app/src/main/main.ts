@@ -1,0 +1,39 @@
+import { app, BrowserWindow, dialog, ipcMain, net, protocol } from "electron";
+import { basename, relative, resolve, sep } from "node:path";
+import { pathToFileURL } from "node:url";
+import { readFile, stat } from "node:fs/promises";
+import { getState, loadState, saveState, updateState, exportableState, setSubtitleKey } from "./store";
+import { newSource, scanSource } from "./scanner";
+import { importVlcHistory } from "./vlc";
+import { downloadSubtitle, findSubtitles } from "./subtitles";
+
+protocol.registerSchemesAsPrivileged([{ scheme: "streamlocal-media", privileges: { secure: true, standard: true, supportFetchAPI: true, stream: true } }]);
+let window: BrowserWindow | null = null;
+function createWindow() {
+  window = new BrowserWindow({ width: 1400, height: 900, minWidth: 980, minHeight: 650, backgroundColor: "#0a0d14", titleBarStyle: "hidden", titleBarOverlay: { color: "#0a0d14", symbolColor: "#f5f7fb", height: 36 }, webPreferences: { preload: `${__dirname}/preload.js`, contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  const devUrl = process.env.STREAMLOCAL_DEV_URL;
+  if (devUrl) window.loadURL(devUrl); else window.loadFile(`${__dirname}/../renderer/index.html`);
+}
+function sourceForPath(path: string) { const source = getState().sources.find((item) => { const fromSource = relative(resolve(item.path), resolve(path)); return fromSource !== "" && !fromSource.startsWith("..") && !fromSource.includes(`..${sep}`); }); if (!source) throw new Error("This media file is outside your selected library folders."); return source; }
+async function scan(sourceId: string) { const source = getState().sources.find((item) => item.id === sourceId); if (!source) throw new Error("Library folder not found."); const files = await scanSource(source, (progress) => window?.webContents.send("library:scanProgress", { sourceId, ...progress })); await updateState((current) => { current.files = [...current.files.filter((item) => item.sourceId !== sourceId), ...files]; const target = current.sources.find((item) => item.id === sourceId); if (target) target.lastScanAt = Date.now(); }); return { files: files.length }; }
+app.whenReady().then(async () => {
+  await loadState();
+  protocol.handle("streamlocal-media", async (request) => { const id = decodeURIComponent(new URL(request.url).pathname.replace(/^\//, "")); const file = getState().files.find((item) => item.id === id); if (!file) return new Response("Not found", { status: 404 }); sourceForPath(file.path); try { await stat(file.path); return net.fetch(pathToFileURL(file.path).toString()); } catch { return new Response("Missing file", { status: 404 }); } });
+  ipcMain.handle("library:selectFolder", async () => { const result = await dialog.showOpenDialog(window!, { title: "Choose a media folder", properties: ["openDirectory"] }); if (result.canceled || !result.filePaths[0]) return null; const path = result.filePaths[0]; let source = getState().sources.find((item) => resolve(item.path).toLowerCase() === resolve(path).toLowerCase()); if (!source) { source = newSource(path, basename(path)); await updateState((current) => current.sources.push(source!)); } return source; });
+  ipcMain.handle("library:scan", (_, sourceId: string) => scan(sourceId));
+  ipcMain.handle("library:listFiles", () => ({ sources: getState().sources, files: getState().files, progress: getState().progress, onboardingDone: getState().settings.onboardingDone }));
+  ipcMain.handle("library:removeSource", async (_, sourceId: string) => updateState((current) => { current.sources = current.sources.filter((item) => item.id !== sourceId); current.files = current.files.filter((item) => item.sourceId !== sourceId); }));
+  ipcMain.handle("library:completeOnboarding", () => updateState((current) => { current.settings.onboardingDone = true; }));
+  ipcMain.handle("library:export", async () => { const choice = await dialog.showSaveDialog(window!, { defaultPath: "StreamLocal-library.json", filters: [{ name: "StreamLocal library", extensions: ["json"] }] }); if (!choice.filePath) return false; await require("node:fs/promises").writeFile(choice.filePath, JSON.stringify(exportableState(), null, 2)); return true; });
+  ipcMain.handle("library:import", async () => { const choice = await dialog.showOpenDialog(window!, { properties: ["openFile"], filters: [{ name: "StreamLocal library", extensions: ["json"] }] }); if (choice.canceled || !choice.filePaths[0]) return false; const incoming = JSON.parse(await readFile(choice.filePaths[0], "utf8")); await updateState((current) => { current.sources = Array.isArray(incoming.sources) ? incoming.sources : []; current.files = Array.isArray(incoming.files) ? incoming.files : []; current.progress = incoming.progress || {}; }); return true; });
+  ipcMain.handle("media:open", (_, id: string) => { const file = getState().files.find((item) => item.id === id); if (!file) throw new Error("Media file not found."); sourceForPath(file.path); return `streamlocal-media://media/${encodeURIComponent(id)}`; });
+  ipcMain.handle("history:saveProgress", (_, id: string, position: number, duration: number) => updateState((current) => { current.progress[id] = { position, duration, watched: duration > 0 && position / duration >= 0.9, lastPlayedAt: Date.now() }; }));
+  ipcMain.handle("history:importVlc", async () => { const result = await importVlcHistory(getState().files); await updateState((current) => { for (const id of result.ids || []) current.progress[id] = { position: 0, duration: 0, watched: false, lastPlayedAt: Date.now() }; }); return result; });
+  ipcMain.handle("settings:get", () => ({ hasSubtitleKey: Boolean(getState().encryptedSubtitleKey), encryptionAvailable: require("electron").safeStorage.isEncryptionAvailable() }));
+  ipcMain.handle("settings:set", (_, key: string) => setSubtitleKey(key));
+  ipcMain.handle("subtitles:search", (_, query: string, language: string) => findSubtitles(query, language));
+  ipcMain.handle("subtitles:download", async (_, fileId: string) => pathToFileURL(await downloadSubtitle(fileId)).toString());
+  createWindow();
+});
+app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
+app.on("activate", () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });

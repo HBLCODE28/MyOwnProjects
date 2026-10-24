@@ -4,6 +4,14 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-24 | StreamLocal standalone Electron desktop app
+
+- Added `desktop-app/` as an independent Electron + React + TypeScript application; the existing `frontend/` PWA was not modified.
+- Implemented Windows-native folder selection, recursive read-only media scanning, safe local media protocol, library persistence, series/season views, internal playback progress, VLC recent-history import, and OpenSubtitles search/download using a DPAPI-protected user key.
+- Added unit coverage for filename classification and stable media identifiers.
+- Added electron-builder NSIS configuration for the per-user `StreamLocal-Setup.exe` installer, including Desktop and Start Menu shortcuts.
+- Verification note: the shared workspace was full during dependency installation (`ENOSPC`), so Electron dependencies and the Windows installer could not be built in this environment. The source project contains the build commands for a Windows machine with available storage.
+
 ## 2026-08-31 15:14:00 (local) | streamlocal-fix-streamlocal-dev-service-worker-20260831-151358.zip
 
 - Task: Prevent stale service-worker cache from hiding Vite dev changes.
@@ -131,3 +139,5 @@ Rolling log of agent changes. Most recent first.
   - Deployment: not deployed.
 
 ---
+
+| 2026-10-24 08:19:42 | `streamlocal-create-standalone-electron-desktop-application-20261024-081942.zip` | create standalone electron desktop application |
