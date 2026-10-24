@@ -399,3 +399,11 @@
 
 - Replaced the browser-native screening time control with fixed 24-hour choices from `00:00` through `23:45`.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Refine StreamLocal desktop playback and identity
+
+- Added the packaged StreamLocal icon to the desktop application header with a hover animation.
+- Preserved every movie and episode playback position every five seconds, on pause, and when the player closes; resumed playback now states its saved position.
+- Improved desktop browsing: clickable media cards, series-only search results, a series card grid, stacked episode rows, palette-matched scrollbars, toast notifications, and red keyboard-focus treatment.
+- Rebuilt the Windows unpacked application after TypeScript, unit-test, and production-build verification.
+- Backup: Git commit only, per the project backup policy.
