@@ -423,3 +423,9 @@
 - Rebuilt and verified the final unpacked Windows application; the release `app.asar` checksum matches the completed build output.
 - Removed obsolete temporary Electron build outputs under `/tmp` after the build disk filled; no project source or active release was removed.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Start existing media sync on launch
+
+- Start artwork and preferred-subtitle synchronization at application launch when encrypted keys already exist, so users do not need to re-enter keys or rescan their library.
+- Re-ran TypeScript, unit, production-build, and Windows packaging checks; verified the copied release archive matches the build archive by SHA-256.
+- Backup: Git commit only, per the project backup policy.
