@@ -75,7 +75,7 @@ nav button.active, nav button:hover { color: #fff; border-bottom: 2px solid var(
 .setting input { width: 100%; padding: 12px; background: #1c1c1c; border: 1px solid var(--soft); color: #fff; }
 .player { position: fixed; inset: 0; z-index: 50; background: #000; padding: 82px 6vw 5vw; display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 25px; }
 .player video { width: 100%; max-height: 75vh; }
-.close { position: absolute; top: 82px; right: 6vw; z-index: 100; background: #fff; color: #000; border-radius: 22px; padding: 9px 15px; }
+.close { position: absolute; top: 82px; right: 6vw; z-index: 100; width: 40px; height: 40px; display: grid; place-items: center; background: #fff; color: #000; border-radius: 50%; padding: 0; font-size: 26px; line-height: 1; }
 .preferred-subs { display: flex; gap: 7px; margin: 12px 0; }
 .preferred-subs button { padding: 7px 10px; border-radius: 5px; background: var(--red-dark); }
 .subtitle { margin-top: 12px; background: #171717; padding: 10px; }

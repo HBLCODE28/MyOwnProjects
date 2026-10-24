@@ -429,3 +429,10 @@
 - Start artwork and preferred-subtitle synchronization at application launch when encrypted keys already exist, so users do not need to re-enter keys or rescan their library.
 - Re-ran TypeScript, unit, production-build, and Windows packaging checks; verified the copied release archive matches the build archive by SHA-256.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Polish StreamLocal player controls and poster diagnostics
+
+- Replaced the text close-player action with an accessible circular × control away from the playback title.
+- Added a manual poster-sync control and actionable no-result message for TMDb configuration or matching issues.
+- Rebuilt and verified the Windows release archive against the copied application archive.
+- Backup: Git commit only, per the project backup policy.
