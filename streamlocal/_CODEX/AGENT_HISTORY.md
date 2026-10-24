@@ -11,6 +11,8 @@ Rolling log of agent changes. Most recent first.
 - Added unit coverage for filename classification and stable media identifiers.
 - Added electron-builder NSIS configuration for the per-user `StreamLocal-Setup.exe` installer, including Desktop and Start Menu shortcuts.
 - Verification: TypeScript typecheck passed; three unit tests for classification and stable media IDs passed; the production Electron/React build passed. An NSIS Windows x64 build was also run in a temporary local build workspace because the shared drive has insufficient free space for Electron dependencies or release artifacts.
+- Follow-up build: with disk space restored, the checked production Windows application was copied to `desktop-app/release/StreamLocal-win-x64`. The Linux NSIS finalization is blocked only by the missing system `wine` executable; building the installer through `npm run dist` on Windows remains supported.
+- Interface follow-up: added arrow-key, arrow-button, and pointer-drag browsing rails; a dedicated Movies page; a discovery-style Search page; securely stored API connection fields; and reliable player close controls including Escape.
 
 ## 2026-08-31 15:14:00 (local) | streamlocal-fix-streamlocal-dev-service-worker-20260831-151358.zip
 
@@ -141,3 +143,7 @@ Rolling log of agent changes. Most recent first.
 ---
 
 | 2026-10-24 08:19:42 | `streamlocal-create-standalone-electron-desktop-application-20261024-081942.zip` | create standalone electron desktop application |
+
+| 2026-10-24 08:53:38 | `streamlocal-bundle-single-file-windows-installer-20261024-085338.zip` | bundle single file windows installer |
+
+| 2026-10-24 09:24:29 | `streamlocal-improve-desktop-streaming-interface-controls-20261024-092429.zip` | improve desktop streaming interface controls |

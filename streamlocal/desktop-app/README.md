@@ -21,6 +21,12 @@ npm run dist
 
 The output is `release\StreamLocal-Setup.exe`. The NSIS installer is per-user, requires no administrator permissions, and creates Start Menu and Desktop shortcuts.
 
+## Run the already-built Windows app
+
+The unpacked Windows release is available at `release\StreamLocal-win-x64`. Copy the entire folder to a Windows PC and double-click `StreamLocal.exe`. Do not move `StreamLocal.exe` out of that folder, because it needs the adjacent Electron runtime files.
+
+To create the single-file NSIS installer, run `npm run dist` from Windows. Building NSIS from Linux requires Wine.
+
 ## Privacy and storage
 
 - Video files stay at their original paths; scanning is read-only.

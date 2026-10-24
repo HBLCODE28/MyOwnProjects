@@ -12,4 +12,6 @@ export async function saveState() { await mkdir(app.getPath("userData"), { recur
 export async function updateState(mutator: (current: LibraryState) => void) { mutator(state); await saveState(); return state; }
 export function setSubtitleKey(key: string) { state.encryptedSubtitleKey = key && safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(key).toString("base64") : undefined; return saveState(); }
 export function subtitleKey() { try { return state.encryptedSubtitleKey ? safeStorage.decryptString(Buffer.from(state.encryptedSubtitleKey, "base64")) : ""; } catch { return ""; } }
+export function setProviderKey(provider: string, key: string) { if (!safeStorage.isEncryptionAvailable()) throw new Error("Windows encryption is unavailable."); state.encryptedProviderKeys ||= {}; if (key) state.encryptedProviderKeys[provider] = safeStorage.encryptString(key).toString("base64"); else delete state.encryptedProviderKeys[provider]; return saveState(); }
+export function providerKeyNames() { return Object.keys(state.encryptedProviderKeys || {}); }
 export function exportableState() { const { encryptedSubtitleKey, ...rest } = state; return rest; }
