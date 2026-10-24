@@ -1,50 +1,11 @@
 <?php
 require __DIR__ . '/bootstrap.php';
-
 if (basename($_SERVER['SCRIPT_NAME']) !== 'panel-7qk3m.php') { http_response_code(404); exit; }
 if (isset($_GET['logout'])) { session_destroy(); header('Location: panel-7qk3m.php'); exit; }
-if (!admin() && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    check_csrf();
-    if (hash_equals($config['admin_user'], $_POST['user'] ?? '') && password_verify($_POST['password'] ?? '', $config['admin_password_hash'])) { session_regenerate_id(true); $_SESSION['admin'] = true; header('Location: panel-7qk3m.php'); exit; }
-    $error = 'פרטי הכניסה שגויים.';
-}
+if (!admin() && $_SERVER['REQUEST_METHOD'] === 'POST') { check_csrf(); if (hash_equals($config['admin_user'], $_POST['user'] ?? '') && password_verify($_POST['password'] ?? '', $config['admin_password_hash'])) { session_regenerate_id(true); $_SESSION['admin'] = true; header('Location: panel-7qk3m.php'); exit; } $error = 'פרטי הכניסה שגויים.'; }
 if (!admin()):
-?><!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><title>✦ מחברת פתוחה | כניסה</title></head><body class="login"><header><a class="brand" href="index.php">✦ מחברת פתוחה</a><nav><a href="summaries.php">סיכומים</a><a href="request.php">בקשת סיכום</a></nav></header><main><form method="post"><h1>כניסה פרטית</h1><input type="hidden" name="csrf" value="<?= csrf() ?>"><label>שם משתמש<input name="user" required autocomplete="username"></label><label>סיסמה<input name="password" type="password" required autocomplete="current-password"></label><button class="button">כניסה</button><?php if (isset($error)): ?><p class="error"><?= e($error) ?></p><?php endif ?></form></main><footer>מחברת פתוחה · נבנה באהבה ללמידה · האתר פונה לכל המגדרים</footer></body></html><?php
-exit;
-endif;
-
-function save_uploaded_summary(array $file): ?string {
-    $allowed = ['application/pdf' => 'pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx', 'image/jpeg' => 'jpg', 'image/png' => 'png'];
-    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || ($file['size'] ?? 0) > 26214400) return null;
-    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-    if (!isset($allowed[$mime])) return null;
-    $name = bin2hex(random_bytes(16)) . '.' . $allowed[$mime];
-    return move_uploaded_file($file['tmp_name'], __DIR__ . '/uploads/' . $name) ? $name : null;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    check_csrf();
-    if (isset($_POST['request_id'])) $pdo->prepare('UPDATE requests SET status="handled" WHERE id=?')->execute([(int) $_POST['request_id']]);
-    if (isset($_POST['delete_summary_id'])) {
-        $id = (int) $_POST['delete_summary_id']; $find = $pdo->prepare('SELECT file_name FROM summaries WHERE id=? LIMIT 1'); $find->execute([$id]); $summary = $find->fetch();
-        if ($summary) { $pdo->prepare('DELETE FROM summaries WHERE id=?')->execute([$id]); $path = __DIR__ . '/uploads/' . basename($summary['file_name']); if (is_file($path)) unlink($path); }
-    }
-    if (isset($_POST['edit_summary_id'])) {
-        $id = (int) $_POST['edit_summary_id']; $find = $pdo->prepare('SELECT file_name FROM summaries WHERE id=? LIMIT 1'); $find->execute([$id]); $summary = $find->fetch();
-        if ($summary) {
-            $newFile = isset($_FILES['file']) && $_FILES['file']['error'] !== UPLOAD_ERR_NO_FILE ? save_uploaded_summary($_FILES['file']) : null;
-            $fields = [trim($_POST['title'] ?? ''), trim($_POST['subject'] ?? ''), trim($_POST['grade'] ?? ''), trim($_POST['description'] ?? '')];
-            if ($newFile !== null) { $pdo->prepare('UPDATE summaries SET title=?, subject=?, grade=?, description=?, file_name=? WHERE id=?')->execute([...$fields, $newFile, $id]); $oldPath = __DIR__ . '/uploads/' . basename($summary['file_name']); if (is_file($oldPath)) unlink($oldPath); }
-            else $pdo->prepare('UPDATE summaries SET title=?, subject=?, grade=?, description=? WHERE id=?')->execute([...$fields, $id]);
-        }
-    }
-    if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK && !isset($_POST['edit_summary_id'])) {
-        $name = save_uploaded_summary($_FILES['file']);
-        if ($name !== null) $pdo->prepare('INSERT INTO summaries(title,subject,grade,description,file_name,published) VALUES(?,?,?,?,?,1)')->execute([trim($_POST['title']), trim($_POST['subject']), trim($_POST['grade']), trim($_POST['description']), $name]);
-    }
-    header('Location: panel-7qk3m.php'); exit;
-}
-
+?><!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>כניסה | מחברת פתוחה</title></head><body class="login"><header><a class="brand" href="index.php">✦ מחברת פתוחה</a></header><main><form method="post"><h1>כניסה פרטית</h1><input type="hidden" name="csrf" value="<?= csrf() ?>"><label>שם משתמש<input name="user" required autocomplete="username"></label><label>סיסמה<input name="password" type="password" required autocomplete="current-password"></label><button class="button">כניסה</button><?php if (isset($error)): ?><p class="error"><?= e($error) ?></p><?php endif ?></form></main></body></html><?php exit; endif;
+function save_uploaded_summary(array $file): ?string { $allowed = ['application/pdf'=>'pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document'=>'docx','image/jpeg'=>'jpg','image/png'=>'png']; if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || ($file['size'] ?? 0) > 26214400) return null; $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']); if (!isset($allowed[$mime])) return null; $name = bin2hex(random_bytes(16)).'.'.$allowed[$mime]; return move_uploaded_file($file['tmp_name'], __DIR__.'/uploads/'.$name) ? $name : null; }
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { check_csrf(); if (isset($_POST['request_id'])) $pdo->prepare('UPDATE requests SET status="handled" WHERE id=?')->execute([(int) $_POST['request_id']]); if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) { $name = save_uploaded_summary($_FILES['file']); if ($name !== null) $pdo->prepare('INSERT INTO summaries(title,subject,grade,description,file_name,published) VALUES(?,?,?,?,?,1)')->execute([trim($_POST['title']),trim($_POST['subject']),trim($_POST['grade']),trim($_POST['description']),$name]); } header('Location: panel-7qk3m.php'); exit; }
 $requests = $pdo->query('SELECT * FROM requests WHERE status="new" ORDER BY created_at DESC LIMIT 50')->fetchAll();
-$summaries = $pdo->query('SELECT id,title,subject,grade,description,file_name FROM summaries ORDER BY created_at DESC LIMIT 100')->fetchAll();
-?><!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><title>ניהול | מחברת פתוחה</title></head><body><header><a class="brand" href="index.php">✦ מחברת פתוחה</a><nav><a href="summaries.php">סיכומים</a><a href="request.php">בקשת סיכום</a><a href="?logout=1">יציאה</a></nav></header><main class="admin"><h1>ניהול האתר</h1><section class="request"><div><h2>העלאת סיכום</h2></div><form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf" value="<?= csrf() ?>"><label>כותרת<input name="title" required></label><label>מקצוע<input name="subject" required></label><label>שכבה<input name="grade" required></label><label>תיאור<textarea name="description"></textarea></label><label>קובץ<input name="file" type="file" accept=".pdf,.docx,.jpg,.png" required></label><button class="button">פרסום</button></form></section><h2>סיכומים שפורסמו</h2><?php foreach ($summaries as $s): ?><article class="item"><form class="edit-summary" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf" value="<?= csrf() ?>"><input type="hidden" name="edit_summary_id" value="<?= $s['id'] ?>"><label>כותרת<input name="title" value="<?= e($s['title']) ?>" required></label><label>מקצוע<input name="subject" value="<?= e($s['subject']) ?>" required></label><label>שכבה<input name="grade" value="<?= e($s['grade']) ?>" required></label><label>תיאור<textarea name="description"><?= e($s['description']) ?></textarea></label><label>החלפת קובץ (לא חובה)<input name="file" type="file" accept=".pdf,.docx,.jpg,.png"></label><div class="admin-actions"><a href="view.php?id=<?= $s['id'] ?>" target="_blank" rel="noopener">צפייה בקובץ</a><button class="button">שמירת שינויים</button></div></form><form method="post" onsubmit="return confirm('למחוק את הסיכום?');"><input type="hidden" name="csrf" value="<?= csrf() ?>"><button name="delete_summary_id" value="<?= $s['id'] ?>">מחיקת סיכום</button></form></article><?php endforeach ?><?php if (!$summaries): ?><p>עדיין אין סיכומים שפורסמו.</p><?php endif ?><h2>בקשות חדשות</h2><?php foreach ($requests as $r): ?><article class="item"><b><?= e($r['subject']) ?> · <?= e($r['grade']) ?></b><p><?= e($r['details']) ?></p><form method="post"><input type="hidden" name="csrf" value="<?= csrf() ?>"><button name="request_id" value="<?= $r['id'] ?>">סמן כטופל</button></form></article><?php endforeach ?><?php if (!$requests): ?><p>אין כרגע בקשות חדשות.</p><?php endif ?></main><footer>מחברת פתוחה · נבנה באהבה ללמידה · האתר פונה לכל המגדרים</footer></body></html>
+?><!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>ניהול | מחברת פתוחה</title></head><body><header><a class="brand" href="index.php">✦ מחברת פתוחה</a><nav><a href="summaries.php">סיכומים</a><a href="request.php">בקשת סיכום</a><a href="?logout=1">יציאה</a></nav></header><main class="admin"><h1>ניהול האתר</h1><section class="request"><div><h2>העלאת סיכום</h2></div><form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf" value="<?= csrf() ?>"><label>כותרת<input name="title" required></label><label>מקצוע<input name="subject" required></label><label>שכבה<input name="grade" required></label><label>תיאור<textarea name="description"></textarea></label><label>קובץ<input name="file" type="file" accept=".pdf,.docx,.jpg,.png" required></label><button class="button">פרסום</button></form></section><section><h2>סיכומים שפורסמו</h2><a class="button" href="summaries-admin.php">ניהול הסיכומים שפורסמו</a></section><h2>בקשות חדשות</h2><?php foreach ($requests as $r): ?><article class="item"><b><?= e($r['subject']) ?> · <?= e($r['grade']) ?></b><p><?= e($r['details']) ?></p><form method="post"><input type="hidden" name="csrf" value="<?= csrf() ?>"><button name="request_id" value="<?= $r['id'] ?>">סמן כטופל</button></form></article><?php endforeach ?><?php if (!$requests): ?><p>אין כרגע בקשות חדשות.</p><?php endif ?></main></body></html>

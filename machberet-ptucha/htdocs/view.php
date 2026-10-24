@@ -1,7 +1,11 @@
 <?php
 require __DIR__ . '/bootstrap.php';
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]); if (!$id) { http_response_code(404); exit; }
-$statement = $pdo->prepare('SELECT title,file_name FROM summaries WHERE id=? AND published=1 LIMIT 1'); $statement->execute([$id]); $summary = $statement->fetch(); $path = $summary ? __DIR__ . '/uploads/' . basename($summary['file_name']) : '';
-if (!$summary || !is_file($path)) { http_response_code(404); exit; }
-$extension = strtolower(pathinfo($path, PATHINFO_EXTENSION)); $types = ['pdf'=>'application/pdf','docx'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document','jpg'=>'image/jpeg','png'=>'image/png']; if (!isset($types[$extension])) { http_response_code(404); exit; }
-header('Content-Type: ' . $types[$extension]); header('Content-Length: ' . filesize($path)); header('Content-Disposition: inline; filename*=UTF-8\'\'' . rawurlencode($summary['title'] . '.' . $extension)); header('X-Content-Type-Options: nosniff'); readfile($path);
+$statement = $pdo->prepare('SELECT title,file_name FROM summaries WHERE id=? AND published=1 LIMIT 1'); $statement->execute([$id]); $summary = $statement->fetch();
+$file = $summary ? basename($summary['file_name']) : ''; $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+if (!$summary || !in_array($extension, ['pdf', 'docx', 'jpg', 'png'], true) || !is_file(__DIR__ . '/uploads/' . $file)) { http_response_code(404); exit; }
+$host = $_SERVER['HTTP_HOST'] ?? '';
+if (!preg_match('/^[A-Za-z0-9.-]+(?::[0-9]{1,5})?$/', $host)) { http_response_code(400); exit('לא ניתן לפתוח תצוגה מקדימה.'); }
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$fileUrl = $scheme . '://' . $host . '/uploads/' . rawurlencode($file);
+?><!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= e($summary['title']) ?> | צפייה</title><style>body{margin:0;background:#e3eee1;color:#213a48;font-family:Arial,sans-serif}.viewer-header{padding:14px 20px;background:#fff;display:flex;justify-content:space-between;gap:12px;align-items:center}.viewer-header a{color:#213a48;font-weight:bold}.viewer-frame{border:0;width:100%;height:calc(100vh - 70px);display:block}.viewer-image{display:block;max-width:100%;max-height:calc(100vh - 70px);margin:0 auto;object-fit:contain}</style></head><body><header class="viewer-header"><b><?= e($summary['title']) ?></b><a href="download.php?id=<?= $id ?>">הורדת הקובץ</a></header><?php if (in_array($extension, ['pdf', 'docx'], true)): ?><iframe class="viewer-frame" title="<?= e($summary['title']) ?>" src="https://docs.google.com/gview?embedded=1&amp;url=<?= rawurlencode($fileUrl) ?>"></iframe><?php else: ?><img class="viewer-image" src="uploads/<?= rawurlencode($file) ?>" alt="<?= e($summary['title']) ?>"><?php endif ?></body></html>

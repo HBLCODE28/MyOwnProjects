@@ -1,0 +1,5 @@
+<?php
+require __DIR__ . '/bootstrap.php';
+if (!admin()) { header('Location: panel-7qk3m.php'); exit; }
+$summaries = $pdo->query('SELECT id,title,subject,grade FROM summaries ORDER BY created_at DESC LIMIT 100')->fetchAll();
+?><!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>ניהול סיכומים | מחברת פתוחה</title></head><body><header><a class="brand" href="panel-7qk3m.php">✦ מחברת פתוחה</a><nav><a href="panel-7qk3m.php">חזרה לניהול</a></nav></header><main class="admin"><h1>סיכומים שפורסמו</h1><?php foreach ($summaries as $summary): ?><article class="item"><b><?= e($summary['title']) ?></b><p><?= e($summary['subject']) ?> · <?= e($summary['grade']) ?></p><a class="view-link" href="edit-summary.php?id=<?= $summary['id'] ?>">עריכת הסיכום</a></article><?php endforeach ?><?php if (!$summaries): ?><p>עדיין אין סיכומים שפורסמו.</p><?php endif ?></main></body></html>

@@ -466,3 +466,9 @@
 - Split the public summary action into separate inline viewing and forced-download links.
 - Added secure file-serving endpoints for published summaries and editable fields for already-published summaries in the admin panel, including optional file replacement.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Separate summary management and preview pages
+
+- Moved published-summary management into a dedicated list and gave every summary its own edit page.
+- Changed document viewing to a preview page, removed the redundant repository section from the home page, and retained a separate download action.
+- Backup: Git commit only, per the project backup policy.
