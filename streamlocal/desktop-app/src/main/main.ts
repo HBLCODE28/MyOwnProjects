@@ -2,10 +2,11 @@ import { app, BrowserWindow, dialog, ipcMain, net, protocol } from "electron";
 import { basename, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { readFile, stat } from "node:fs/promises";
-import { getState, loadState, updateState, exportableState, setProviderKey, providerKeyNames, setSubtitleKey } from "./store";
+import { getState, loadState, updateState, exportableState, setProviderKey, providerKeyNames, setSubtitleKey, subtitleKey } from "./store";
 import { newSource, scanSource } from "./scanner";
 import { importVlcHistory } from "./vlc";
 import { downloadSubtitle, findSubtitles } from "./subtitles";
+import { artworkFor } from "./artwork";
 
 protocol.registerSchemesAsPrivileged([{ scheme: "streamlocal-media", privileges: { secure: true, standard: true, supportFetchAPI: true, stream: true } }]);
 let window: BrowserWindow | null = null;
@@ -15,12 +16,16 @@ function createWindow() {
   if (devUrl) window.loadURL(devUrl); else window.loadFile(`${__dirname}/../renderer/index.html`);
 }
 function sourceForPath(path: string) { const source = getState().sources.find((item) => { const fromSource = relative(resolve(item.path), resolve(path)); return fromSource !== "" && !fromSource.startsWith("..") && !fromSource.includes(`..${sep}`); }); if (!source) throw new Error("This media file is outside your selected library folders."); return source; }
-async function scan(sourceId: string) { const source = getState().sources.find((item) => item.id === sourceId); if (!source) throw new Error("Library folder not found."); const files = await scanSource(source, (progress) => window?.webContents.send("library:scanProgress", { sourceId, ...progress })); await updateState((current) => { current.files = [...current.files.filter((item) => item.sourceId !== sourceId), ...files]; const target = current.sources.find((item) => item.id === sourceId); if (target) target.lastScanAt = Date.now(); }); return { files: files.length }; }
+async function syncArtwork() { const files = [...getState().files]; let updated = 0; for (const file of files) { if (file.posterUrl || file.backdropUrl) continue; const artwork = await artworkFor(file).catch(() => null); if (!artwork) continue; await updateState((current) => { const target = current.files.find((item) => item.id === file.id); if (target) Object.assign(target, artwork); }); updated++; } return { updated }; }
+async function preferredSubtitles(id: string) { const existing = getState().preferredSubtitles?.[id]; if (existing?.he || existing?.en) return { he: existing.he ? pathToFileURL(existing.he).toString() : undefined, en: existing.en ? pathToFileURL(existing.en).toString() : undefined }; const file = getState().files.find((item) => item.id === id); if (!file || !subtitleKey()) return {}; const result: { he?: string; en?: string } = {}; for (const language of ["he", "en"] as const) { try { const match = (await findSubtitles(file.type === "episode" ? `${file.series} S${file.season}E${file.episode}` : file.title, language)).sort((a, b) => b.downloadCount - a.downloadCount)[0]; if (match) result[language] = await downloadSubtitle(match.id); } catch { /* Manual subtitle selection remains available. */ } } await updateState((current) => { current.preferredSubtitles ||= {}; current.preferredSubtitles[id] = result; }); return { he: result.he ? pathToFileURL(result.he).toString() : undefined, en: result.en ? pathToFileURL(result.en).toString() : undefined }; }
+function prepareSubtitlesInBackground(files: { id: string }[]) { if (!subtitleKey()) return; void (async () => { for (const file of files) await preferredSubtitles(file.id); })(); }
+async function scan(sourceId: string) { const source = getState().sources.find((item) => item.id === sourceId); if (!source) throw new Error("Library folder not found."); const files = await scanSource(source, (progress) => window?.webContents.send("library:scanProgress", { sourceId, ...progress })); await updateState((current) => { const previous = new Map(current.files.map((item) => [item.id, item])); current.files = [...current.files.filter((item) => item.sourceId !== sourceId), ...files.map((item) => ({ ...item, posterUrl: previous.get(item.id)?.posterUrl, backdropUrl: previous.get(item.id)?.backdropUrl }))]; const target = current.sources.find((item) => item.id === sourceId); if (target) target.lastScanAt = Date.now(); }); void syncArtwork(); prepareSubtitlesInBackground(files); return { files: files.length }; }
 app.whenReady().then(async () => {
   await loadState();
-  protocol.handle("streamlocal-media", async (request) => { const id = decodeURIComponent(new URL(request.url).pathname.replace(/^\//, "")); const file = getState().files.find((item) => item.id === id); if (!file) return new Response("Not found", { status: 404 }); sourceForPath(file.path); try { await stat(file.path); return net.fetch(pathToFileURL(file.path).toString()); } catch { return new Response("Missing file", { status: 404 }); } });
+  protocol.handle("streamlocal-media", async (request) => { const id = decodeURIComponent(new URL(request.url).pathname.replace(/^\//, "")); const file = getState().files.find((item) => item.id === id); if (!file) return new Response("Not found", { status: 404 }); sourceForPath(file.path); try { await stat(file.path); const range = request.headers.get("range"); return net.fetch(pathToFileURL(file.path).toString(), { headers: range ? { Range: range } : undefined }); } catch { return new Response("Missing file", { status: 404 }); } });
   ipcMain.handle("library:selectFolder", async () => { const result = await dialog.showOpenDialog(window!, { title: "Choose a media folder", properties: ["openDirectory"] }); if (result.canceled || !result.filePaths[0]) return null; const path = result.filePaths[0]; let source = getState().sources.find((item) => resolve(item.path).toLowerCase() === resolve(path).toLowerCase()); if (!source) { source = newSource(path, basename(path)); await updateState((current) => current.sources.push(source!)); } return source; });
   ipcMain.handle("library:scan", (_, sourceId: string) => scan(sourceId));
+  ipcMain.handle("library:syncArtwork", () => syncArtwork());
   ipcMain.handle("library:listFiles", () => ({ sources: getState().sources, files: getState().files, progress: getState().progress, onboardingDone: getState().settings.onboardingDone }));
   ipcMain.handle("library:removeSource", async (_, sourceId: string) => updateState((current) => { current.sources = current.sources.filter((item) => item.id !== sourceId); current.files = current.files.filter((item) => item.sourceId !== sourceId); }));
   ipcMain.handle("library:completeOnboarding", () => updateState((current) => { current.settings.onboardingDone = true; }));
@@ -30,10 +35,11 @@ app.whenReady().then(async () => {
   ipcMain.handle("history:saveProgress", (_, id: string, position: number, duration: number) => updateState((current) => { current.progress[id] = { position, duration, watched: duration > 0 && position / duration >= 0.9, lastPlayedAt: Date.now() }; }));
   ipcMain.handle("history:importVlc", async () => { const result = await importVlcHistory(getState().files); await updateState((current) => { for (const id of result.ids || []) current.progress[id] = { position: 0, duration: 0, watched: false, lastPlayedAt: Date.now() }; }); return result; });
   ipcMain.handle("settings:get", () => ({ hasSubtitleKey: Boolean(getState().encryptedSubtitleKey), providerKeys: providerKeyNames(), encryptionAvailable: require("electron").safeStorage.isEncryptionAvailable() }));
-  ipcMain.handle("settings:set", (_, key: string) => setSubtitleKey(key));
-  ipcMain.handle("settings:setProviderKey", (_, provider: string, key: string) => setProviderKey(provider, key));
+  ipcMain.handle("settings:set", async (_, key: string) => { await setSubtitleKey(key); prepareSubtitlesInBackground(getState().files); });
+  ipcMain.handle("settings:setProviderKey", async (_, provider: string, key: string) => { await setProviderKey(provider, key); if (provider === "tmdb") void syncArtwork(); });
   ipcMain.handle("subtitles:search", (_, query: string, language: string) => findSubtitles(query, language));
   ipcMain.handle("subtitles:download", async (_, fileId: string) => pathToFileURL(await downloadSubtitle(fileId)).toString());
+  ipcMain.handle("subtitles:preferred", (_, id: string) => preferredSubtitles(id));
   createWindow();
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });

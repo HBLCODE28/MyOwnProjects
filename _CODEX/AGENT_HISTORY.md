@@ -407,3 +407,11 @@
 - Improved desktop browsing: clickable media cards, series-only search results, a series card grid, stacked episode rows, palette-matched scrollbars, toast notifications, and red keyboard-focus treatment.
 - Rebuilt the Windows unpacked application after TypeScript, unit-test, and production-build verification.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-24 - Improve StreamLocal media delivery
+
+- Forwarded HTTP byte-range requests through the protected local-media protocol so video seeking can work correctly.
+- Added automatic TMDb poster/backdrop retrieval using the user's encrypted key, along with poster rendering in desktop cards.
+- Added automatic preferred Hebrew and English subtitle selection, cached locally per title, while retaining a compact manual alternative picker.
+- Moved the close-player control away from the Windows window buttons and reduced system-notification duration to eight seconds.
+- Backup: Git commit only, per the project backup policy.

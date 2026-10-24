@@ -14,4 +14,5 @@ export function setSubtitleKey(key: string) { state.encryptedSubtitleKey = key &
 export function subtitleKey() { try { return state.encryptedSubtitleKey ? safeStorage.decryptString(Buffer.from(state.encryptedSubtitleKey, "base64")) : ""; } catch { return ""; } }
 export function setProviderKey(provider: string, key: string) { if (!safeStorage.isEncryptionAvailable()) throw new Error("Windows encryption is unavailable."); state.encryptedProviderKeys ||= {}; if (key) state.encryptedProviderKeys[provider] = safeStorage.encryptString(key).toString("base64"); else delete state.encryptedProviderKeys[provider]; return saveState(); }
 export function providerKeyNames() { return Object.keys(state.encryptedProviderKeys || {}); }
+export function providerKey(provider: string) { try { const value = state.encryptedProviderKeys?.[provider]; return value ? safeStorage.decryptString(Buffer.from(value, "base64")) : ""; } catch { return ""; } }
 export function exportableState() { const { encryptedSubtitleKey, ...rest } = state; return rest; }
