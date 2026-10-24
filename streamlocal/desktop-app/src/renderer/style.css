@@ -81,4 +81,6 @@ nav button.active, nav button:hover { color: #fff; border-bottom: 2px solid var(
 .subtitle { margin-top: 12px; background: #171717; padding: 10px; }
 .subtitle button { display: block; width: 100%; text-align: left; padding: 9px; border-bottom: 1px solid #333; }
 .notice { color: #7ae5a5; }
+.player .notice { position: fixed; z-index: 120; top: 82px; left: 50%; transform: translateX(-50%); max-width: min(680px, calc(100vw - 36px)); padding: 13px 20px; border: 1px solid var(--red); border-radius: 8px; background: #1c0606; box-shadow: 0 12px 35px #000; color: #fff; text-align: center; animation: message-hide 8s forwards; }
+@keyframes message-hide { 0%, 88% { opacity: 1; visibility: visible; } 100% { opacity: 0; visibility: hidden; } }
 @media (max-width: 760px) { header { padding: 0 16px; } header nav { display: none; } .content { padding: 20px; } .hero { padding: 35px 25px; min-height: 250px; } .hero h1, h1 { font-size: 34px; } .player { grid-template-columns: 1fr; padding: 78px 15px 15px; } .page-title { flex-direction: column; align-items: start; } .episodes button { grid-template-columns: 1fr auto; } .episodes b { grid-column: 1 / -1; } }
