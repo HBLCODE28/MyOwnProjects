@@ -1,7 +1,7 @@
 import type { MediaFile } from "../shared/types";
 
 type TvmazeShow = { name?: string; image?: { medium?: string; original?: string } | null };
-type WikiPage = { thumbnail?: { source?: string } };
+type WikiPage = { title?: string; thumbnail?: { source?: string } };
 
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "");
 
@@ -15,11 +15,13 @@ async function seriesArtwork(title: string): Promise<Pick<MediaFile, "posterUrl"
 }
 
 async function movieArtwork(title: string): Promise<Pick<MediaFile, "posterUrl"> | null> {
-  const params = new URLSearchParams({ action: "query", generator: "search", gsrsearch: `${title} film`, gsrnamespace: "0", prop: "pageimages", piprop: "thumbnail", pithumbsize: "600", format: "json" });
+  const params = new URLSearchParams({ action: "query", titles: `${title} (film)|${title}`, redirects: "1", prop: "pageimages", piprop: "thumbnail", pithumbsize: "600", format: "json" });
   const response = await fetch(`https://en.wikipedia.org/w/api.php?${params}`, { headers: { Accept: "application/json" } });
   if (!response.ok) return null;
   const pages = Object.values(((await response.json()) as { query?: { pages?: Record<string, WikiPage> } }).query?.pages || {});
-  const poster = pages.find((page) => page.thumbnail?.source)?.thumbnail?.source;
+  const wanted = normalize(title);
+  const poster = pages.find((page) => normalize(page.title || "").replace("film", "") === wanted && page.thumbnail?.source)?.thumbnail?.source
+    || pages.find((page) => page.thumbnail?.source)?.thumbnail?.source;
   return poster ? { posterUrl: poster } : null;
 }
 

@@ -4,6 +4,17 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-26 | StreamLocal desktop player and home improvements
+
+- Updated the Windows Electron app (`desktop-app/`), not the browser PWA.
+- Replaced the fixed Home marketing text with a three-second rotating feature view covering local films and series.
+- Added explicit Hebrew/English subtitle controls, accessible status messages, subtitle-loading failure feedback, manual subtitle search, three-dots subtitle synchronization, and left/right ten-second player shortcuts.
+- Removed the visible “Resuming from …” line and styled series titles as title marks containing only the series name.
+- Improved movie artwork lookup by preferring the exact Wikipedia film page instead of an arbitrary search result, avoiding cast/crew images when a film poster is available.
+- Verification limitation: `desktop-app/node_modules` is not installed, so the Electron/Node type dependencies required by the app typecheck are unavailable.
+
+---
+
 ## 2026-10-26 | Player subtitles, home carousel, and poster safety
 
 - Added clear Hebrew and English subtitle actions in the player. Each action reports loading, success, no-match, and download errors; repeated selection rotates through alternative matching subtitle releases.
