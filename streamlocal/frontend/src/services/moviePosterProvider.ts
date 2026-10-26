@@ -165,9 +165,10 @@ export async function findPreservationNetworkPoster(
 
   for (const { record } of ranked) {
     const images = imageCandidates(record);
-    const preferred =
-      images.find((url) => /poster|cover/i.test(url)) ??
-      images[0];
+    // A title match alone is not enough: some provider entries include cast or
+    // crew portraits. Only use an image explicitly identified as a poster/cover;
+    // Wikipedia and Commons remain safer fallbacks for other image URLs.
+    const preferred = images.find((url) => /poster|cover/i.test(url));
 
     if (preferred) return preferred;
   }

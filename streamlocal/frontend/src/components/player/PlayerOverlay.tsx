@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
-  TablerAdjustmentsHorizontalIcon,
   TablerCaptionsIcon,
+  TablerDotsIcon,
   TablerMaximizeIcon,
   TablerMinimizeIcon,
   TablerPlayerPauseIcon,
@@ -181,6 +181,7 @@ export function PlayerOverlay({
   const subtitleOffsetRef = useRef(0);
   const subtitleSeeTimeRef = useRef<number | null>(null);
   const subtitleHearTimeRef = useRef<number | null>(null);
+  const subtitleLanguageCycleRef = useRef<Record<"en" | "he", number>>({ en: 0, he: 0 });
   const [timelinePreview, setTimelinePreview] = useState<{
     url: string | null;
     positionSeconds: number;
@@ -751,9 +752,46 @@ export function PlayerOverlay({
       setMedia((current) => current ? { ...current, subtitles: [...current.subtitles, track] } : current);
       setSelectedSubtitleTrack(media?.subtitles.length ?? 0);
       setSubtitleMatches([]);
-      setSubtitleNotice(null);
+      setSubtitleNotice(`${track.label} loaded. Subtitles are now enabled.`);
     } catch (value) {
       setSubtitleNotice(value instanceof Error ? value.message : "Subtitle download failed.");
+    } finally {
+      setSubtitleBusy(false);
+    }
+  }
+
+  async function chooseSubtitleLanguage(language: "en" | "he") {
+    const languageName = language === "he" ? "Hebrew" : "English";
+    const aliases = language === "he" ? ["he", "heb"] : ["en", "eng"];
+    const tracks = media?.subtitles ?? [];
+    const matchingLocalTrackIndexes = tracks
+      .map((track, index) => ({ track, index }))
+      .filter(({ track }) => aliases.includes(track.language.toLowerCase()));
+
+    if (matchingLocalTrackIndexes.length > 0) {
+      const currentIndex = matchingLocalTrackIndexes.findIndex(({ index }) => index === selectedSubtitleTrack);
+      const next = matchingLocalTrackIndexes[(currentIndex + 1) % matchingLocalTrackIndexes.length];
+      selectSubtitleTrack(next.index);
+      setSubtitleNotice(`${languageName} subtitles loaded: ${next.track.label}.`);
+      return;
+    }
+
+    setSubtitleBusy(true);
+    setSubtitleNotice(`Loading ${languageName} subtitles…`);
+    try {
+      const matches = (await searchOpenSubtitles(item))
+        .filter((match) => aliases.includes(match.language.toLowerCase()));
+      if (!matches.length) {
+        setSubtitleNotice(`No ${languageName} subtitles were found for this title.`);
+        return;
+      }
+
+      const cycle = subtitleLanguageCycleRef.current[language] % matches.length;
+      subtitleLanguageCycleRef.current[language] += 1;
+      setSubtitleMatches(matches);
+      await addOpenSubtitle(matches[cycle]);
+    } catch (value) {
+      setSubtitleNotice(value instanceof Error ? value.message : `${languageName} subtitles could not be loaded.`);
     } finally {
       setSubtitleBusy(false);
     }
@@ -1091,19 +1129,19 @@ export function PlayerOverlay({
               <button
                 className="player-icon-button player-icon-only"
                 aria-expanded={playbackMenuOpen}
-                aria-label="Playback options"
+                aria-label="More options"
                 onClick={() => {
                   setPlaybackMenuOpen((open) => !open);
                   setSubtitleMenuOpen(false);
                 }}
-                title="Playback options"
+                title="More options"
               >
-                <TablerAdjustmentsHorizontalIcon size={25} />
+                <TablerDotsIcon size={25} />
               </button>
 
               {playbackMenuOpen && (
                 <div className="player-options-menu">
-                  <strong>Playback options</strong>
+                  <strong>More options</strong>
                   <label className="player-speed">
                     Brightness
                     <input type="range" min="0.5" max="1.8" step="0.05" value={brightness} onChange={(event) => setBrightness(Number(event.target.value))} />
@@ -1116,6 +1154,21 @@ export function PlayerOverlay({
                       ))}
                     </select>
                   </label>
+                  <strong>Subtitle synchronization</strong>
+                  <div className="player-option-actions">
+                    <button type="button" className="player-icon-button" disabled={!media.subtitles.length || selectedSubtitleTrack < 0} onClick={markSubtitleSeen}>
+                      {subtitleSeenMark == null ? "I SEE THE LINE NOW" : `SEEN ${formatTime(subtitleSeenMark)}`}
+                    </button>
+                    <button type="button" className="player-icon-button" disabled={!media.subtitles.length || selectedSubtitleTrack < 0} onClick={markSubtitleHeard}>
+                      {subtitleHeardMark == null ? "I HEAR THE LINE NOW" : `HEARD ${formatTime(subtitleHeardMark)}`}
+                    </button>
+                  </div>
+                  <button type="button" className="player-icon-button" onClick={() => {
+                    setSubtitleMenuOpen(true);
+                    setPlaybackMenuOpen(false);
+                  }}>
+                    Subtitle languages and options
+                  </button>
                 </div>
               )}
 
@@ -1135,6 +1188,14 @@ export function PlayerOverlay({
               {subtitleMenuOpen && (
                 <div className="player-options-menu player-subtitle-menu">
                   <strong>Subtitle options</strong>
+                  <div className="player-option-actions">
+                    <button type="button" className="player-icon-button" onClick={() => void chooseSubtitleLanguage("he")} disabled={subtitleBusy}>
+                      HEBREW
+                    </button>
+                    <button type="button" className="player-icon-button" onClick={() => void chooseSubtitleLanguage("en")} disabled={subtitleBusy}>
+                      ENGLISH
+                    </button>
+                  </div>
                   <label className="player-speed">
                     Subtitles
                     <select
@@ -1166,7 +1227,7 @@ export function PlayerOverlay({
                       {index === 0 ? "Best match · " : ""}{match.label}{match.hearingImpaired ? " · HI" : ""}
                     </button>
                   ))}
-                  {subtitleNotice && <p className="player-subtitle-notice">{subtitleNotice}</p>}
+                  {subtitleNotice && <p className="player-subtitle-notice" role="status" aria-live="polite">{subtitleNotice}</p>}
                 </div>
               )}
 

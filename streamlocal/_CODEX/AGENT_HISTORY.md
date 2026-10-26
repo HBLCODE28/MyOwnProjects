@@ -4,6 +4,16 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-26 | Player subtitles, home carousel, and poster safety
+
+- Added clear Hebrew and English subtitle actions in the player. Each action reports loading, success, no-match, and download errors; repeated selection rotates through alternative matching subtitle releases.
+- Made subtitle status messages accessible to screen readers and exposed the existing manual subtitle synchronization controls from the three-dots menu.
+- Kept the ±10-second seek controls in the player and changed the Home hero to rotate through every playable movie and series every three seconds.
+- Tightened poster selection from the Preservation Network so a cast or crew image is never accepted unless its URL explicitly identifies it as a poster or cover.
+- Verification: TypeScript typecheck passed. Vitest could not start because the shared-drive installation is missing Rollup's optional Linux native package. The shared smoke test passed its PHP lint phase; its JavaScript syntax phase exceeded the reporting window on the shared drive.
+
+---
+
 ## 2026-10-24 | StreamLocal standalone Electron desktop app
 
 - Added `desktop-app/` as an independent Electron + React + TypeScript application; the existing `frontend/` PWA was not modified.

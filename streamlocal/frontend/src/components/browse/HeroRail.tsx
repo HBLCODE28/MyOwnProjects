@@ -19,30 +19,15 @@ type Featured =
 function chooseFeatured(
   movies: MovieCard[],
   series: SeriesCard[],
-  preferredSeriesIndex = 0,
+  index = 0,
 ): Featured | null {
-  const availableSeries = series.filter((card) => card.availableEpisodeCount > 0);
-  const artworkSeries = availableSeries.filter((card) =>
-    Boolean(
-      card.series.logoArtworkId ||
-        card.series.backdropArtworkId ||
-        card.series.posterArtworkId ||
-        card.series.remoteLogoUrl ||
-        card.series.remoteBackdropUrl ||
-        card.series.remotePosterUrl ||
-        card.seasons[0]?.episodes[0]?.item.posterArtworkId,
-    ),
-  );
-  const seriesPool = artworkSeries.length > 0 ? artworkSeries : availableSeries;
-  const availableFeaturedSeries = seriesPool.length > 0 ? seriesPool : series;
-  const featuredSeries = availableFeaturedSeries.length > 0
-    ? availableFeaturedSeries[preferredSeriesIndex % availableFeaturedSeries.length]
-    : undefined;
-  const availableMovie = movies.find(({ file }) => file?.available) ?? movies[0];
-
-  if (featuredSeries) return { kind: "series", series: featuredSeries };
-  if (availableMovie) return { kind: "movie", movie: availableMovie };
-  return null;
+  const playableSeries = series.filter((card) => card.availableEpisodeCount > 0);
+  const playableMovies = movies.filter(({ file }) => file?.available);
+  const entries: Featured[] = [
+    ...playableSeries.map((entry) => ({ kind: "series" as const, series: entry })),
+    ...playableMovies.map((entry) => ({ kind: "movie" as const, movie: entry })),
+  ];
+  return entries.length ? entries[index % entries.length] : null;
 }
 
 function firstPlayableEpisode(card: SeriesCard): MediaItem | null {
@@ -58,31 +43,25 @@ function firstPlayableEpisode(card: SeriesCard): MediaItem | null {
 }
 
 export function HeroRail({ movies, series, onOpenSeries, onPlaySeries, onPlayMovie }: Props) {
-  const [featuredSeriesIndex, setFeaturedSeriesIndex] = useState(0);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
   const [expandedOverviewKey, setExpandedOverviewKey] = useState<string | null>(null);
-  const seriesPoolLength = useMemo(() => {
-    const available = series.filter((card) => card.availableEpisodeCount > 0);
-    const artwork = available.filter((card) => Boolean(
-      card.series.logoArtworkId || card.series.backdropArtworkId ||
-      card.series.posterArtworkId || card.series.remoteBackdropUrl ||
-      card.series.remoteLogoUrl || card.series.remotePosterUrl ||
-      card.seasons[0]?.episodes[0]?.item.posterArtworkId,
-    ));
-    return (artwork.length > 0 ? artwork : available).length || series.length;
-  }, [series]);
+  const featuredCount = useMemo(
+    () => series.filter((card) => card.availableEpisodeCount > 0).length + movies.filter(({ file }) => file?.available).length,
+    [movies, series],
+  );
 
   useEffect(() => {
-    setFeaturedSeriesIndex((current) =>
-      seriesPoolLength > 0 ? current % seriesPoolLength : 0,
+    setFeaturedIndex((current) =>
+      featuredCount > 0 ? current % featuredCount : 0,
     );
-    if (seriesPoolLength < 2) return undefined;
+    if (featuredCount < 2) return undefined;
     const timer = window.setInterval(() => {
-      setFeaturedSeriesIndex((current) => (current + 1) % seriesPoolLength);
-    }, 20_000);
+      setFeaturedIndex((current) => (current + 1) % featuredCount);
+    }, 3_000);
     return () => window.clearInterval(timer);
-  }, [seriesPoolLength]);
+  }, [featuredCount]);
 
-  const featured = chooseFeatured(movies, series, featuredSeriesIndex);
+  const featured = chooseFeatured(movies, series, featuredIndex);
   const featuredKey = featured
     ? featured.kind === "series"
       ? `series-${featured.series.series.id}`
