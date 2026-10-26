@@ -477,3 +477,8 @@
 
 - Moved new summary requests from the main admin dashboard into a dedicated, authenticated management page.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-26 - Add presentation uploads
+
+- Added PowerPoint `.ppt` and `.pptx` support for summary uploads, replacement uploads, downloads, and preview pages.
+- Backup: Git commit only, per the project backup policy.
