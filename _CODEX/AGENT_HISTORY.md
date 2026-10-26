@@ -488,3 +488,8 @@
 - Replaced the blocked Google embedded viewer with Microsoft Office embedding for Word documents and presentations.
 - Added a dedicated inline file endpoint so PDF files and images preview directly in the site.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-26 - Add bulk summary deletion
+
+- Added a confirmed admin action to delete every summary record and its uploaded file from the published-summary management page.
+- Backup: Git commit only, per the project backup policy.
