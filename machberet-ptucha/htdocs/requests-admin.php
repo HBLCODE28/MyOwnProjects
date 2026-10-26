@@ -1,0 +1,6 @@
+<?php
+require __DIR__ . '/bootstrap.php';
+if (!admin()) { header('Location: panel-7qk3m.php'); exit; }
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { check_csrf(); if (isset($_POST['request_id'])) $pdo->prepare('UPDATE requests SET status="handled" WHERE id=?')->execute([(int) $_POST['request_id']]); header('Location: requests-admin.php'); exit; }
+$requests = $pdo->query('SELECT * FROM requests WHERE status="new" ORDER BY created_at DESC LIMIT 50')->fetchAll();
+?><!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>בקשות חדשות | מחברת פתוחה</title></head><body><header><a class="brand" href="panel-7qk3m.php">✦ מחברת פתוחה</a><nav><a href="panel-7qk3m.php">חזרה לניהול</a></nav></header><main class="admin"><h1>בקשות חדשות</h1><?php foreach ($requests as $request): ?><article class="item"><b><?= e($request['subject']) ?> · <?= e($request['grade']) ?></b><p><?= e($request['details']) ?></p><form method="post"><input type="hidden" name="csrf" value="<?= csrf() ?>"><button name="request_id" value="<?= $request['id'] ?>">סמן כטופל</button></form></article><?php endforeach ?><?php if (!$requests): ?><p>אין כרגע בקשות חדשות.</p><?php endif ?></main></body></html>

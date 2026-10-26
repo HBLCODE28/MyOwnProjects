@@ -472,3 +472,8 @@
 - Moved published-summary management into a dedicated list and gave every summary its own edit page.
 - Changed document viewing to a preview page, removed the redundant repository section from the home page, and retained a separate download action.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-26 - Separate new-request management
+
+- Moved new summary requests from the main admin dashboard into a dedicated, authenticated management page.
+- Backup: Git commit only, per the project backup policy.
