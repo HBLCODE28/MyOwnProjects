@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-27 - Correct Israel News Multiview empty-state visibility
+
+- Explicitly hide the empty-state panel whenever one or more valid channels are selected.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-27 - Give Israel News Multiview phone branding more room
 
 - Changed the mobile menu close control to an icon-only button so it no longer crowds the site title.

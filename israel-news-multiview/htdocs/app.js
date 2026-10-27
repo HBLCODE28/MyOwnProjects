@@ -918,8 +918,9 @@
     destroyAllPlayers();
     els.grid.textContent = "";
     updateGridGeometry();
-    els.empty.hidden = activeIds.length !== 0;
-    els.grid.hidden = activeIds.length === 0;
+    const hasChannels = activeIds.some(id => Boolean(byId(id)));
+    els.empty.hidden = hasChannels;
+    els.grid.hidden = !hasChannels;
 
     activeIds.forEach(id => {
       const channel = byId(id);

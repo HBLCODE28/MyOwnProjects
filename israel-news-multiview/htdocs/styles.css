@@ -209,6 +209,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 .error-actions button:hover, .error-actions a:hover { background: #253853; }
 
 .empty-state { height: 100%; display: grid; place-content: center; justify-items: center; text-align: center; color: var(--muted); }
+.empty-state[hidden] { display: none !important; }
 .empty-mark { width: 74px; height: 54px; border: 2px solid #294766; border-radius: 12px; display: grid; place-items: center; color: #5ca9e4; letter-spacing: .14em; font-weight: 700; margin-bottom: 14px; direction: ltr; }
 .empty-state h1 { color: var(--text); margin: 0 0 8px; }
 .empty-state p { margin: 0 0 18px; }
