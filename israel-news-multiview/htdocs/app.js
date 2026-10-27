@@ -25,6 +25,18 @@
   const WEATHER_CACHE_KEY = "israelNewsMultiview.weather.v3";
   const WEATHER_REFRESH_MS = 10 * 60 * 1000;
   const WEATHER_ROTATE_MS = 10 * 1000;
+  const MARKET_CACHE_KEY = "israelNewsMultiview.markets.v1";
+  const MARKET_REFRESH_MS = 5 * 60 * 1000;
+  const MARKET_INDICES = [
+    { id: "ta35", label: "תא 35", symbol: "^TA35.TA" },
+    { id: "ta125", label: "תא 125", symbol: "^TA125.TA" },
+    { id: "sp500", label: "S&P 500", symbol: "^GSPC" },
+    { id: "nasdaq", label: "NASDAQ", symbol: "^IXIC" },
+    { id: "teva", label: "טבע", symbol: "TEVA" },
+    { id: "leumi", label: "לאומי", symbol: "LUMI.TA" },
+    { id: "apple", label: "APPLE", symbol: "AAPL" },
+    { id: "nvidia", label: "NVIDIA", symbol: "NVDA" }
+  ];
   const TABLER_ICON_BASE = "https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/";
 
   const els = {
@@ -38,6 +50,8 @@
     weatherIcon: document.getElementById("weatherIcon"),
     weatherCityName: document.getElementById("weatherCityName"),
     weatherTemperature: document.getElementById("weatherTemperature"),
+    marketTicker: document.getElementById("marketTicker"),
+    marketTickerItems: document.getElementById("marketTickerItems"),
     fullscreenBtn: document.getElementById("fullscreenBtn"),
     fullscreenIcon: document.getElementById("fullscreenIcon"),
     fullscreenLabel: document.getElementById("fullscreenLabel"),
@@ -324,6 +338,88 @@
     }
   }
 
+  function marketCache() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(MARKET_CACHE_KEY) || "null");
+      return parsed && typeof parsed === "object" && parsed.values ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function formatMarketNumber(value) {
+    return new Intl.NumberFormat("he-IL", { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(value);
+  }
+
+  function renderMarkets(values, updatedAt = 0) {
+    if (!els.marketTickerItems) return;
+    els.marketTickerItems.textContent = "";
+    const fragment = document.createDocumentFragment();
+    MARKET_INDICES.forEach(index => {
+      const quote = values?.[index.id];
+      const item = document.createElement("div");
+      item.className = "market-item";
+      const name = document.createElement("strong");
+      name.textContent = index.label;
+      const value = document.createElement("span");
+      value.className = "market-value";
+      const change = document.createElement("span");
+      change.className = "market-change";
+
+      if (quote && Number.isFinite(quote.price) && Number.isFinite(quote.changePercent)) {
+        const direction = quote.changePercent > 0 ? "עלייה" : quote.changePercent < 0 ? "ירידה" : "ללא שינוי";
+        value.textContent = formatMarketNumber(quote.price);
+        change.textContent = `${quote.changePercent > 0 ? "+" : ""}${quote.changePercent.toFixed(2)}%`;
+        change.classList.add(quote.changePercent > 0 ? "is-up" : quote.changePercent < 0 ? "is-down" : "is-flat");
+        item.setAttribute("aria-label", `${index.label}: ${value.textContent}, ${direction} של ${Math.abs(quote.changePercent).toFixed(2)} אחוז`);
+      } else {
+        value.textContent = "—";
+        change.textContent = "לא זמין";
+        change.classList.add("is-flat");
+        item.setAttribute("aria-label", `${index.label}: נתון לא זמין`);
+      }
+      item.append(name, value, change);
+      fragment.appendChild(item);
+    });
+    els.marketTickerItems.appendChild(fragment);
+    els.marketTickerItems.setAttribute("aria-busy", "false");
+    if (updatedAt) els.marketTicker.title = `עודכן ${new Date(updatedAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+  }
+
+  async function fetchMarketQuote(index) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(index.symbol)}?range=1d&interval=5m`;
+      const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+      if (!response.ok) throw new Error(`Market HTTP ${response.status}`);
+      const result = (await response.json())?.chart?.result?.[0];
+      const meta = result?.meta;
+      const price = Number(meta?.regularMarketPrice);
+      const previousClose = Number(meta?.chartPreviousClose || meta?.previousClose);
+      if (!Number.isFinite(price) || !Number.isFinite(previousClose) || previousClose === 0) throw new Error("Invalid market quote");
+      return { id: index.id, price, changePercent: ((price - previousClose) / previousClose) * 100 };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function updateMarkets() {
+    const cached = marketCache();
+    if (cached) renderMarkets(cached.values, cached.updatedAt);
+    try {
+      const results = await Promise.allSettled(MARKET_INDICES.map(fetchMarketQuote));
+      const quotes = results.filter(result => result.status === "fulfilled").map(result => result.value);
+      if (!quotes.length) throw new Error("No market quotes available");
+      const values = Object.fromEntries(quotes.map(quote => [quote.id, quote]));
+      const entry = { updatedAt: Date.now(), values };
+      localStorage.setItem(MARKET_CACHE_KEY, JSON.stringify(entry));
+      renderMarkets(values, entry.updatedAt);
+    } catch {
+      if (!cached) renderMarkets({});
+    }
+  }
+
   function qualityMode() {
     return QUALITY_MODES.find(mode => mode.id === currentQuality) || QUALITY_MODES[0];
   }
@@ -532,7 +628,7 @@
       video.addEventListener("error", () => tryNextSource("לא ניתן להתחבר למקור השידור."), { once: true });
       video.play().catch(() => { });
     } else {
-      showError(card, "הדפדפן לא תומך ב-HLS והספרייה hls.js לא נטענה. נסי Chrome או Edge מעודכן.");
+      showError(card, "הדפדפן לא תומך ב-HLS והספרייה hls.js לא נטענה. נסו Chrome או Edge מעודכן.");
       return;
     }
 
@@ -1267,6 +1363,8 @@
   setInterval(updateClock, 1000);
   updateWeather();
   setInterval(updateWeather, WEATHER_REFRESH_MS);
+  updateMarkets();
+  setInterval(updateMarkets, MARKET_REFRESH_MS);
   weatherSwitchTimer = setInterval(rotateWeatherCity, WEATHER_ROTATE_MS);
   updateFullscreenUi();
   render();

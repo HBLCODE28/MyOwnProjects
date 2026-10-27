@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-27 - Add desktop market ticker to Israel News Multiview
+
+- Added a compact desktop-only ticker for leading Israeli/global indices and leading Israeli/global companies, refreshing every five minutes.
+- Changed visible user-facing text to gender-inclusive Hebrew where it used gendered second-person wording.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-27 - Correct Israel News Multiview empty-state visibility
 
 - Explicitly hide the empty-state panel whenever one or more valid channels are selected.

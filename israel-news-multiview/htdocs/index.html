@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0b1324">
   <title>חדשות ישראל LIVE - מסך מפוצל</title>
-  <link rel="stylesheet" href="styles.css?v=if-20261027-empty-state-fix">
+  <link rel="stylesheet" href="styles.css?v=if-20261027-market-ticker">
 </head>
 <body>
   <header class="topbar" id="topbar">
@@ -55,12 +55,16 @@
     </div>
   </header>
 
+  <section class="market-ticker" id="marketTicker" aria-label="מדדים ומניות מובילים" aria-live="polite">
+    <div class="market-ticker-items" id="marketTickerItems" aria-busy="true"></div>
+  </section>
+
   <main class="workspace" id="workspace">
     <section class="channel-grid" id="channelGrid" aria-live="polite"></section>
     <div class="empty-state" id="emptyState" hidden>
       <img class="empty-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/device-tv-off.svg" alt="">
       <h1>לא נבחרו ערוצים</h1>
-      <p>לחצי על "ערוצים" ובחרי את השידורים שתרצי לראות.</p>
+      <p>לחצו על "ערוצים" ובחרו את השידורים שתרצו לראות.</p>
       <button class="primary-button" type="button" id="emptyChannelsBtn">בחירת ערוצים</button>
     </div>
   </main>
@@ -115,7 +119,7 @@
       <div class="channel-picker" id="channelPicker"></div>
       <details class="custom-stream-panel">
         <summary>הוספת שידור HLS מותאם אישית</summary>
-        <p class="custom-stream-note">לערוץ שתוסיפי יוקצה אוטומטית מספר פנוי. ערוצים שהוספת ניתנים למחיקה מהרשימה.</p>
+        <p class="custom-stream-note">לכל ערוץ שיתווסף יוקצה אוטומטית מספר פנוי. אפשר למחוק ערוצים מותאמים מהרשימה.</p>
         <div class="custom-stream-fields">
           <label>שם הערוץ<input id="customName" type="text" autocomplete="off" placeholder="לדוגמה: ערוץ מקומי"></label>
           <label>כתובת m3u8<input id="customUrl" type="url" autocomplete="off" placeholder="https://example.com/live.m3u8" dir="ltr"></label>
@@ -162,9 +166,9 @@
         <button class="close-dialog icon-only" value="cancel" aria-label="סגירה" type="submit"><img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/x.svg" alt=""></button>
       </div>
       <div class="help-content">
-        <p><strong>ערוצים:</strong> בחרי או בטלי ערוץ והמסך יתעדכן מיד. חלון הבחירה ייסגר מעצמו אחרי כמה שניות.</p>
+        <p><strong>ערוצים:</strong> אפשר לבחור או לבטל ערוץ, והמסך יתעדכן מיד. חלון הבחירה ייסגר מעצמו אחרי כמה שניות.</p>
         <p><strong>קול:</strong> הערוצים מתחילים בשקט. הפעלת קול בערוץ אחד משתיקה אוטומטית את כל השאר.</p>
-        <p><strong>סידור:</strong> במחשב אפשר לגרור חלון למיקום אחר, והאתר יזכור את הסדר שבחרת.</p>
+        <p><strong>סידור:</strong> במחשב אפשר לגרור חלון למיקום אחר, והאתר ישמור את הסדר שנבחר.</p>
         <p><strong>מסך מלא ואיכות:</strong> אפשר להגדיל ערוץ בלחיצה כפולה על הווידאו או בכפתור ההגדלה. בכפתור האיכות בוחרים בין חיסכון במשאבים לתמונה חדה יותר.</p>
       </div>
       <div class="modal-actions"><button class="primary-button" value="default" type="submit">סגירה</button></div>
@@ -208,7 +212,7 @@
   </template>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.13/hls.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="streams.js?v=if-20261027-empty-state-fix"></script>
-  <script src="app.js?v=if-20261027-empty-state-fix"></script>
+  <script src="streams.js?v=if-20261027-market-ticker"></script>
+  <script src="app.js?v=if-20261027-market-ticker"></script>
 </body>
 </html>
