@@ -19,6 +19,7 @@ CREATE TABLE `groups` (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
     created_by INT UNSIGNED NOT NULL,
+    member_limit SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_groups_created_by (created_by),
@@ -33,6 +34,18 @@ CREATE TABLE group_members (
     KEY idx_group_members_user (user_id),
     CONSTRAINT fk_group_members_group FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
     CONSTRAINT fk_group_members_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE group_managers (
+    group_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    granted_by INT UNSIGNED NOT NULL,
+    granted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (group_id, user_id),
+    KEY idx_group_managers_user (user_id),
+    CONSTRAINT fk_group_managers_group FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_managers_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_managers_granted_by FOREIGN KEY (granted_by) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE grocery_items (

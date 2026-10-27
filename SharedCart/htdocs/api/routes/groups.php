@@ -31,7 +31,7 @@ ensureGroupJoinRequestsTable($dbh);
 // PATCH /api/groups/{id}/management - update creator-only group settings.
 if ('management' === $sub && null !== $id && 'GET' === $method) {
     $stmt = $dbh->prepare(
-        'SELECT id, name, created_by, notify_creator_on_item_taken
+        'SELECT id, name, created_by, notify_creator_on_item_taken, member_limit
            FROM `groups`
           WHERE id = :id
             AND deleted_at IS NULL
@@ -43,7 +43,8 @@ if ('management' === $sub && null !== $id && 'GET' === $method) {
     if (!groupCanManage($dbh, $id, $uid)) jsonError('Only group managers can manage it', 403);
 
     $membersStmt = $dbh->prepare(
-        'SELECT u.id, u.username, gm.joined_at, (u.id = g.created_by) AS is_creator
+        'SELECT u.id, u.username, gm.joined_at, (u.id = g.created_by) AS is_creator,
+                EXISTS(SELECT 1 FROM group_managers m WHERE m.group_id = gm.group_id AND m.user_id = gm.user_id) AS is_manager
            FROM group_members gm
            JOIN users u ON u.id = gm.user_id AND u.deleted_at IS NULL
            JOIN `groups` g ON g.id = gm.group_id AND g.deleted_at IS NULL
@@ -105,6 +106,7 @@ if ('management' === $sub && null !== $id && 'GET' === $method) {
             'name' => (string)$group['name'],
             'created_by' => (int)$group['created_by'],
             'notify_creator_on_item_taken' => (bool)$group['notify_creator_on_item_taken'],
+            'member_limit' => (int)$group['member_limit'],
         ],
         'members' => $members,
         'items' => $items,
@@ -147,9 +149,7 @@ if ('join-requests' === $sub && null !== $id && 'POST' === $method) {
 
 if ('management' === $sub && null !== $id && 'PATCH' === $method) {
     $body = json_decode(file_get_contents('php://input'), true) ?? [];
-    if (!array_key_exists('notify_creator_on_item_taken', $body)) {
-        jsonError('notify_creator_on_item_taken required');
-    }
+    if (!array_key_exists('notify_creator_on_item_taken', $body) && !array_key_exists('member_limit', $body)) jsonError('Group settings required');
 
     $stmt = $dbh->prepare(
         'SELECT created_by
@@ -161,26 +161,54 @@ if ('management' === $sub && null !== $id && 'PATCH' === $method) {
     $stmt->execute([':id' => $id]);
     $group = $stmt->fetch();
     if (!$group) jsonError('Group not found', 404);
-    if ((int)$group['created_by'] !== $uid) jsonError('Only the group creator can manage it', 403);
+    if (!groupCanManage($dbh, $id, $uid)) jsonError('Only group managers can manage it', 403);
 
-    $enabled = filter_var($body['notify_creator_on_item_taken'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-    if (null === $enabled) jsonError('Invalid notification setting');
+    $enabled = array_key_exists('notify_creator_on_item_taken', $body)
+        ? filter_var($body['notify_creator_on_item_taken'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+        : null;
+    if (array_key_exists('notify_creator_on_item_taken', $body) && null === $enabled) jsonError('Invalid notification setting');
+    $limit = array_key_exists('member_limit', $body) ? (int)$body['member_limit'] : null;
+    if (null !== $limit && ($limit < 0 || $limit > 1000)) jsonError('Invalid member limit');
 
     $stmt = $dbh->prepare(
-        'UPDATE `groups`
-            SET notify_creator_on_item_taken = :enabled
-          WHERE id = :id
-            AND deleted_at IS NULL'
+        'UPDATE `groups` SET
+            notify_creator_on_item_taken = COALESCE(:enabled, notify_creator_on_item_taken),
+            member_limit = COALESCE(:member_limit, member_limit)
+          WHERE id = :id AND deleted_at IS NULL'
     );
     $stmt->execute([
-        ':enabled' => $enabled ? 1 : 0,
+        ':enabled' => null === $enabled ? null : ($enabled ? 1 : 0),
+        ':member_limit' => $limit,
         ':id' => $id,
     ]);
 
     jsonOut([
         'message' => 'Group management settings updated',
         'notify_creator_on_item_taken' => $enabled,
+        'member_limit' => $limit,
     ]);
+}
+
+if ('managers' === $sub && null !== $id && 'POST' === $method) {
+    $body = json_decode(file_get_contents('php://input'), true) ?? [];
+    $targetUserId = (int)($body['user_id'] ?? 0);
+    $isManager = filter_var($body['is_manager'] ?? null, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    if (!$targetUserId || null === $isManager) jsonError('Invalid manager setting');
+    $owner = $dbh->prepare('SELECT created_by FROM `groups` WHERE id = :id AND deleted_at IS NULL LIMIT 1');
+    $owner->execute([':id' => $id]);
+    if ((int)$owner->fetchColumn() !== $uid) jsonError('Only the group creator can manage managers', 403);
+    if ($targetUserId === $uid) jsonError('The group creator is already a manager', 409);
+    $member = $dbh->prepare('SELECT 1 FROM group_members WHERE group_id = :group_id AND user_id = :user_id LIMIT 1');
+    $member->execute([':group_id' => $id, ':user_id' => $targetUserId]);
+    if (!$member->fetchColumn()) jsonError('Member not found', 404);
+    if ($isManager) {
+        $stmt = $dbh->prepare('INSERT IGNORE INTO group_managers (group_id, user_id, granted_by) VALUES (:group_id, :user_id, :granted_by)');
+        $stmt->execute([':group_id' => $id, ':user_id' => $targetUserId, ':granted_by' => $uid]);
+    } else {
+        $stmt = $dbh->prepare('DELETE FROM group_managers WHERE group_id = :group_id AND user_id = :user_id');
+        $stmt->execute([':group_id' => $id, ':user_id' => $targetUserId]);
+    }
+    jsonOut(['message' => 'Manager setting updated']);
 }
 
 if ('members' === $sub && null !== $id && 'GET' === $method) {
@@ -245,7 +273,7 @@ if ('members' === $sub && null !== $id && 'DELETE' === $method) {
     if (!$group) jsonError('Group not found', 404);
 
     $creatorId = (int)$group['created_by'];
-    if ($creatorId !== $uid) jsonError('Only the group creator can remove members', 403);
+    if (!groupCanManage($dbh, $id, $uid)) jsonError('Only group managers can remove members', 403);
     if ($targetUserId === $creatorId) jsonError('The group creator cannot be removed', 400);
 
     $stmt = $dbh->prepare('DELETE FROM group_members WHERE group_id = :group_id AND user_id = :user_id');
@@ -294,7 +322,7 @@ if (null !== $id && 'PATCH' === $method && '' === $sub) {
     $stmt->execute([':id' => $id]);
     $group = $stmt->fetch();
     if (!$group) jsonError('Group not found', 404);
-    if ((int)$group['created_by'] !== $uid) jsonError('Only the group creator can rename it', 403);
+    if (!groupCanManage($dbh, $id, $uid)) jsonError('Only group managers can rename it', 403);
 
     $stmt = $dbh->prepare('UPDATE `groups` SET name = :name WHERE id = :id');
     $stmt->execute([':name' => $name, ':id' => $id]);
@@ -303,14 +331,15 @@ if (null !== $id && 'PATCH' === $method && '' === $sub) {
 
 if ('GET' === $method && null === $id) {
     $stmt = $dbh->prepare(
-        'SELECT DISTINCT g.id, g.name, g.created_at, g.created_by, (g.created_by = :viewer) AS can_rename
+        'SELECT DISTINCT g.id, g.name, g.created_at, g.created_by,
+                (g.created_by = :viewer OR EXISTS(SELECT 1 FROM group_managers m WHERE m.group_id = g.id AND m.user_id = :manager_viewer)) AS can_rename
            FROM `groups` g
            JOIN group_members m ON m.group_id = g.id
           WHERE m.user_id = :member
             AND g.deleted_at IS NULL
           ORDER BY g.created_at DESC'
     );
-    $stmt->execute([':viewer' => $uid, ':member' => $uid]);
+    $stmt->execute([':viewer' => $uid, ':manager_viewer' => $uid, ':member' => $uid]);
     $groups = array_map(static function (array $group): array {
         $group['id'] = (int)$group['id'];
         $group['created_by'] = (int)$group['created_by'];

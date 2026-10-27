@@ -8,6 +8,7 @@ $auth = requireAuth();
 $uid  = (int)$auth['sub'];
 $dbh  = getDb();
 ensureAdminSchema($dbh);
+ensureGroupGovernanceSchema($dbh);
 
 const PROFILE_MAX_PASSWORD_LEN = 256;
 const PROFILE_PASSWORD_HASH_PREFIX = 'cg1:';
@@ -90,6 +91,29 @@ if ('PATCH' === $method && 'language' === $sub) {
     $stmt = $dbh->prepare('UPDATE users SET preferred_language = :language WHERE id = :uid');
     $stmt->execute([':language' => $language, ':uid' => $uid]);
     jsonOut(['message' => 'Language updated', 'language' => $language]);
+}
+
+if ('DELETE' === $method && ('me' === $sub || '' === $sub)) {
+    if ('admin' === ($auth['role'] ?? 'user')) {
+        $admins = (int)$dbh->query("SELECT COUNT(*) FROM users WHERE role = 'admin' AND deleted_at IS NULL")->fetchColumn();
+        if ($admins <= 1) jsonError('The last admin cannot be removed', 409);
+    }
+    $dbh->beginTransaction();
+    try {
+        $dbh->prepare('UPDATE `groups` SET deleted_at = UTC_TIMESTAMP(), deleted_by = :uid WHERE created_by = :uid AND deleted_at IS NULL')
+            ->execute([':uid' => $uid]);
+        $dbh->prepare('DELETE FROM group_members WHERE user_id = :uid')->execute([':uid' => $uid]);
+        $dbh->prepare('DELETE FROM group_managers WHERE user_id = :uid OR granted_by = :uid')->execute([':uid' => $uid]);
+        $stmt = $dbh->prepare('UPDATE users SET deleted_at = UTC_TIMESTAMP(), deleted_by = :uid, token_version = token_version + 1 WHERE id = :uid AND deleted_at IS NULL');
+        $stmt->execute([':uid' => $uid]);
+        if (1 !== $stmt->rowCount()) jsonError('User not found', 404);
+        $dbh->commit();
+    } catch (Throwable $e) {
+        if ($dbh->inTransaction()) $dbh->rollBack();
+        throw $e;
+    }
+    clearAuthSessionCookie();
+    jsonOut(['message' => 'Account deleted']);
 }
 
 jsonError('Method not allowed', 405);

@@ -42,6 +42,12 @@
         <div class="auth-hero"><svg class="icon icon-tabler icon-tabler-shopping-cart tabler-icon" aria-hidden="true" focusable="false"><use href="/img/tabler-icons.svg#tabler-shopping-cart"></use></svg></div>
         <h1 class="auth-title">סל שיתופי</h1>
         <p class="auth-sub">קניות משותפות, בקלות</p>
+        <div class="auth-benefits" aria-label="מה אפשר לעשות בסל שיתופי">
+          <span>מוסיפים יחד</span><span>מסמנים כשנקנה</span><span>פחות הודעות</span>
+        </div>
+        <div class="auth-demo" aria-label="דוגמה: נועה הוסיפה חלב לרשימה ודן סימן אותו כנקנה">
+          <span class="auth-demo-avatar">נ</span><span>נועה הוסיפה חלב</span><span class="auth-demo-check">✓</span><span class="auth-demo-avatar second">ד</span>
+        </div>
         <button id="btnAbout" type="button" class="auth-about-button" aria-haspopup="dialog">מי אנחנו</button>
 
         <div id="authError" class="msg-error hidden" role="alert"></div>
@@ -55,7 +61,7 @@
           <span id="loginPasswordError" class="field-error hidden" role="alert"></span>
           <button id="btnLogin" type="submit" class="btn-primary">כניסה</button>
           <button id="btnShowForgotPassword" type="button" class="btn-ghost">שכחתי סיסמה</button>
-          <button id="btnShowRegister" type="button" class="btn-ghost">אין לי חשבון - הרשמה</button>
+        <button id="btnShowRegister" type="button" class="btn-ghost">אין לי חשבון - הרשמה</button>
         </form>
 
         <div id="formRegister" class="auth-card hidden">
@@ -102,6 +108,7 @@
           <button id="btnBackToLoginFromNewPassword" type="button" class="btn-ghost">חזרה לכניסה</button>
         </div>
       </div>
+      <p class="auth-legal-links"><a href="privacy.html">מדיניות פרטיות</a><span aria-hidden="true">·</span><a href="terms.html">תנאי שימוש</a></p>
     </section>
 
     <!-- GROUPS -->
@@ -125,6 +132,12 @@
           <input type="text" id="newGroupName" placeholder="שם הקבוצה" maxlength="100">
           <button id="btnCreateGroup" class="btn-primary">צור</button>
         </div>
+      </div>
+      <div class="quick-start" aria-label="התחלות מהירות">
+        <p>להתחלה מהירה</p>
+        <button type="button" class="quick-start-template" data-group-template="קניות שבועיות">קניות שבועיות</button>
+        <button type="button" class="quick-start-template" data-group-template="דירת שותפים">דירת שותפים</button>
+        <button type="button" class="quick-start-template" data-group-template="ארוחת שישי">ארוחת שישי</button>
       </div>
 
       <p class="section-label">הצטרף לקבוצה קיימת</p>
@@ -278,6 +291,15 @@
         </label>
         <p id="groupAdminEmailStatus" class="group-admin-status hidden" role="status"></p>
       </div>
+      <div class="group-admin-card">
+        <div class="group-admin-card-copy">
+          <h3>מגבלת משתתפים</h3>
+          <p>השאירו 0 כדי לאפשר הצטרפות ללא הגבלה. קישורי ההזמנה נשארים פשוטים כמו ב־WhatsApp.</p>
+        </div>
+        <label class="group-admin-limit" for="groupMemberLimit">מספר מרבי
+          <input id="groupMemberLimit" type="number" min="0" max="1000" inputmode="numeric" value="0">
+        </label>
+      </div>
 
       <div class="group-admin-section">
         <div class="group-admin-section-head">
@@ -379,6 +401,7 @@
         <p id="profilePasswordError" class="profile-feedback profile-error hidden" role="alert"></p>
         <p id="profilePasswordMessage" class="profile-feedback profile-success hidden" role="status"></p>
       </div>
+      <button id="btnDeleteMyAccount" type="button" class="btn-danger profile-password-button">מחיקת חשבון</button>
     </div>
   </div>
 

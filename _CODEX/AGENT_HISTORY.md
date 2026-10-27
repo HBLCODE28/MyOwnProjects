@@ -559,3 +559,10 @@
 - Added database groundwork for an optional group member limit and delegated group managers; invite joins now enforce the configured limit while preserving the simple share-link flow.
 - The public onboarding, account/data controls, templates, and visible manager settings remain the next cohesive UI change.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-27 - Complete SharedCart public-release experience
+
+- Added a concise public-facing welcome experience with an animated shared-list example, quick-start group templates, privacy policy, and terms of use.
+- Added visible group-member limits and owner-managed delegated group managers while keeping invitation links one-step and familiar.
+- Added self-service account deletion with an explicit warning, session invalidation, and protection against deleting the last administrator.
+- Backup: Git commit only, per the project backup policy.

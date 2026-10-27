@@ -641,6 +641,19 @@ $('#btnSaveProfile').on('click', saveProfileUsername);
 $('#btnStartProfilePasswordChange, #btnResendProfilePasswordCode').on('click', requestProfilePasswordCode);
 $('#btnVerifyProfilePasswordCode').on('click', verifyProfilePasswordCode);
 $('#btnConfirmProfilePasswordChange').on('click', confirmProfilePasswordChange);
+$('#btnDeleteMyAccount').on('click', () => {
+    const warning = uiText('למחוק את החשבון? גם קבוצות שיצרת יימחקו ולא יהיה אפשר לשחזר אותן.', 'Delete your account? Groups you created will also be deleted and cannot be restored.');
+    if (!confirm(warning)) return;
+    apiCall('DELETE', '/profile/me')
+        .done(() => {
+            clearToken();
+            stopPoll();
+            hideProfileModal();
+            showScreen('screenAuth');
+            showStyledAlert(uiText('החשבון נמחק', 'Your account was deleted'), uiText('בוצע', 'Done'), 'success');
+        })
+        .fail(xhr => $('#profileError').text(apiErr(xhr)).removeClass('hidden'));
+});
 $('#profilePasswordCode').on('input', clearProfileFeedback).on('keydown', event => {
     if (event.key === 'Enter') {
         event.preventDefault();
@@ -1537,6 +1550,10 @@ $('#btnCreateGroup').on('click', () => {
             showShareBanner(group.id);
         })
         .fail(xhr => alert(apiErr(xhr)));
+});
+
+$('.quick-start-template').on('click', function () {
+    $('#newGroupName').val($(this).data('group-template') || '').trigger('focus');
 });
 
 $('#btnJoinGroup').on('click', () => {
@@ -2514,6 +2531,7 @@ function loadGroupManagement() {
             const members = response && Array.isArray(response.members) ? response.members : [];
             const items = response && Array.isArray(response.items) ? response.items : [];
             $('#groupEmailNotifications').prop('checked', !!group.notify_creator_on_item_taken).prop('disabled', false);
+            $('#groupMemberLimit').val(Math.max(0, Number(group.member_limit) || 0));
             renderGroupAdminMembers(members);
             renderGroupAdminContent(items);
             setGroupAdminStatus('');
@@ -2542,7 +2560,8 @@ function renderGroupAdminMembers(members) {
 
     members.forEach(member => {
         const isCreator = !!member.is_creator;
-        const role = isCreator ? uiText('יוצר/ת הקבוצה', 'Group creator') : uiText('משתתף/ת', 'Member');
+        const isManager = !!member.is_manager;
+        const role = isCreator ? uiText('יוצר/ת הקבוצה', 'Group creator') : (isManager ? uiText('מנהל/ת קבוצה', 'Group manager') : uiText('משתתף/ת', 'Member'));
         const $row = $('<li class="group-admin-row">').append(
             $('<div class="group-admin-row-copy">').append(
                 $('<strong>').text(member.username || uiText('משתמש/ת', 'User')),
@@ -2551,13 +2570,24 @@ function renderGroupAdminMembers(members) {
         );
         if (!isCreator) {
             $row.append(
-                $('<button type="button" class="group-admin-remove">')
-                    .text(uiText('הסר מהקבוצה', 'Remove from group'))
-                    .on('click', () => removeManagedMember(member.id, member.username))
+                $('<div class="group-admin-request-actions">').append(
+                    $('<button type="button" class="group-admin-approve">')
+                        .text(isManager ? uiText('הסר ניהול', 'Remove manager') : uiText('הפוך למנהל', 'Make manager'))
+                        .on('click', () => setGroupManager(member.id, !isManager)),
+                    $('<button type="button" class="group-admin-remove">')
+                        .text(uiText('הסר מהקבוצה', 'Remove from group'))
+                        .on('click', () => removeManagedMember(member.id, member.username))
+                )
             );
         }
         $list.append($row);
     });
+}
+
+function setGroupManager(userId, isManager) {
+    apiCall('POST', `/groups/${currentGroupId}/managers`, { user_id: userId, is_manager: isManager })
+        .done(loadGroupManagement)
+        .fail(xhr => setGroupAdminStatus(apiErr(xhr), true));
 }
 
 function removeManagedMember(userId, username) {
@@ -2626,6 +2656,15 @@ $('#groupEmailNotifications').on('change', function () {
             setGroupAdminStatus(apiErr(xhr), true);
         })
         .always(() => $checkbox.prop('disabled', false));
+});
+
+$('#groupMemberLimit').on('change', function () {
+    const limit = Math.max(0, Math.min(1000, Number.parseInt($(this).val(), 10) || 0));
+    $(this).val(limit).prop('disabled', true);
+    apiCall('PATCH', `/groups/${currentGroupId}/management`, { member_limit: limit })
+        .done(() => setGroupAdminStatus(uiText('מגבלת המשתתפים נשמרה', 'Member limit saved')))
+        .fail(xhr => setGroupAdminStatus(apiErr(xhr), true))
+        .always(() => $(this).prop('disabled', false));
 });
 
 // Share
