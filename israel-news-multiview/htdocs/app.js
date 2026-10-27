@@ -532,7 +532,7 @@
       video.addEventListener("error", () => tryNextSource("לא ניתן להתחבר למקור השידור."), { once: true });
       video.play().catch(() => { });
     } else {
-      showError(card, "הדפדפן לא תומך ב-HLS והספרייה hls.js לא נטענה. נסו Chrome או Edge מעודכן.");
+      showError(card, "הדפדפן לא תומך ב-HLS והספרייה hls.js לא נטענה. נסו/נסי Chrome או Edge מעודכן.");
       return;
     }
 
@@ -808,7 +808,7 @@
   async function loadKanSchedule(channel) {
     // Kept only as a defensive fallback. InfinityFree free hosting must not be used
     // for scraping/proxying third-party pages, so this build does not fetch guide HTML.
-    els.scheduleCustomBody.innerHTML = '<div class="schedule-custom-error"><strong>לוח כאן נטען מהאתר הרשמי בגרסת InfinityFree.</strong><span>השתמשי בכפתור "פתיחה באתר הרשמי" אם האתר אינו מאפשר הצגה בתוך חלון.</span></div>';
+    els.scheduleCustomBody.innerHTML = '<div class="schedule-custom-error"><strong>לוח כאן נטען מהאתר הרשמי בגרסת InfinityFree.</strong><span>אפשר לפתוח את האתר הרשמי אם אינו מאפשר הצגה בתוך חלון.</span></div>';
     els.scheduleCustomMeta.textContent = "לוח חיצוני";
   }
 

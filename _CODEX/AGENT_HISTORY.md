@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-27 - Use inclusive Hebrew wording in Israel News Multiview
+
+- Updated direct user-facing wording to address women and men, while using gender-neutral wording where it is clearer.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-27 - Remove unavailable global indices from Israel News Multiview ticker
 
 - Removed the unavailable S&P 500 and NASDAQ index entries from the market ticker while retaining listed shares and Israeli indicators.
