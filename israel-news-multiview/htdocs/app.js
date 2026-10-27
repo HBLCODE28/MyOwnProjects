@@ -28,6 +28,7 @@
   const TABLER_ICON_BASE = "https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/";
 
   const els = {
+    topbar: document.getElementById("topbar"),
     grid: document.getElementById("channelGrid"),
     empty: document.getElementById("emptyState"),
     cardTemplate: document.getElementById("channelCardTemplate"),
@@ -40,6 +41,8 @@
     fullscreenBtn: document.getElementById("fullscreenBtn"),
     fullscreenIcon: document.getElementById("fullscreenIcon"),
     fullscreenLabel: document.getElementById("fullscreenLabel"),
+    mobileMenuBtn: document.getElementById("mobileMenuBtn"),
+    mobileMenuIcon: document.getElementById("mobileMenuIcon"),
     reloadBtn: document.getElementById("reloadBtn"),
     channelsBtn: document.getElementById("channelsBtn"),
     emptyChannelsBtn: document.getElementById("emptyChannelsBtn"),
@@ -1161,21 +1164,38 @@
     }
   }
 
+  function setMobileMenu(open) {
+    const shouldOpen = Boolean(open) && window.innerWidth <= 700;
+    els.topbar.classList.toggle("mobile-menu-open", shouldOpen);
+    els.mobileMenuBtn.setAttribute("aria-expanded", String(shouldOpen));
+    els.mobileMenuBtn.setAttribute("aria-label", shouldOpen ? "סגירת תפריט" : "פתיחת תפריט");
+    els.mobileMenuBtn.title = shouldOpen ? "סגירת תפריט" : "פתיחת תפריט";
+    els.mobileMenuIcon.src = `${TABLER_ICON_BASE}${shouldOpen ? "x.svg" : "menu-2.svg"}`;
+  }
+
   els.channelsBtn.addEventListener("click", openChannels);
   els.emptyChannelsBtn.addEventListener("click", openChannels);
   els.channelsDialog.addEventListener("close", () => clearTimeout(channelsCloseTimer));
   els.addCustomBtn.addEventListener("click", addCustomChannel);
   els.reloadBtn.addEventListener("click", render);
+  els.mobileMenuBtn.addEventListener("click", () => {
+    setMobileMenu(!els.topbar.classList.contains("mobile-menu-open"));
+  });
+  els.topbar.addEventListener("click", event => {
+    if (event.target.closest("button") && !event.target.closest("#mobileMenuBtn")) setMobileMenu(false);
+  });
   els.fullscreenBtn.addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", updateFullscreenUi);
   document.addEventListener("webkitfullscreenchange", updateFullscreenUi);
   els.qualityBtn.addEventListener("click", event => {
     event.stopPropagation();
+    setMobileMenu(false);
     toggleQualityPopover();
   });
   els.helpBtn.addEventListener("click", () => els.helpDialog.showModal());
   els.layoutBtn.addEventListener("click", event => {
     event.stopPropagation();
+    setMobileMenu(false);
     els.qualityPopover.hidden = true;
     els.qualityBtn.setAttribute("aria-expanded", "false");
     toggleLayoutPopover();
@@ -1221,12 +1241,16 @@
     }
   });
   document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && els.topbar.classList.contains("mobile-menu-open")) setMobileMenu(false);
     if (event.key === "Escape" && maximizedId) {
       const card = els.grid.querySelector(`.channel-card[data-id="${CSS.escape(maximizedId)}"]`);
       if (card) toggleMaximize(card);
     }
   });
-  window.addEventListener("resize", updateGridGeometry);
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 700) setMobileMenu(false);
+    updateGridGeometry();
+  });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
       els.grid.querySelectorAll("video").forEach(video => video.play().catch(() => { }));

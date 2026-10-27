@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0b1324">
   <title>חדשות ישראל LIVE - מסך מפוצל</title>
-  <link rel="stylesheet" href="styles.css?v=if-20261027-fullscreen-clean">
+  <link rel="stylesheet" href="styles.css?v=if-20261027-mobile-menu">
 </head>
 <body>
   <header class="topbar" id="topbar">
@@ -48,6 +48,9 @@
       </button>
       <button class="topbar-button compact" id="helpBtn" type="button" title="עזרה">
         <img class="tabler-icon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/help-circle.svg" alt=""><span class="button-label">עזרה</span>
+      </button>
+      <button class="topbar-button mobile-menu-button" id="mobileMenuBtn" type="button" title="פתיחת תפריט" aria-label="פתיחת תפריט" aria-controls="topbar" aria-expanded="false">
+        <img class="tabler-icon" id="mobileMenuIcon" src="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outline/menu-2.svg" alt=""><span class="button-label">תפריט</span>
       </button>
     </div>
   </header>
@@ -205,7 +208,7 @@
   </template>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.13/hls.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="streams.js?v=if-20261027-ui-simplified"></script>
-  <script src="app.js?v=if-20261027-ui-simplified"></script>
+  <script src="streams.js?v=if-20261027-mobile-menu"></script>
+  <script src="app.js?v=if-20261027-mobile-menu"></script>
 </body>
 </html>

@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-27 - Add compact phone menu to Israel News Multiview
+
+- Collapsed the phone navigation into an accessible menu button that reveals the controls on demand.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-27 - Use all space in Israel News Multiview fullscreen
 
 - Hide the navigation bar in browser fullscreen mode so only the broadcast screens remain visible.

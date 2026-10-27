@@ -78,6 +78,7 @@ button { cursor: pointer; }
   border-color: #29466e;
   outline: none;
 }
+.mobile-menu-button { display: none; }
 .button-label { font-size: 15px; white-space: nowrap; }
 .grid-icon { width: 20px; height: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
 .grid-icon i { background: #8fcfff; border-radius: 2px; }
@@ -702,4 +703,50 @@ html.fullscreen-active .channel-card.is-maximized { inset: 0; }
   .schedule-row { grid-template-columns: 64px minmax(0, 1fr); min-height: 54px; }
   .schedule-row-copy { padding: 9px 10px; }
   .schedule-now-label { display: none; }
+}
+
+/* Phone menu: keep the header compact until its menu button is pressed. */
+@media (max-width: 700px) {
+  .topbar {
+    height: var(--header-h);
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "brand menu";
+    padding: 0 10px;
+  }
+  .brand { grid-area: brand; text-align: right; min-width: 0; }
+  .brand-main { justify-content: flex-start; }
+  .topbar-right { display: none; grid-area: right; }
+  .topbar-left { grid-area: menu; justify-content: flex-end; }
+  .topbar-left > :not(.mobile-menu-button) { display: none; }
+  .mobile-menu-button { display: inline-flex !important; min-height: 40px; padding: 0 7px; }
+
+  .topbar.mobile-menu-open {
+    height: auto;
+    min-height: var(--header-h);
+    grid-template-areas:
+      "brand menu"
+      "right right"
+      "left left";
+    padding-block: 7px;
+  }
+  .topbar.mobile-menu-open .topbar-right,
+  .topbar.mobile-menu-open .topbar-left {
+    display: flex;
+    width: 100%;
+    padding-top: 7px;
+    border-top: 1px solid #263a57;
+  }
+  .topbar.mobile-menu-open .topbar-right {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .topbar.mobile-menu-open .topbar-left {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .topbar.mobile-menu-open .topbar-left > :not(.mobile-menu-button) { display: flex; }
+  .topbar.mobile-menu-open .topbar-left .clock { display: block; align-self: center; }
+  .topbar.mobile-menu-open .topbar-left .weather-rotator { display: flex; }
+  .topbar.mobile-menu-open .topbar-left .topbar-button { display: inline-flex; }
+  .topbar.mobile-menu-open .button-label { display: inline; }
 }
