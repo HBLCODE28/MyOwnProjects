@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-27 - Use a live market-feed ticker in Israel News Multiview
+
+- Replaced the rate-limited direct quote fetcher with TradingView's market-data ticker, configured with Israeli and global indices and leading companies.
+- Retained the compact desktop-only placement and continuous ticker behavior.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-27 - Animate Israel News Multiview market ticker
 
 - Turned the desktop market strip into a continuous scrolling ticker that pauses on hover or keyboard focus.

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0b1324">
   <title>חדשות ישראל LIVE - מסך מפוצל</title>
-  <link rel="stylesheet" href="styles.css?v=if-20261027-market-ticker-scroll">
+  <link rel="stylesheet" href="styles.css?v=if-20261027-tradingview-ticker">
 </head>
 <body>
   <header class="topbar" id="topbar">
@@ -55,8 +55,10 @@
     </div>
   </header>
 
-  <section class="market-ticker" id="marketTicker" aria-label="מדדים ומניות מובילים" aria-live="polite">
-    <div class="market-ticker-items" id="marketTickerItems" aria-busy="true"></div>
+  <section class="market-ticker" aria-label="מדדים ומניות מובילים">
+    <tv-ticker-tape symbols="TASE:TA35,TASE:TA125,TASE:TEVA,TASE:LUMI,SP:SPX,NASDAQ:NDX,NASDAQ:AAPL,NASDAQ:NVDA" direction="horizontal" item-size="compact" hide-chart theme="dark" locale="he_IL">
+      <span class="market-ticker-placeholder">טוען נתוני שוק…</span>
+    </tv-ticker-tape>
   </section>
 
   <main class="workspace" id="workspace">
@@ -212,7 +214,8 @@
   </template>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.13/hls.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="streams.js?v=if-20261027-market-ticker-scroll"></script>
-  <script src="app.js?v=if-20261027-market-ticker-scroll"></script>
+  <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
+  <script src="streams.js?v=if-20261027-tradingview-ticker"></script>
+  <script src="app.js?v=if-20261027-tradingview-ticker"></script>
 </body>
 </html>
