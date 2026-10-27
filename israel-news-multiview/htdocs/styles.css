@@ -718,7 +718,8 @@ html.fullscreen-active .channel-card.is-maximized { inset: 0; }
   .topbar-right { display: none; grid-area: right; }
   .topbar-left { grid-area: menu; justify-content: flex-end; }
   .topbar-left > :not(.mobile-menu-button) { display: none; }
-  .mobile-menu-button { display: inline-flex !important; min-height: 40px; padding: 0 7px; }
+  .mobile-menu-button { display: inline-flex !important; min-width: 40px; min-height: 40px; padding: 0 7px; }
+  .mobile-menu-button .button-label { display: none !important; }
 
   .topbar.mobile-menu-open {
     height: auto;

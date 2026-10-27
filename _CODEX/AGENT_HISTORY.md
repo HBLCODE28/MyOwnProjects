@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-27 - Give Israel News Multiview phone branding more room
+
+- Changed the mobile menu close control to an icon-only button so it no longer crowds the site title.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-27 - Add compact phone menu to Israel News Multiview
 
 - Collapsed the phone navigation into an accessible menu button that reveals the controls on demand.
