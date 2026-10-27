@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-27 - Remove unavailable global indices from Israel News Multiview ticker
+
+- Removed the unavailable S&P 500 and NASDAQ index entries from the market ticker while retaining listed shares and Israeli indicators.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-27 - Keep Israel News Multiview market ticker visible on TVs
 
 - Kept the market ticker visible above the phone breakpoint, so TV and desktop viewers do not need to zoom out.
