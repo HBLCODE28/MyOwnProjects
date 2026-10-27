@@ -546,12 +546,11 @@ html.fullscreen-active body {
   min-height: 100vh;
   overflow: hidden;
 }
-html.fullscreen-active .statusbar { display: none; }
-html.fullscreen-active .workspace { height: calc(100vh - var(--header-h)); }
-html.fullscreen-active .topbar { padding-inline: 12px; }
-html.fullscreen-active .brand-subtitle { display: none; }
+html.fullscreen-active .statusbar,
+html.fullscreen-active .topbar { display: none; }
+html.fullscreen-active .workspace { height: 100vh; }
 html.fullscreen-active .channel-card { border-radius: 7px; }
-html.fullscreen-active .channel-card.is-maximized { inset: var(--header-h) 0 0 0; }
+html.fullscreen-active .channel-card.is-maximized { inset: 0; }
 
 /* Custom, light schedule view used by Kan 11 */
 .schedule-content { min-height: 0; overflow: hidden; background: #f4f6f9; }

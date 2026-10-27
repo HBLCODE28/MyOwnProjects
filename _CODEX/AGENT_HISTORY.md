@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-27 - Use all space in Israel News Multiview fullscreen
+
+- Hide the navigation bar in browser fullscreen mode so only the broadcast screens remain visible.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-27 - Simplify Israel News Multiview controls
 
 - Made channel selection apply immediately and close the picker five seconds after the last selection change.
