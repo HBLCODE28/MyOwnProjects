@@ -10,9 +10,9 @@
   };
 
   const QUALITY_MODES = [
-    { id: "economy", label: "חסכון", maxHeight: 360, status: "מצב חסכון: עד 360p לכל ערוץ - מפחית עומס כשצופים בכמה שידורים יחד." },
-    { id: "balanced", label: "מאוזן", maxHeight: 720, status: "מצב מאוזן: עד 720p לכל ערוץ - תמונה חדה יותר עם צריכת משאבים בינונית." },
-    { id: "max", label: "מקסימום", maxHeight: Infinity, status: "מצב מקסימום: הנגן רשאי לבחור את האיכות הגבוהה ביותר - צורך יותר אינטרנט ומשאבי מחשב." }
+    { id: "economy", label: "חסכון", maxHeight: 360 },
+    { id: "balanced", label: "מאוזן", maxHeight: 720 },
+    { id: "max", label: "מקסימום", maxHeight: Infinity }
   ];
 
   const WEATHER_CITIES = [
@@ -45,9 +45,6 @@
     emptyChannelsBtn: document.getElementById("emptyChannelsBtn"),
     channelsDialog: document.getElementById("channelsDialog"),
     channelPicker: document.getElementById("channelPicker"),
-    applyChannelsBtn: document.getElementById("applyChannelsBtn"),
-    selectPrimaryBtn: document.getElementById("selectPrimaryBtn"),
-    clearSelectionBtn: document.getElementById("clearSelectionBtn"),
     customName: document.getElementById("customName"),
     customUrl: document.getElementById("customUrl"),
     customOfficial: document.getElementById("customOfficial"),
@@ -59,22 +56,18 @@
     helpBtn: document.getElementById("helpBtn"),
     helpDialog: document.getElementById("helpDialog"),
     qualityPopover: document.getElementById("qualityPopover"),
-    qualityStatus: document.getElementById("qualityStatus"),
     qualityIntro: document.getElementById("qualityIntro"),
     qualityIntroDismiss: document.getElementById("qualityIntroDismiss"),
     qualityIntroChange: document.getElementById("qualityIntroChange"),
     scheduleDialog: document.getElementById("scheduleDialog"),
-    scheduleTitle: document.getElementById("scheduleTitle"),
     scheduleFrame: document.getElementById("scheduleFrame"),
     scheduleFrameWrap: document.getElementById("scheduleFrameWrap"),
-    scheduleDescription: document.getElementById("scheduleDescription"),
     scheduleCustom: document.getElementById("scheduleCustom"),
     scheduleCustomHeading: document.getElementById("scheduleCustomHeading"),
     scheduleCustomMeta: document.getElementById("scheduleCustomMeta"),
     scheduleCustomBody: document.getElementById("scheduleCustomBody"),
     scheduleRefreshBtn: document.getElementById("scheduleRefreshBtn"),
     scheduleExternal: document.getElementById("scheduleExternal"),
-    scheduleCloseBtn: document.getElementById("scheduleCloseBtn"),
     scheduleDoneBtn: document.getElementById("scheduleDoneBtn")
   };
 
@@ -90,6 +83,7 @@
   let weatherUpdatedAt = 0;
   let weatherIndex = 0;
   let weatherSwitchTimer = null;
+  let channelsCloseTimer = null;
 
   function safeJson(key, fallback) {
     try {
@@ -358,7 +352,6 @@
   function updateQualityUi() {
     const mode = qualityMode();
     els.qualityLabel.textContent = mode.label;
-    if (els.qualityStatus) els.qualityStatus.textContent = mode.status;
     if (els.qualityPopover) {
       els.qualityPopover.querySelectorAll("[data-quality]").forEach(button => {
         button.classList.toggle("is-active", button.dataset.quality === mode.id);
@@ -820,11 +813,9 @@
     const scheduleUrl = scheduleUrlFor(channel);
     if (!scheduleUrl) return;
     currentScheduleChannel = channel;
-    els.scheduleTitle.textContent = `לוח שידורים - ${channel.name}`;
     els.scheduleExternal.href = scheduleUrl;
 
     if (channel.scheduleMode === "kan-html") {
-      els.scheduleDescription.textContent = "האתר קורא את לוח ערוץ 11 כ-HTML ומציג רק את שעות ושמות התוכניות בעיצוב נקי משלנו. מקור EPG חיצוני משמש כברירת מחדל כדי להימנע מחסימות של עמוד כאן הרשמי.";
       els.scheduleFrameWrap.hidden = true;
       els.scheduleCustom.hidden = false;
       els.scheduleCustomHeading.textContent = "לוח כאן 11 - היום";
@@ -834,7 +825,6 @@
       return;
     }
 
-    els.scheduleDescription.textContent = "הלוח נטען מהאתר הרשמי של הערוץ ולכן הוא נשאר עדכני גם כשהתוכניות משתנות.";
     els.scheduleCustom.hidden = true;
     els.scheduleFrameWrap.hidden = false;
     els.scheduleFrame.src = scheduleUrl;
@@ -951,6 +941,7 @@
       checkbox.type = "checkbox";
       checkbox.value = channel.id;
       checkbox.checked = selected.has(channel.id);
+      checkbox.addEventListener("change", applyPickerSelection);
 
       const badge = document.createElement("span");
       badge.className = "channel-badge";
@@ -985,8 +976,16 @@
   }
 
   function openChannels() {
+    clearTimeout(channelsCloseTimer);
     renderPicker();
     els.channelsDialog.showModal();
+  }
+
+  function scheduleChannelsClose() {
+    clearTimeout(channelsCloseTimer);
+    channelsCloseTimer = window.setTimeout(() => {
+      if (els.channelsDialog.open) els.channelsDialog.close();
+    }, 5000);
   }
 
   function applyPickerSelection() {
@@ -996,6 +995,7 @@
     activeIds = [...oldOrder, ...newOnes];
     saveActiveIds();
     render();
+    scheduleChannelsClose();
   }
 
   function deleteCustomChannel(channel) {
@@ -1059,6 +1059,8 @@
     els.customUrl.value = "";
     els.customOfficial.value = "";
     renderPicker();
+    render();
+    scheduleChannelsClose();
   }
 
   function toggleLayoutPopover() {
@@ -1161,18 +1163,7 @@
 
   els.channelsBtn.addEventListener("click", openChannels);
   els.emptyChannelsBtn.addEventListener("click", openChannels);
-  els.applyChannelsBtn.addEventListener("click", applyPickerSelection);
-  els.selectPrimaryBtn.addEventListener("click", () => {
-    const primary = new Set(getAllChannels().filter(channel => channel.primary).map(channel => channel.id));
-    els.channelPicker.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-      checkbox.checked = primary.has(checkbox.value);
-    });
-  });
-  els.clearSelectionBtn.addEventListener("click", () => {
-    els.channelPicker.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-      checkbox.checked = false;
-    });
-  });
+  els.channelsDialog.addEventListener("close", () => clearTimeout(channelsCloseTimer));
   els.addCustomBtn.addEventListener("click", addCustomChannel);
   els.reloadBtn.addEventListener("click", render);
   els.fullscreenBtn.addEventListener("click", toggleFullscreen);
@@ -1215,7 +1206,6 @@
   els.scheduleRefreshBtn.addEventListener("click", () => {
     if (currentScheduleChannel?.scheduleMode === "kan-html") loadKanSchedule(currentScheduleChannel);
   });
-  els.scheduleCloseBtn.addEventListener("click", closeSchedule);
   els.scheduleDoneBtn.addEventListener("click", closeSchedule);
   els.scheduleDialog.addEventListener("cancel", event => {
     event.preventDefault();

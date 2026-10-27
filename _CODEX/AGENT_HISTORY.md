@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-27 - Simplify Israel News Multiview controls
+
+- Made channel selection apply immediately and close the picker five seconds after the last selection change.
+- Removed the channel-picker action buttons, live-status strip, English utility labels, and the schedule dialog heading/copy.
+- Reduced the navigation height to give broadcasts more screen space and condensed Help into friendly, everyday guidance.
+- Backup: Git commit only, per the project backup policy.
+
 ## 2026-10-23 - Correct Machberet Ptucha home header and encoding safeguards
 
 - Kept the home-page header on the paper background while retaining the distinct header colour elsewhere.

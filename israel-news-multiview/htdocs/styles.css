@@ -11,8 +11,8 @@
   --accent: #42a5f5;
   --accent-strong: #1e88e5;
   --danger: #ef5350;
-  --header-h: 76px;
-  --status-h: 34px;
+  --header-h: 58px;
+  --status-h: 0px;
   --gap: 12px;
   --card-header-h: 52px;
 }
@@ -55,15 +55,15 @@ button { cursor: pointer; }
 .topbar-side { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .topbar-right { justify-content: flex-start; }
 .topbar-left { justify-content: flex-end; direction: ltr; }
-.brand { text-align: center; min-width: 300px; line-height: 1; }
+.brand { text-align: center; min-width: 250px; line-height: 1; }
 .brand-main { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.brand-title { font-size: clamp(23px, 2.2vw, 36px); font-weight: 700; white-space: nowrap; letter-spacing: -.02em; }
+.brand-title { font-size: clamp(20px, 1.8vw, 29px); font-weight: 700; white-space: nowrap; letter-spacing: -.02em; }
 .brand-live { color: #72c7ff; font-size: 13px; font-weight: 700; letter-spacing: .12em; direction: ltr; }
 .brand-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff4d5d; box-shadow: 0 0 0 4px rgba(255,77,93,.12); }
 .brand-subtitle { display: block; margin-top: 7px; font-size: 10px; color: #8798b1; letter-spacing: .35em; direction: ltr; }
 
 .topbar-button {
-  min-height: 46px;
+  min-height: 40px;
   border: 1px solid transparent;
   background: transparent;
   color: #e9f0fa;
@@ -277,7 +277,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 .help-content strong { color: #fff; }
 
 @media (max-width: 1050px) {
-  :root { --header-h: 68px; --gap: 8px; --card-header-h: 48px; }
+  :root { --header-h: 54px; --gap: 8px; --card-header-h: 48px; }
   .topbar { padding: 0 9px; }
   .brand { min-width: 210px; }
   .brand-title { font-size: 24px; }
@@ -289,7 +289,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 }
 
 @media (max-width: 700px) {
-  :root { --header-h: 60px; --status-h: 30px; --gap: 6px; }
+  :root { --header-h: 54px; --status-h: 0px; --gap: 6px; }
   .brand { min-width: 135px; }
   .brand-title { font-size: 17px; }
   .brand-live { font-size: 9px; }
@@ -305,7 +305,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 }
 
 @media (max-height: 650px) and (min-width: 701px) {
-  :root { --header-h: 58px; --status-h: 28px; --gap: 7px; --card-header-h: 42px; }
+  :root { --header-h: 52px; --status-h: 0px; --gap: 7px; --card-header-h: 42px; }
   .brand-title { font-size: 22px; }
   .brand-subtitle { display: none; }
   .topbar-button { min-height: 42px; }
@@ -388,7 +388,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 .error-actions .tabler-icon { width: 17px; height: 17px; }
 .empty-icon { width: 68px; height: 68px; filter: brightness(0) invert(1); opacity: .35; margin-bottom: 12px; }
 
-.schedule-card { width: min(1080px, calc(100vw - 26px)); height: min(830px, calc(100vh - 26px)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; }
+.schedule-card { width: min(1080px, calc(100vw - 26px)); height: min(830px, calc(100vh - 26px)); display: grid; grid-template-rows: minmax(0, 1fr) auto; overflow: hidden; }
 .schedule-frame-wrap { min-height: 0; position: relative; background: #f6f7f9; }
 #scheduleFrame { width: 100%; height: 100%; border: 0; background: #fff; display: block; }
 .schedule-frame-note { position: absolute; right: 12px; left: 12px; bottom: 10px; padding: 7px 10px; border-radius: 7px; background: rgba(9,16,27,.9); color: #c5d0de; font-size: 11px; pointer-events: none; }
@@ -435,7 +435,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 .weather-rotator {
   flex: 0 0 auto;
   min-width: 118px;
-  height: 46px;
+  height: 40px;
   display: flex;
   align-items: center;
   direction: ltr;
@@ -484,7 +484,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
   object-fit: contain;
   filter: brightness(0) saturate(100%) invert(79%) sepia(21%) saturate(1195%) hue-rotate(170deg) brightness(105%) contrast(101%);
   opacity: .96;
-  margin-top: 9px;
+  margin-top: 3px;
 }
 
 .channel-card:fullscreen,
@@ -535,7 +535,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 
 /* True browser fullscreen mode */
 html.fullscreen-active {
-  --header-h: 62px;
+  --header-h: 54px;
   --status-h: 0px;
   --gap: 7px;
 }
