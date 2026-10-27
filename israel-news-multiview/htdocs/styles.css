@@ -292,8 +292,7 @@ body.card-maximized .channel-card:not(.is-maximized) { visibility: hidden; }
 .help-content strong { color: #fff; }
 
 @media (max-width: 1050px) {
-  :root { --header-h: 54px; --market-h: 0px; --gap: 8px; --card-header-h: 48px; }
-  .market-ticker { display: none; }
+  :root { --header-h: 54px; --gap: 8px; --card-header-h: 48px; }
   .topbar { padding: 0 9px; }
   .brand { min-width: 210px; }
   .brand-title { font-size: 24px; }

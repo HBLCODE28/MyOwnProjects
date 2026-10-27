@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-27 - Keep Israel News Multiview market ticker visible on TVs
+
+- Kept the market ticker visible above the phone breakpoint, so TV and desktop viewers do not need to zoom out.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-27 - Use a live market-feed ticker in Israel News Multiview
 
 - Replaced the rate-limited direct quote fetcher with TradingView's market-data ticker, configured with Israeli and global indices and leading companies.
