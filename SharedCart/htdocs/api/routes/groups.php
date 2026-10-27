@@ -23,6 +23,7 @@ $auth = requireAuth();
 $uid  = (int)$auth['sub'];
 $dbh  = getDb();
 ensureAdminSchema($dbh);
+ensureGroupGovernanceSchema($dbh);
 ensureGroupJoinRequestsTable($dbh);
 
 // Group creator management panel.
@@ -39,7 +40,7 @@ if ('management' === $sub && null !== $id && 'GET' === $method) {
     $stmt->execute([':id' => $id]);
     $group = $stmt->fetch();
     if (!$group) jsonError('Group not found', 404);
-    if ((int)$group['created_by'] !== $uid) jsonError('Only the group creator can manage it', 403);
+    if (!groupCanManage($dbh, $id, $uid)) jsonError('Only group managers can manage it', 403);
 
     $membersStmt = $dbh->prepare(
         'SELECT u.id, u.username, gm.joined_at, (u.id = g.created_by) AS is_creator
@@ -121,7 +122,7 @@ if ('join-requests' === $sub && null !== $id && 'POST' === $method) {
     $stmt->execute([':id' => $id]);
     $group = $stmt->fetch();
     if (!$group) jsonError('Group not found', 404);
-    if ((int)$group['created_by'] !== $uid) jsonError('Only the group creator can manage join requests', 403);
+    if (!groupCanManage($dbh, $id, $uid)) jsonError('Only group managers can manage join requests', 403);
 
     $dbh->beginTransaction();
     try {

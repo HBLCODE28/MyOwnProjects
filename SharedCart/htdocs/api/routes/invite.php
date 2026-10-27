@@ -2,6 +2,7 @@
 // Invite routes: POST /api/invite/create, GET /api/invite/join?t={token}
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../auth_helper.php';
+require_once __DIR__ . '/../admin_helper.php';
 
 const INVITE_TTL_HOURS = 24;
 const INVITE_TOKEN_BYTES = 32;
@@ -48,7 +49,7 @@ if ('create' === $sub) {
     $body = json_decode(file_get_contents('php://input'), true) ?? [];
     $groupId = (int)($body['group_id'] ?? 0);
     if (!$groupId) jsonError('group_id required');
-    $dbh = getDb(); ensureAdminSchema($dbh); ensureInviteTokensTable($dbh);
+    $dbh = getDb(); ensureAdminSchema($dbh); ensureGroupGovernanceSchema($dbh); ensureInviteTokensTable($dbh);
     $stmt = $dbh->prepare('SELECT 1 FROM group_members gm JOIN `groups` g ON g.id = gm.group_id AND g.deleted_at IS NULL WHERE gm.group_id = :group_id AND gm.user_id = :user_id LIMIT 1');
     $stmt->execute([':group_id' => $groupId, ':user_id' => $uid]);
     if (!$stmt->fetch()) jsonError('Forbidden', 403);
@@ -64,7 +65,7 @@ if ('join' === $sub) {
     $auth = requireAuth(); $uid = (int)$auth['sub'];
     $token = trim((string)($_GET['t'] ?? ''));
     if (!preg_match('/^[0-9a-f]{64}$/i', $token)) jsonError('Invalid token', 400);
-    $dbh = getDb(); ensureAdminSchema($dbh); ensureInviteTokensTable($dbh); ensureGroupJoinRequestsTable($dbh);
+    $dbh = getDb(); ensureAdminSchema($dbh); ensureGroupGovernanceSchema($dbh); ensureInviteTokensTable($dbh); ensureGroupJoinRequestsTable($dbh);
     $stmt = $dbh->prepare('SELECT it.group_id, g.name, g.created_by, (it.expires_at < UTC_TIMESTAMP()) AS is_expired FROM invite_tokens it JOIN `groups` g ON g.id = it.group_id AND g.deleted_at IS NULL WHERE it.token = :token LIMIT 1');
     $stmt->execute([':token' => inviteTokenHash($token)]);
     $group = $stmt->fetch();
@@ -74,6 +75,20 @@ if ('join' === $sub) {
     $member = $dbh->prepare('SELECT 1 FROM group_members WHERE group_id = :group_id AND user_id = :user_id LIMIT 1');
     $member->execute([':group_id' => $groupId, ':user_id' => $uid]);
     if ($member->fetch()) jsonOut(['status' => 'approved', 'id' => $groupId, 'name' => (string)$group['name'], 'created_by' => (int)$group['created_by'], 'can_rename' => (int)$group['created_by'] === $uid]);
+    $capacity = $dbh->prepare(
+        'SELECT g.member_limit, COUNT(gm.user_id) AS member_count
+           FROM `groups` g
+           LEFT JOIN group_members gm ON gm.group_id = g.id
+          WHERE g.id = :group_id AND g.deleted_at IS NULL
+          GROUP BY g.id, g.member_limit
+          LIMIT 1'
+    );
+    $capacity->execute([':group_id' => $groupId]);
+    $capacityRow = $capacity->fetch();
+    if (!$capacityRow) jsonError('Token not found', 404);
+    if ((int)$capacityRow['member_limit'] > 0 && (int)$capacityRow['member_count'] >= (int)$capacityRow['member_limit']) {
+        jsonError('Group member limit reached', 409);
+    }
     $stmt = $dbh->prepare('INSERT INTO group_join_requests (group_id, user_id, status, requested_at, resolved_at, resolved_by) VALUES (:group_id, :user_id, "pending", UTC_TIMESTAMP(), NULL, NULL) ON DUPLICATE KEY UPDATE status = "pending", requested_at = UTC_TIMESTAMP(), resolved_at = NULL, resolved_by = NULL');
     $stmt->execute([':group_id' => $groupId, ':user_id' => $uid]);
     jsonOut(['status' => 'pending', 'name' => (string)$group['name']]);

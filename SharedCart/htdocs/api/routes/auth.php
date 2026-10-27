@@ -322,7 +322,6 @@ if ('register' === $sub) {
 
     jsonOut([
         'message' => 'ההרשמה הושלמה',
-        'token' => $token,
         'role' => 'user',
         'language' => $preferredLanguage,
     ], 201);
@@ -433,7 +432,6 @@ if ('login' === $sub) {
         'role' => $role,
     ]);
     jsonOut([
-        'token' => $token,
         'role' => $role,
         'language' => (string)($user['preferred_language'] ?? 'he'),
         'admin_path' => 'admin' === $role ? ADMIN_CONSOLE_PATH : null,

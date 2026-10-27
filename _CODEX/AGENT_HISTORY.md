@@ -552,3 +552,10 @@
 
 - Added a confirmed admin action to delete every summary record and its uploaded file from the published-summary management page.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-27 - Start SharedCart public-release hardening
+
+- Moved SharedCart authentication to the existing Secure, HttpOnly session cookie and removed login JWT delivery/storage in browser JavaScript.
+- Added database groundwork for an optional group member limit and delegated group managers; invite joins now enforce the configured limit while preserving the simple share-link flow.
+- The public onboarding, account/data controls, templates, and visible manager settings remain the next cohesive UI change.
+- Backup: Git commit only, per the project backup policy.

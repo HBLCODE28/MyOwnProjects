@@ -688,3 +688,33 @@ SQL;
         error_log('Security event logging failed: ' . $e->getMessage());
     }
 }
+
+function ensureGroupGovernanceSchema(PDO $dbh): void {
+    try {
+        $dbh->exec('CREATE TABLE IF NOT EXISTS group_managers (
+            group_id INT UNSIGNED NOT NULL,
+            user_id INT UNSIGNED NOT NULL,
+            granted_by INT UNSIGNED NOT NULL,
+            granted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (group_id, user_id),
+            KEY idx_group_managers_user (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+        $column = $dbh->query("SHOW COLUMNS FROM `groups` LIKE 'member_limit'")->fetch();
+        if (!$column) $dbh->exec('ALTER TABLE `groups` ADD member_limit SMALLINT UNSIGNED NOT NULL DEFAULT 0');
+    } catch (PDOException $e) {
+        error_log('Group governance schema setup failed: ' . $e->getMessage());
+        jsonError('Group settings unavailable', 500);
+    }
+}
+
+function groupCanManage(PDO $dbh, int $groupId, int $userId): bool {
+    $stmt = $dbh->prepare(
+        'SELECT 1 FROM `groups` g
+          LEFT JOIN group_managers m ON m.group_id = g.id AND m.user_id = :user_id
+         WHERE g.id = :group_id AND g.deleted_at IS NULL
+           AND (g.created_by = :owner_id OR m.user_id IS NOT NULL)
+         LIMIT 1'
+    );
+    $stmt->execute([':group_id' => $groupId, ':user_id' => $userId, ':owner_id' => $userId]);
+    return (bool)$stmt->fetchColumn();
+}

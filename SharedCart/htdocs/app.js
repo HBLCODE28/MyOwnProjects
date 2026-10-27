@@ -1,7 +1,6 @@
 // Grocery App - Frontend Logic (jQuery 3.x)
 
 const API       = '/api';
-const TOKEN_KEY = 'cg_token';
 const LANGUAGE_KEY = 'cg_language';
 const POLL_MS   = 5000;
 const KITCHEN_CAPTURE_MAX_DIMENSION = 1280;
@@ -222,12 +221,13 @@ function updateAdminDashboardButton() {
 }
 
 function loadCurrentProfile() {
-    const profileToken = getToken();
     const profileStateVersion = authStateVersion;
 
     return apiCall('GET', '/profile/me')
         .done(profile => {
-            if (profileStateVersion !== authStateVersion || profileToken !== getToken()) return;
+            if (profileStateVersion !== authStateVersion) return;
+            hasAuthenticatedSession = true;
+            currentUserId = Number(profile.id) || null;
             currentUsername = String(profile.username || '');
             currentUserEmail = String(profile.email || '').trim().toLowerCase();
             updateHomeProfileName();
@@ -240,7 +240,8 @@ function loadCurrentProfile() {
             applyMainLanguage();
         })
         .fail(() => {
-            if (profileStateVersion !== authStateVersion || profileToken !== getToken()) return;
+            if (profileStateVersion !== authStateVersion) return;
+            hasAuthenticatedSession = false;
             currentUsername = '';
             currentUserRole = 'user';
             currentUserEmail = '';
@@ -256,6 +257,7 @@ let currentGroupName      = '';
 let currentUserId         = null;
 let itemsLoadRequestId    = 0;
 let authStateVersion      = 0;
+let hasAuthenticatedSession = false;
 let currentUsername       = '';
 let currentUserEmail      = '';
 let currentUserRole       = 'user';
@@ -292,21 +294,18 @@ const shareLinkRequests = new Map();
 
 // API
 function apiCall(method, endpoint, data) {
-    const token = getToken();
     const opts = {
         url: API + endpoint,
         method,
         contentType: 'application/json'
     };
-    if (token) opts.headers = { Authorization: 'Bearer ' + token };
     if (data !== undefined) opts.data = JSON.stringify(data);
     return $.ajax(opts).fail(xhr => {
-        if (xhr.status === 401) handleUnauthorized();
+        if (xhr.status === 401 && hasAuthenticatedSession) handleUnauthorized();
     });
 }
 
 function apiUpload(method, endpoint, formData) {
-    const token = getToken();
     const opts = {
         url: API + endpoint,
         method,
@@ -314,9 +313,8 @@ function apiUpload(method, endpoint, formData) {
         processData: false,
         contentType: false
     };
-    if (token) opts.headers = { Authorization: 'Bearer ' + token };
     return $.ajax(opts).fail(xhr => {
-        if (xhr.status === 401) handleUnauthorized();
+        if (xhr.status === 401 && hasAuthenticatedSession) handleUnauthorized();
     });
 }
 
@@ -1008,20 +1006,21 @@ if ('ResizeObserver' in window) {
 $(window).on('resize orientationchange', syncFixedUiOffsets);
 requestAnimationFrame(syncFixedUiOffsets);
 
-// Token
-function saveToken(token) {
+// Authentication is held only in the HttpOnly session cookie. Keeping the
+// returned token out of JavaScript storage limits its exposure to XSS.
+function saveToken() {
     authStateVersion += 1;
-    localStorage.setItem(TOKEN_KEY, token);
-    currentUserId = parseUserId(token);
+    hasAuthenticatedSession = true;
+    currentUserId = null;
     currentUsername = '';
     currentUserEmail = '';
 }
 function getToken() {
-    return localStorage.getItem(TOKEN_KEY) || '';
+    return '';
 }
 function clearToken() {
     authStateVersion += 1;
-    localStorage.removeItem(TOKEN_KEY);
+    hasAuthenticatedSession = false;
     currentUserId = null;
     currentUsername = '';
     currentUserEmail = '';
@@ -1032,8 +1031,6 @@ function clearToken() {
 }
 
 function handleUnauthorized() {
-    if (!getToken()) return;
-
     clearToken();
     stopPoll();
     currentGroupId = null;
@@ -1045,15 +1042,6 @@ function handleUnauthorized() {
     $('#notifBadge').text('');
     showScreen('screenAuth');
     authErr(uiText('פג תוקף ההתחברות. יש להתחבר מחדש.', 'Your session has expired. Please sign in again.'));
-}
-function parseUserId(token) {
-    try {
-        let encoded = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-        encoded += '='.repeat((4 - encoded.length % 4) % 4);
-        return JSON.parse(atob(encoded)).sub || null;
-    } catch (e) {
-        return null;
-    }
 }
 
 // Screens
@@ -1198,7 +1186,7 @@ $('#formLogin').on('submit', event => {
     const $button = $('#btnLogin').prop('disabled', true);
     apiCall('POST', '/auth/login', { identifier, password })
         .done(res => {
-            saveToken(res.token);
+            saveToken();
             currentUserRole = String(res.role || 'user');
             currentAdminPath = currentUserRole === 'admin' ? String(res.admin_path || '') : '';
             updateAdminDashboardButton();
@@ -1301,7 +1289,7 @@ $('#btnRegister').on('click', () => {
         language: currentLanguage
     })
         .done(res => {
-            saveToken(res.token);
+            saveToken();
             if (res.language) currentLanguage = res.language === 'en' ? 'en' : 'he';
             $('#regUsername, #regEmail, #regPassword, #regPasswordConfirm').val('');
             applyMainLanguage();
@@ -1813,7 +1801,7 @@ $('#btnGroupManage').on('click', openGroupManagement);
 $('#btnLanguage').on('click', () => {
     currentLanguage = currentLanguage === 'he' ? 'en' : 'he';
     applyMainLanguage();
-    if (getToken()) {
+    if (hasAuthenticatedSession) {
         apiCall('PATCH', '/profile/language', { language: currentLanguage });
     }
 });
@@ -3379,19 +3367,14 @@ $(function () {
     }
 
     applyMainLanguage();
-    const authToken = getToken();
-    if (authToken) {
-        currentUserId = parseUserId(authToken);
-        loadCurrentProfile()
-            .done(() => {
-                if (!redeemPendingInvite()) {
-                    sessionStorage.removeItem('last_group');
-                    loadGroups();
-                }
-            });
-    } else {
-        showScreen('screenAuth');
-    }
+    loadCurrentProfile()
+        .done(() => {
+            if (!redeemPendingInvite()) {
+                sessionStorage.removeItem('last_group');
+                loadGroups();
+            }
+        })
+        .fail(() => showScreen('screenAuth'));
 });
 
 function redeemPendingInvite() {
