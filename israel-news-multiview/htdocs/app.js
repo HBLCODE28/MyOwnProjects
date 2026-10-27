@@ -354,7 +354,8 @@
   function renderMarkets(values, updatedAt = 0) {
     if (!els.marketTickerItems) return;
     els.marketTickerItems.textContent = "";
-    const fragment = document.createDocumentFragment();
+    const sequence = document.createElement("div");
+    sequence.className = "market-ticker-sequence";
     MARKET_INDICES.forEach(index => {
       const quote = values?.[index.id];
       const item = document.createElement("div");
@@ -379,9 +380,14 @@
         item.setAttribute("aria-label", `${index.label}: נתון לא זמין`);
       }
       item.append(name, value, change);
-      fragment.appendChild(item);
+      sequence.appendChild(item);
     });
-    els.marketTickerItems.appendChild(fragment);
+    const duplicate = sequence.cloneNode(true);
+    duplicate.setAttribute("aria-hidden", "true");
+    const track = document.createElement("div");
+    track.className = "market-ticker-track";
+    track.append(sequence, duplicate);
+    els.marketTickerItems.appendChild(track);
     els.marketTickerItems.setAttribute("aria-busy", "false");
     if (updatedAt) els.marketTicker.title = `עודכן ${new Date(updatedAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
   }
