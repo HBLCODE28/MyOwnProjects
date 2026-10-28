@@ -251,7 +251,7 @@ if ('register' === $sub) {
     $email = strtolower(trim((string)($body['email'] ?? '')));
     $password = (string)($body['password'] ?? '');
     $passwordConfirmation = (string)($body['password_confirmation'] ?? $body['passwordConfirmation'] ?? '');
-    $preferredLanguage = in_array(($body['language'] ?? 'he'), ['he', 'en'], true) ? (string)$body['language'] : 'he';
+    $preferredLanguage = 'he';
 
     $missing = [];
     if ('' === $username) $missing[] = 'שם משתמש';

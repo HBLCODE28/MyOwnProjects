@@ -1,7 +1,6 @@
 // Grocery App - Frontend Logic (jQuery 3.x)
 
 const API       = '/api';
-const LANGUAGE_KEY = 'cg_language';
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -93,7 +92,6 @@ function applyMainLanguage() {
     document.documentElement.lang = currentLanguage;
     document.documentElement.dir = currentLanguage === 'he' ? 'rtl' : 'ltr';
     document.title = text.siteTitle;
-    localStorage.setItem(LANGUAGE_KEY, currentLanguage);
 
     $('.skip-link').text(text.skip);
     $('#btnBack').attr('aria-label', text.back);
@@ -139,10 +137,6 @@ function applyMainLanguage() {
     $('.nav-btn[data-tab="share"] span:last-child').text(text.share);
     $('.staple-toggle span').text(uiText('מוצר ברזל', 'Staple item'));
     $('#newItemStaple').attr('aria-label', uiText('מוצר ברזל; הסימון מתאפס אחרי יום', 'Staple item; completion resets after one day'));
-    $('#btnLanguage').attr({
-        'aria-label': currentLanguage === 'he' ? 'Switch to English' : 'מעבר לעברית',
-        title: currentLanguage === 'he' ? 'English' : 'עברית'
-    });
     $('.auth-title').text(text.siteTitle);
     $('.auth-sub').first().text(text.authSub);
     $('.auth-benefits').attr('aria-label', uiText('מה אפשר לעשות בסל שיתופי', 'What you can do with SharedCart'));
@@ -300,9 +294,6 @@ function loadCurrentProfile() {
             updateHomeProfileName();
             currentUserRole = String(profile.role || 'user');
             currentAdminPath = currentUserRole === 'admin' ? String(profile.admin_path || '') : '';
-            if (!localStorage.getItem(LANGUAGE_KEY) && profile.preferred_language) {
-                currentLanguage = profile.preferred_language === 'en' ? 'en' : 'he';
-            }
             updateAdminDashboardButton();
             applyMainLanguage();
         })
@@ -330,7 +321,7 @@ let currentUserEmail      = '';
 let currentUserRole       = 'user';
 let currentAdminPath      = '';
 let aboutReturnFocus      = null;
-let currentLanguage       = localStorage.getItem(LANGUAGE_KEY) === 'en' ? 'en' : 'he';
+let currentLanguage       = 'he';
 let pollTimer             = null;
 let serverClockOffsetMs   = 0;
 let resetSessionToken     = sessionStorage.getItem('cg_reset_token') || '';
@@ -1270,7 +1261,6 @@ $('#formLogin').on('submit', event => {
             currentUserRole = String(res.role || 'user');
             currentAdminPath = currentUserRole === 'admin' ? String(res.admin_path || '') : '';
             updateAdminDashboardButton();
-            if (res.language) currentLanguage = res.language === 'en' ? 'en' : 'he';
             applyMainLanguage();
             loadCurrentProfile()
                 .done(() => redeemPendingInvite() || loadGroups());
@@ -1370,7 +1360,6 @@ $('#btnRegister').on('click', () => {
     })
         .done(res => {
             saveToken();
-            if (res.language) currentLanguage = res.language === 'en' ? 'en' : 'he';
             $('#regUsername, #regEmail, #regPassword, #regPasswordConfirm').val('');
             applyMainLanguage();
             loadCurrentProfile()
@@ -1924,23 +1913,6 @@ $('#btnAdminDashboard').on('click', () => {
 });
 
 $('#btnGroupManage').on('click', openGroupManagement);
-
-$('#btnLanguage').on('click', () => {
-    currentLanguage = currentLanguage === 'he' ? 'en' : 'he';
-    applyMainLanguage();
-    if (currentGroupId) {
-        if (!$('#screenItems').hasClass('hidden')) loadItems();
-        else if (!$('#screenActivity').hasClass('hidden')) loadActivity();
-        else if (!$('#screenMembers').hasClass('hidden')) loadMembers();
-        else if (!$('#screenKitchen').hasClass('hidden')) loadKitchen();
-        else if (!$('#screenGroupAdmin').hasClass('hidden')) loadGroupManagement();
-    } else if (!$('#screenGroups').hasClass('hidden')) {
-        loadGroups();
-    }
-    if (hasAuthenticatedSession) {
-        apiCall('PATCH', '/profile/language', { language: currentLanguage });
-    }
-});
 
 $(window).on('resize', updateAdminDashboardButton);
 

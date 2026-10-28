@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-28 - Keep SharedCart Hebrew-only
+
+- Removed the language controls from the main app and administrator dashboard.
+- Forced the interface and new-account language preference to Hebrew, and made the legacy language endpoint retain Hebrew.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-28 - Complete SharedCart English interface coverage
 
 - Extended the existing language switch to translate previously missed static copy, dialogs, accessibility labels, group-management controls, sharing controls, and the About content.

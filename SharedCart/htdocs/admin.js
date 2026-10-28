@@ -1,7 +1,6 @@
 'use strict';
 
 const API = '/api';
-const LANGUAGE_KEY = 'cg_language';
 
 const TABLER_SPRITE_URL = '/img/tabler-icons.svg';
 const ADMIN_TIME_ZONE = 'Asia/Jerusalem';
@@ -13,7 +12,7 @@ const I18N = {
 
 I18N.en.pendingJoinRequests = 'Pending join requests';
 
-const state={language:localStorage.getItem(LANGUAGE_KEY)==='en'?'en':'he',view:'overview',period:30,search:'',page:1,userStatus:'all',groupStatus:'active',contentKind:'items',contentStatus:'all',moderationTab:'terms',moderationStatus:'open',lastRows:[]};
+const state={language:'he',view:'overview',period:30,search:'',page:1,userStatus:'all',groupStatus:'active',contentKind:'items',contentStatus:'all',moderationTab:'terms',moderationStatus:'open',lastRows:[]};
 let searchTimer=null;
 let lastSecurityScan=null;
 let lastHealthSnapshot=null;
@@ -188,7 +187,7 @@ function renderAuditDetails(value){
 }
 
 function installIcons(root=document){root.querySelectorAll('[data-icon]').forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
-function applyLanguage(){document.documentElement.lang=state.language;document.documentElement.dir=state.language==='he'?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=t(el.dataset.i18nPlaceholder));document.getElementById('pageTitle').textContent=t(state.view);const badge=document.getElementById('securityAlertBadge');if(badge)setSecurityAlertCount(badge.hidden?0:Number(badge.textContent)||0);localStorage.setItem(LANGUAGE_KEY,state.language)}
+function applyLanguage(){document.documentElement.lang='he';document.documentElement.dir='rtl';document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=t(el.dataset.i18nPlaceholder));document.getElementById('pageTitle').textContent=t(state.view);const badge=document.getElementById('securityAlertBadge');if(badge)setSecurityAlertCount(badge.hidden?0:Number(badge.textContent)||0)}
 async function api(path,options={}){const headers={...(options.headers||{})};if(options.body&&!(options.body instanceof FormData)){headers['Content-Type']='application/json';options.body=JSON.stringify(options.body)}const res=await fetch(API+path,{credentials:'same-origin',...options,headers});let data={};try{data=await res.json()}catch{}if(!res.ok){const err=new Error(data.error||data.message||`HTTP ${res.status}`);err.status=res.status;err.data=data;throw err}return data}
 function toast(message,error=false){const el=document.getElementById('adminToast');el.textContent=message;el.classList.toggle('error',error);el.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.hidden=true,3200)}
 function loading(){document.getElementById('adminContent').innerHTML=`<div class="loading-state"><div><div class="spinner"></div><p>${escapeHtml(t('loading'))}</p></div></div>`}
@@ -201,7 +200,7 @@ function showModal(title,body,actions=[]){const modal=document.getElementById('a
 function closeModal(){document.getElementById('adminModal').hidden=true}
 document.getElementById('adminModalClose').onclick=closeModal;document.getElementById('adminModal').addEventListener('click',e=>{if(e.target.id==='adminModal')closeModal()});
 
-async function loadMe(){const me=await api('/admin/me');document.getElementById('adminName').textContent=me.username||'Admin';document.getElementById('adminEmail').textContent=me.email||'';document.getElementById('adminAvatar').textContent=initials(me.username);setSecurityAlertCount(me.security_alerts);if(!localStorage.getItem(LANGUAGE_KEY)&&me.language){state.language=me.language==='en'?'en':'he';applyLanguage();setSecurityAlertCount(me.security_alerts)}}
+async function loadMe(){const me=await api('/admin/me');document.getElementById('adminName').textContent=me.username||'Admin';document.getElementById('adminEmail').textContent=me.email||'';document.getElementById('adminAvatar').textContent=initials(me.username);setSecurityAlertCount(me.security_alerts)}
 
 function updateToolbar(){
   const toolbar=document.getElementById('adminToolbar');
@@ -464,7 +463,6 @@ function syncDesktopGuard(){document.getElementById('adminApp').hidden=false;ret
 function bootEvents(){
   document.querySelectorAll('.admin-nav-item').forEach(b=>b.onclick=()=>switchAdminView(b.dataset.view));
   document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{state.period=Number(b.dataset.period);document.querySelectorAll('[data-period]').forEach(x=>x.classList.toggle('active',x===b));loadView()});
-  document.getElementById('btnAdminLanguage').onclick=async()=>{state.language=state.language==='he'?'en':'he';applyLanguage();try{await api('/profile/language',{method:'PATCH',body:{language:state.language}})}catch{}loadView()};
   document.getElementById('btnRefreshAdmin').onclick=loadView;
   document.getElementById('btnSecurityAlerts').onclick=()=>switchAdminView('health');
   document.getElementById('adminSearch').oninput=e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{state.search=e.target.value.trim();state.page=1;loadView()},350)};

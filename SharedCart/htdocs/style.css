@@ -1647,8 +1647,7 @@ body.item-actions-modal-open{overflow:hidden}
   background:#dbe9ff;
 }
 .admin-dashboard-btn .tabler-icon{width:19px;height:19px;flex:0 0 auto}
-.admin-dashboard-btn .tabler-icon,
-#btnLanguage .tabler-icon{width:21px;height:21px}
+.admin-dashboard-btn .tabler-icon{width:21px;height:21px}
 .item-title-wrap{flex:1;min-width:0}
 .item-name-and-actions{
   flex:0 1 auto;

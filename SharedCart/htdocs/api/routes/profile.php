@@ -85,12 +85,9 @@ if ('PATCH' === $method && 'password' === $sub) {
 }
 
 if ('PATCH' === $method && 'language' === $sub) {
-    $body = json_decode(file_get_contents('php://input'), true) ?? [];
-    $language = (string)($body['language'] ?? '');
-    if (!in_array($language, ['he', 'en'], true)) jsonError('Unsupported language');
     $stmt = $dbh->prepare('UPDATE users SET preferred_language = :language WHERE id = :uid');
-    $stmt->execute([':language' => $language, ':uid' => $uid]);
-    jsonOut(['message' => 'Language updated', 'language' => $language]);
+    $stmt->execute([':language' => 'he', ':uid' => $uid]);
+    jsonOut(['message' => 'הוגדרה עברית', 'language' => 'he']);
 }
 
 if ('DELETE' === $method && ('me' === $sub || '' === $sub)) {

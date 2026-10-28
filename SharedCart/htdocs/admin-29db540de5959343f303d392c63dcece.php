@@ -150,9 +150,6 @@ header('Referrer-Policy: same-origin');
             <span data-icon="shield-check"></span>
             <span id="securityAlertBadge" class="security-alert-badge" hidden>0</span>
           </button>
-          <button id="btnAdminLanguage" type="button" class="icon-button" aria-label="Language" title="Language">
-            <span data-icon="language"></span>
-          </button>
           <button id="btnRefreshAdmin" type="button" class="icon-button" aria-label="Refresh" title="Refresh">
             <span data-icon="refresh"></span>
           </button>
@@ -184,6 +181,6 @@ header('Referrer-Policy: same-origin');
   </div>
 
   <div id="adminToast" class="admin-toast" role="status" hidden></div>
-  <script src="admin.js?v=20261028-1"></script>
+  <script src="admin.js?v=20261028-2"></script>
 </body>
 </html>
