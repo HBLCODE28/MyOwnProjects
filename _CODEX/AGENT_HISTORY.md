@@ -573,3 +573,9 @@
 - Changed each quick-start option to create its group and populate a matching ready-made list, with visible loading and error feedback on desktop and mobile.
 - Updated asset cache versions so visitors receive the revised JavaScript and CSS.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-28 - Center SharedCart legal pages
+
+- Centered the privacy-policy and terms-of-use content in a wider, readable card.
+- Replaced the plain return link on both pages with a prominent, keyboard-accessible return button.
+- Backup: Git commit only, per the project backup policy.
