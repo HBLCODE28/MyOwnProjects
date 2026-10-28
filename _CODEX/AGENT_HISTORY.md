@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-28 - Complete SharedCart English interface coverage
+
+- Extended the existing language switch to translate previously missed static copy, dialogs, accessibility labels, group-management controls, sharing controls, and the About content.
+- Reloaded the active data screen after a language switch so dynamically rendered controls also use the selected language.
+- Added English legal-page content that follows the saved app language preference.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-28 - Make SharedCart mobile-ready and installable
 
 - Removed the desktop-only admin restriction and added a responsive phone layout with touch-scrollable navigation and tables, compact cards, stacked forms, and safe-area-aware dialogs.

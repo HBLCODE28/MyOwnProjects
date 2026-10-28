@@ -109,7 +109,9 @@ function applyMainLanguage() {
     $('#mobileMenuLeave span:last-child').text(text.leaveGroup);
     $('#mobileMenuBack span:last-child').text(text.backToGroups);
     $('#btnRenameGroup').text(text.rename);
+    $('#btnRenameGroup').attr('aria-label', currentLanguage === 'he' ? 'שנה את שם הקבוצה' : 'Rename group');
     $('#btnGroupManage, #mobileMenuManage span:last-child, #groupAdminEyebrow').text(text.groupManagement);
+    $('#btnGroupManage').attr('aria-label', currentLanguage === 'he' ? 'פתח ניהול קבוצה' : 'Open group management');
     $('#mobileMenuRename span:last-child').text(currentLanguage === 'he' ? 'שנה שם קבוצה' : 'Rename group');
     $('#screenGroups .section-label').eq(0).text(text.groupsTitle);
     $('#screenGroups .section-label').eq(1).text(text.newGroup);
@@ -117,6 +119,16 @@ function applyMainLanguage() {
     $('#btnCreateGroup').text(text.create);
     $('#btnJoinGroup').text(text.join);
     $('#quickStartTitle').text(uiText('להתחלה מהירה — קבוצה עם רשימה מוכנה', 'Quick start — a group with a ready-made list'));
+    $('.quick-start').attr('aria-label', uiText('התחלות מהירות', 'Quick starts'));
+    $('.quick-start-template[data-group-template="weekly"]').text(uiText('קניות שבועיות', 'Weekly shopping'));
+    $('.quick-start-template[data-group-template="roommates"]').text(uiText('דירת שותפים', 'Roommates'));
+    $('.quick-start-template[data-group-template="friday"]').text(uiText('ארוחת שישי', 'Friday dinner'));
+    $('#btnScanJoinQr').attr('aria-label', uiText('סרוק QR קוד להצטרפות', 'Scan a QR code to join')).find('span').text(uiText('סרוק QR', 'Scan QR'));
+    $('#joinQrClose').attr('aria-label', uiText('סגור סריקת QR', 'Close QR scanner'));
+    $('#joinQrTitle').text(uiText('סריקת QR להצטרפות', 'Scan QR to join'));
+    $('#joinQrStatus').text(uiText('אפשרו גישה למצלמה וכַוונו את הקוד למרכז המסך.', 'Allow camera access and point the code at the center of the screen.'));
+    $('#joinPendingTitle').text(uiText('מחכה לאישור מנהל', 'Waiting for manager approval'));
+    $('#btnPendingBack').text(uiText('חזרה לקבוצות שלי', 'Back to my groups'));
     $('#newItemName').attr({placeholder: text.itemPlaceholder, 'aria-label': text.itemPlaceholder});
     $('#newItemQty').attr('aria-label', text.quantity);
     $('#addItemForm .add-btn').text(text.addItem).attr('aria-label', text.addItem);
@@ -133,6 +145,17 @@ function applyMainLanguage() {
     });
     $('.auth-title').text(text.siteTitle);
     $('.auth-sub').first().text(text.authSub);
+    $('.auth-benefits').attr('aria-label', uiText('מה אפשר לעשות בסל שיתופי', 'What you can do with SharedCart'));
+    $('.auth-benefits span').eq(0).text(uiText('מוסיפים יחד', 'Add together'));
+    $('.auth-benefits span').eq(1).text(uiText('מסמנים כשנקנה', 'Mark items as bought'));
+    $('.auth-benefits span').eq(2).text(uiText('פחות הודעות', 'Fewer messages'));
+    $('.auth-demo').attr('aria-label', uiText('דוגמה מונפשת: נועה מוסיפה חלב, דן מסמן אותו כנקנה, והרשימה מתעדכנת', 'Animated example: Noa adds milk, Dan marks it as bought, and the list updates'));
+    $('.auth-demo-step-add span').eq(1).text(uiText('נועה הוסיפה חלב', 'Noa added milk'));
+    $('.auth-demo-step-check span').eq(1).text(uiText('דן קנה חלב', 'Dan bought milk'));
+    $('.auth-demo-step-next span').eq(1).text(uiText('נשארו ביצים ולחם', 'Eggs and bread remain'));
+    $('#btnAbout').text(uiText('מי אנחנו', 'About us'));
+    $('.auth-legal-links a').eq(0).text(uiText('מדיניות פרטיות', 'Privacy policy'));
+    $('.auth-legal-links a').eq(1).text(uiText('תנאי שימוש', 'Terms of use'));
     $('label[for="loginEmail"]').text(text.loginIdentifier);
     $('label[for="regEmail"], label[for="forgotEmail"], label[for="resetEmail"]').text(text.email);
     $('#loginEmail').attr('placeholder', currentLanguage === 'he' ? 'שם משתמש או your@email.com' : 'Username or your@email.com');
@@ -208,6 +231,9 @@ function applyMainLanguage() {
     $('#btnPickItemImage').attr('aria-label', text.addImage);
     $('#btnNotifications').attr('aria-label', text.notifications);
     $('#btnHomeProfile').attr('aria-label', currentLanguage === 'he' ? 'פתח פרופיל' : 'Open profile');
+    $('#btnProfile').attr('aria-label', currentLanguage === 'he' ? 'פתח פרופיל' : 'Open profile');
+    $('#btnLogout').attr('aria-label', text.logout);
+    $('#btnGroupMenu').attr('aria-label', currentLanguage === 'he' ? 'פתח תפריט קבוצה' : 'Open group menu');
     $('#profilePasswordTitle').text(currentLanguage === 'he' ? 'אבטחת החשבון' : 'Account security');
     $('#profilePasswordIntro').text(currentLanguage === 'he' ? 'שינוי סיסמה מחייב קוד אימות שיישלח לאימייל של החשבון.' : 'Changing the password requires a verification code sent to the account email.');
     $('#btnStartProfilePasswordChange').text(text.changePassword);
@@ -219,8 +245,42 @@ function applyMainLanguage() {
     $('#btnConfirmProfilePasswordChange').text(currentLanguage === 'he' ? 'שמור סיסמה חדשה' : 'Save new password');
     $('#btnAdminDashboard').attr({'aria-label': text.admin, title: text.admin});
     $('#adminDashboardLabel').text(text.admin);
+    $('#kitchenTitle').text(uiText('עדכון לפי אזור', 'Update by area'));
+    $('.kitchen-eyebrow span').text(uiText('מצב מטבח', 'Kitchen status'));
+    $('#kitchenCameraClose').attr('aria-label', uiText('סגור מצלמה', 'Close camera'));
+    $('#btnKitchenCameraCapture').text(uiText('צלם תמונה', 'Take photo'));
+    $('#btnKitchenChooseImage').text(uiText('בחר תמונה', 'Choose image'));
+    $('#itemList').attr('aria-label', uiText('פריטים לקנייה', 'Shopping items'));
+    $('#addItemForm').attr('aria-label', text.addItem);
+    $('#bottomNav').attr('aria-label', uiText('ניווט', 'Navigation'));
+    $('#memberJoinRequestList').attr('aria-label', uiText('בקשות הצטרפות', 'Join requests'));
+    $('#memberJoinRequestList').prev().find('h3').text(uiText('בקשות הצטרפות', 'Join requests'));
+    $('#memberJoinRequestsEmpty').text(uiText('אין בקשות הצטרפות ממתינות.', 'There are no pending join requests.'));
+    $('#groupMemberLimit').closest('.group-admin-card').find('h3').text(uiText('מגבלת משתתפים', 'Member limit'));
+    $('#groupMemberLimit').closest('.group-admin-card').find('p').text(uiText('השאירו 0 כדי לאפשר הצטרפות ללא הגבלה. קישורי ההזמנה נשארים פשוטים כמו ב־WhatsApp.', 'Use 0 to allow unlimited members. Invitation links stay as simple as WhatsApp links.'));
+    $('#groupMemberLimit').closest('label').contents().filter(function () { return this.nodeType === Node.TEXT_NODE; }).first().replaceWith(uiText('Maximum members ', 'Maximum members '));
+    $('#groupAdminMemberList').attr('aria-label', text.manageMembers);
+    $('#groupAdminMembersEmpty').text(uiText('אין משתתפים נוספים בקבוצה.', 'There are no additional group members.'));
+    $('#groupAdminContentList').attr('aria-label', text.manageContent);
+    $('#groupAdminContentEmpty').text(uiText('אין תוכן פעיל בקבוצה.', 'There is no active content in this group.'));
+    $('#btnDeleteMyAccount').text(uiText('מחיקת חשבון', 'Delete account'));
+    $('#itemActionImageText').text(uiText('הוסף תמונה', 'Add image'));
+    $('#btnItemActionStapleInfo .item-action-text').text(uiText('הסבר על מוצר ברזל', 'About staple items'));
+    $('#shareChoiceClose').attr('aria-label', uiText('סגור שיתוף', 'Close sharing'));
+    $('#shareChoiceTitle').text(uiText('שתף קבוצה', 'Share group'));
+    $('#btnShareLinkMode span').text(uiText('קישור', 'Link'));
+    $('#btnShareQrMode span').text(uiText('QR קוד', 'QR code'));
+    $('#btnCopyInviteMessage').text(uiText('העתק הודעה וקישור', 'Copy message and link'));
+    $('.share-qr-help').text(uiText('סרקו את הקוד במצלמת הטלפון כדי להצטרף לקבוצה.', 'Scan the code with your phone camera to join the group.'));
+    $('#shareQrCode').attr('aria-label', uiText('QR קוד להצטרפות לקבוצה', 'QR code for joining the group'));
+    $('#aboutClose').attr('aria-label', text.close);
+    $('#aboutTitle').text(uiText('מי אנחנו', 'About us'));
+    $('.about-copy p').eq(0).text(uiText('לא פעם ולא פעמיים רשימת הקניות נשלחת בקבוצת WhatsApp, נעלמת בין ההודעות, או ששיחת טלפון קצרה קוטעת בדיוק כשמנסים להיזכר מה חסר בבית.', 'Shopping lists often end up in a WhatsApp group, disappear among messages, or get interrupted by a quick call just when you are trying to remember what is missing at home.'));
+    $('.about-copy p').eq(1).text(uiText('סל שיתופי נותן לכל קבוצה מקום אחד ברור ונוח: מוסיפים פריטים, מסמנים מה כבר נקנה, ורואים היסטוריה כדי שלא יהיה ספק מי עדכן ומתי.', 'SharedCart gives every group one clear, convenient place to add items, mark what was bought, and see a history of who updated what and when.'));
+    $('.about-copy p').eq(2).text(uiText('אפשר לשתף קבוצה בקישור או ב־QR, לאשר חברים חדשים, להבליט מוצרי ברזל שתמיד צריכים בבית, ולהשתמש במצב מטבח כדי לעדכן בתמונות מה באמת נשאר במקרר ובמזווה.', 'You can share a group by link or QR code, approve new members, highlight household staples, and use Kitchen status to update the group with photos of what is actually left in the fridge and pantry.'));
+    $('.about-copy p').eq(3).text(uiText('המטרה פשוטה: פחות הודעות, פחות בלבול, ויותר קניות משותפות שעובדות.', 'The goal is simple: fewer messages, less confusion, and shared shopping that works.'));
     updateHomeProfileName();
-    $('#itemActionsClose, #commentsClose, #commentComposerClose, #reportClose, #imagePreviewClose').attr('aria-label', text.close);
+    $('#profileClose, #itemActionsClose, #commentsClose, #commentComposerClose, #reportClose, #imagePreviewClose').attr('aria-label', text.close);
 }
 
 function updateAdminDashboardButton() {
@@ -389,7 +449,7 @@ function showImagePreview(src, itemName, trigger) {
     imagePreviewReturnFocus = trigger || document.activeElement;
     $('#imagePreviewImage')
         .attr('src', cleanSrc)
-        .attr('alt', cleanName ? `תמונה מוגדלת של ${cleanName}` : 'תמונה מוגדלת של פריט');
+        .attr('alt', cleanName ? uiText(`תמונה מוגדלת של ${cleanName}`, `Enlarged image of ${cleanName}`) : uiText('תמונה מוגדלת של פריט', 'Enlarged item image'));
     $('#imagePreviewTitle')
         .text(cleanName)
         .toggleClass('hidden', !cleanName);
@@ -1868,6 +1928,15 @@ $('#btnGroupManage').on('click', openGroupManagement);
 $('#btnLanguage').on('click', () => {
     currentLanguage = currentLanguage === 'he' ? 'en' : 'he';
     applyMainLanguage();
+    if (currentGroupId) {
+        if (!$('#screenItems').hasClass('hidden')) loadItems();
+        else if (!$('#screenActivity').hasClass('hidden')) loadActivity();
+        else if (!$('#screenMembers').hasClass('hidden')) loadMembers();
+        else if (!$('#screenKitchen').hasClass('hidden')) loadKitchen();
+        else if (!$('#screenGroupAdmin').hasClass('hidden')) loadGroupManagement();
+    } else if (!$('#screenGroups').hasClass('hidden')) {
+        loadGroups();
+    }
     if (hasAuthenticatedSession) {
         apiCall('PATCH', '/profile/language', { language: currentLanguage });
     }
