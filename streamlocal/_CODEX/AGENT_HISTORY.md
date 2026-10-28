@@ -4,6 +4,15 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-28 | Desktop network library, series browsing, and poster refresh
+
+- Added a dedicated Windows network-folder field in Settings. It accepts validated UNC paths such as `\\SERVER\Media`, then scans that shared folder like any local source.
+- Redesigned the desktop Series page for larger libraries: alphabetized responsive cards, series/season/episode counts, and a filter field.
+- Strengthened artwork matching to use exact TVmaze and Wikipedia title matches only. The manual poster refresh now replaces existing artwork so previously incorrect images can be fixed.
+- Verification: renderer TypeScript check passed. The Electron main-process check and packaged build require installing the missing `desktop-app` development dependencies first.
+
+---
+
 ## 2026-10-26 | StreamLocal desktop player and home improvements
 
 - Updated the Windows Electron app (`desktop-app/`), not the browser PWA.

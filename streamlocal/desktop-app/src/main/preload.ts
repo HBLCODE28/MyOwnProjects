@@ -1,5 +1,29 @@
 import { contextBridge, ipcRenderer } from "electron";
+
 contextBridge.exposeInMainWorld("streamlocal", {
-  library: { selectFolder: () => ipcRenderer.invoke("library:selectFolder"), scan: (id: string) => ipcRenderer.invoke("library:scan", id), syncArtwork: () => ipcRenderer.invoke("library:syncArtwork"), listFiles: () => ipcRenderer.invoke("library:listFiles"), removeSource: (id: string) => ipcRenderer.invoke("library:removeSource", id), completeOnboarding: () => ipcRenderer.invoke("library:completeOnboarding"), export: () => ipcRenderer.invoke("library:export"), import: () => ipcRenderer.invoke("library:import"), onScanProgress: (callback: (value: unknown) => void) => { const listener = (_: unknown, value: unknown) => callback(value); ipcRenderer.on("library:scanProgress", listener); return () => ipcRenderer.removeListener("library:scanProgress", listener); }, onArtworkUpdated: (callback: (value: unknown) => void) => { const listener = (_: unknown, value: unknown) => callback(value); ipcRenderer.on("library:artworkUpdated", listener); return () => ipcRenderer.removeListener("library:artworkUpdated", listener); } },
-  media: { open: (id: string) => ipcRenderer.invoke("media:open", id) }, history: { saveProgress: (id: string, position: number, duration: number) => ipcRenderer.invoke("history:saveProgress", id, position, duration), importVlc: () => ipcRenderer.invoke("history:importVlc") }, settings: { get: () => ipcRenderer.invoke("settings:get"), set: (key: string) => ipcRenderer.invoke("settings:set", key), setProviderKey: (provider: string, key: string) => ipcRenderer.invoke("settings:setProviderKey", provider, key) }, subtitles: { search: (query: string, language: string) => ipcRenderer.invoke("subtitles:search", query, language), download: (id: string) => ipcRenderer.invoke("subtitles:download", id), preferred: (id: string) => ipcRenderer.invoke("subtitles:preferred", id) }
+  library: {
+    selectFolder: () => ipcRenderer.invoke("library:selectFolder"),
+    addNetworkFolder: (path: string) => ipcRenderer.invoke("library:addNetworkFolder", path),
+    scan: (id: string) => ipcRenderer.invoke("library:scan", id),
+    syncArtwork: (refreshExisting = false) => ipcRenderer.invoke("library:syncArtwork", refreshExisting),
+    listFiles: () => ipcRenderer.invoke("library:listFiles"),
+    removeSource: (id: string) => ipcRenderer.invoke("library:removeSource", id),
+    completeOnboarding: () => ipcRenderer.invoke("library:completeOnboarding"),
+    export: () => ipcRenderer.invoke("library:export"),
+    import: () => ipcRenderer.invoke("library:import"),
+    onScanProgress: (callback: (value: unknown) => void) => {
+      const listener = (_: unknown, value: unknown) => callback(value);
+      ipcRenderer.on("library:scanProgress", listener);
+      return () => ipcRenderer.removeListener("library:scanProgress", listener);
+    },
+    onArtworkUpdated: (callback: (value: unknown) => void) => {
+      const listener = (_: unknown, value: unknown) => callback(value);
+      ipcRenderer.on("library:artworkUpdated", listener);
+      return () => ipcRenderer.removeListener("library:artworkUpdated", listener);
+    },
+  },
+  media: { open: (id: string) => ipcRenderer.invoke("media:open", id) },
+  history: { saveProgress: (id: string, position: number, duration: number) => ipcRenderer.invoke("history:saveProgress", id, position, duration), importVlc: () => ipcRenderer.invoke("history:importVlc") },
+  settings: { get: () => ipcRenderer.invoke("settings:get"), set: (key: string) => ipcRenderer.invoke("settings:set", key), setProviderKey: (provider: string, key: string) => ipcRenderer.invoke("settings:setProviderKey", provider, key) },
+  subtitles: { search: (query: string, language: string) => ipcRenderer.invoke("subtitles:search", query, language), download: (id: string) => ipcRenderer.invoke("subtitles:download", id), preferred: (id: string) => ipcRenderer.invoke("subtitles:preferred", id) },
 });
