@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Karantina:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261027-1">
+  <link rel="stylesheet" href="style.css?v=20261028-1">
   </head>
   <body>
 
@@ -45,8 +45,11 @@
         <div class="auth-benefits" aria-label="מה אפשר לעשות בסל שיתופי">
           <span>מוסיפים יחד</span><span>מסמנים כשנקנה</span><span>פחות הודעות</span>
         </div>
-        <div class="auth-demo" aria-label="דוגמה: נועה הוסיפה חלב לרשימה ודן סימן אותו כנקנה">
-          <span class="auth-demo-avatar">נ</span><span>נועה הוסיפה חלב</span><span class="auth-demo-check">✓</span><span class="auth-demo-avatar second">ד</span>
+        <div class="auth-demo" aria-label="דוגמה מונפשת: נועה מוסיפה חלב, דן מסמן אותו כנקנה, והרשימה מתעדכנת">
+          <span class="auth-demo-list-icon" aria-hidden="true"><svg class="icon icon-tabler icon-tabler-shopping-cart tabler-icon" focusable="false"><use href="/img/tabler-icons.svg#tabler-shopping-cart"></use></svg></span>
+          <span class="auth-demo-step auth-demo-step-add" aria-hidden="true"><span class="auth-demo-avatar">נ</span><span>נועה הוסיפה חלב</span><span class="auth-demo-plus">+</span></span>
+          <span class="auth-demo-step auth-demo-step-check" aria-hidden="true"><span class="auth-demo-avatar second">ד</span><span>דן קנה חלב</span><span class="auth-demo-check">✓</span></span>
+          <span class="auth-demo-step auth-demo-step-next" aria-hidden="true"><span class="auth-demo-avatar third">מ</span><span>נשארו ביצים ולחם</span><span class="auth-demo-list-count">2</span></span>
         </div>
         <button id="btnAbout" type="button" class="auth-about-button" aria-haspopup="dialog">מי אנחנו</button>
 
@@ -134,10 +137,11 @@
         </div>
       </div>
       <div class="quick-start" aria-label="התחלות מהירות">
-        <p>להתחלה מהירה</p>
-        <button type="button" class="quick-start-template" data-group-template="קניות שבועיות">קניות שבועיות</button>
-        <button type="button" class="quick-start-template" data-group-template="דירת שותפים">דירת שותפים</button>
-        <button type="button" class="quick-start-template" data-group-template="ארוחת שישי">ארוחת שישי</button>
+        <p id="quickStartTitle">להתחלה מהירה — קבוצה עם רשימה מוכנה</p>
+        <button type="button" class="quick-start-template" data-group-template="weekly">קניות שבועיות</button>
+        <button type="button" class="quick-start-template" data-group-template="roommates">דירת שותפים</button>
+        <button type="button" class="quick-start-template" data-group-template="friday">ארוחת שישי</button>
+        <p id="quickStartStatus" class="quick-start-status" role="status" aria-live="polite"></p>
       </div>
 
       <p class="section-label">הצטרף לקבוצה קיימת</p>
@@ -525,6 +529,6 @@
   <script src="vendor/jquery-3.7.1.min.js?v=3.7.1-full-1"></script>
   <script src="vendor/qrcode.min.js?v=1.0.0"></script>
   <script src="vendor/jsQR.js?v=1.4.0"></script>
-  <script src="app.js?v=20261027-1"></script>
+  <script src="app.js?v=20261028-1"></script>
   </body>
   </html>

@@ -566,3 +566,10 @@
 - Added visible group-member limits and owner-managed delegated group managers while keeping invitation links one-step and familiar.
 - Added self-service account deletion with an explicit warning, session invalidation, and protection against deleting the last administrator.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-28 - Make SharedCart quick starts create usable lists
+
+- Replaced the compact onboarding example with a richer three-step shopping-list animation, including reduced-motion support.
+- Changed each quick-start option to create its group and populate a matching ready-made list, with visible loading and error feedback on desktop and mobile.
+- Updated asset cache versions so visitors receive the revised JavaScript and CSS.
+- Backup: Git commit only, per the project backup policy.

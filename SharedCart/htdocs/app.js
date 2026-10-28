@@ -110,6 +110,7 @@ function applyMainLanguage() {
     $('#screenGroups .section-label').eq(2).text(text.joinGroup);
     $('#btnCreateGroup').text(text.create);
     $('#btnJoinGroup').text(text.join);
+    $('#quickStartTitle').text(uiText('להתחלה מהירה — קבוצה עם רשימה מוכנה', 'Quick start — a group with a ready-made list'));
     $('#newItemName').attr({placeholder: text.itemPlaceholder, 'aria-label': text.itemPlaceholder});
     $('#newItemQty').attr('aria-label', text.quantity);
     $('#addItemForm .add-btn').text(text.addItem).attr('aria-label', text.addItem);
@@ -1552,8 +1553,51 @@ $('#btnCreateGroup').on('click', () => {
         .fail(xhr => alert(apiErr(xhr)));
 });
 
+const QUICK_START_TEMPLATES = {
+    weekly: {
+        name: { he: 'קניות שבועיות', en: 'Weekly shopping' },
+        items: { he: ['חלב', 'לחם', 'ביצים', 'ירקות', 'פירות'], en: ['Milk', 'Bread', 'Eggs', 'Vegetables', 'Fruit'] }
+    },
+    roommates: {
+        name: { he: 'דירת שותפים', en: 'Roommates apartment' },
+        items: { he: ['נייר טואלט', 'סבון כלים', 'קפה', 'חלב', 'שקיות אשפה'], en: ['Toilet paper', 'Dish soap', 'Coffee', 'Milk', 'Trash bags'] }
+    },
+    friday: {
+        name: { he: 'ארוחת שישי', en: 'Friday dinner' },
+        items: { he: ['חלה', 'יין', 'סלט', 'עוף', 'קינוח'], en: ['Challah', 'Wine', 'Salad', 'Chicken', 'Dessert'] }
+    }
+};
+
+function setQuickStartStatus(message, isError = false) {
+    $('#quickStartStatus').text(message).toggleClass('is-error', isError);
+}
+
+function addQuickStartItems(groupId, items) {
+    let request = $.Deferred().resolve().promise();
+    items.forEach(name => {
+        request = request.then(() => apiCall('POST', '/items', { group_id: groupId, name, quantity: 1, is_staple: false }));
+    });
+    return request;
+}
+
 $('.quick-start-template').on('click', function () {
-    $('#newGroupName').val($(this).data('group-template') || '').trigger('focus');
+    const template = QUICK_START_TEMPLATES[$(this).data('group-template')];
+    if (!template) return;
+
+    const name = template.name[currentLanguage] || template.name.he;
+    const items = template.items[currentLanguage] || template.items.he;
+    const $buttons = $('.quick-start-template').prop('disabled', true);
+    setQuickStartStatus(uiText('יוצרים קבוצה ומוסיפים רשימה מוכנה...', 'Creating the group and its ready-made list...'));
+
+    apiCall('POST', '/groups', { name })
+        .then(group => addQuickStartItems(group.id, items).then(() => group))
+        .done(group => {
+            setQuickStartStatus(uiText('הקבוצה והרשימה מוכנות.', 'Your group and list are ready.'));
+            showItems(group.id, group.name, true);
+            showShareBanner(group.id);
+        })
+        .fail(xhr => setQuickStartStatus(apiErr(xhr), true))
+        .always(() => $buttons.prop('disabled', false));
 });
 
 $('#btnJoinGroup').on('click', () => {
