@@ -4,6 +4,15 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-28 | Desktop VLC-style player controls
+
+- Reworked the Electron player into a compact top toolbar with Hebrew and English subtitle selection, brightness, playback speed, and a close action.
+- Added the requested subtitle alignment flow: pause on a line, then use “I SEE NOW” and “I HEAR NOW” to shift loaded subtitle cues by the measured offset.
+- Kept the existing subtitle search and download flow in an accessible drawer, with announced loading and error states.
+- Verified: renderer TypeScript check passed.
+
+---
+
 ## 2026-10-28 | Bundle desktop logo asset
 
 - Moved the renderer logo dependency into `desktop-app/src/renderer/assets/` and updated the app to load that bundled SVG.

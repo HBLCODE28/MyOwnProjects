@@ -86,16 +86,30 @@ nav button.active, nav button:hover { color: #fff; border-bottom: 2px solid var(
 .network-folder > div { display: flex; gap: 8px; }
 .network-folder button { white-space: nowrap; }
 .network-folder small { color: #aaa; }
-.player { position: fixed; inset: 0; z-index: 50; background: #000; padding: 82px 6vw 5vw; display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 25px; }
-.player video { width: 100%; max-height: 75vh; }
-.close { position: absolute; top: 82px; right: 6vw; z-index: 100; width: 40px; height: 40px; display: grid; place-items: center; background: #fff; color: #000; border-radius: 50%; padding: 0; font-size: 26px; line-height: 1; }
-.preferred-subs { display: flex; gap: 7px; margin: 12px 0; }
-.preferred-subs button { padding: 7px 10px; border-radius: 5px; background: var(--red-dark); }
-.subtitle { margin-top: 12px; background: #171717; padding: 10px; }
-.subtitle button { display: block; width: 100%; text-align: left; padding: 9px; border-bottom: 1px solid #333; }
-.subtitle.tools { display: grid; gap: 7px; }
-.subtitle.tools strong { font-size: 12px; color: #ffb1b1; }
-.subtitle.tools button { border-radius: 5px; background: #282020; }
+.player { position: fixed; inset: 0; z-index: 50; overflow: auto; background: #000; padding: 18px clamp(16px, 4vw, 72px) 40px; }
+.player-toolbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 60px; padding: 8px 0; background: linear-gradient(#000 75%, transparent); }
+.player-title { min-width: 0; }
+.player-title .eyebrow { margin: 0 0 3px; font-size: 10px; }
+.player-title strong { display: block; overflow: hidden; max-width: 42vw; text-overflow: ellipsis; white-space: nowrap; }
+.player-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
+.player-actions button, .player-menu button { border: 1px solid #542020; border-radius: 5px; background: #261111; padding: 8px 10px; }
+.player-actions button:hover, .player-menu button:hover { background: var(--red-dark); }
+.player-actions .close { width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: #fff; color: #000; font-size: 24px; line-height: 1; }
+.brightness, .speed { display: flex; align-items: center; gap: 6px; color: #ddd; font-size: 12px; }
+.brightness input { width: 82px; accent-color: var(--red); }
+.speed select { border: 1px solid #542020; border-radius: 5px; background: #171717; color: #fff; padding: 7px; }
+.player-menu { position: absolute; top: 62px; right: 48px; display: grid; gap: 9px; width: min(340px, calc(100vw - 32px)); padding: 14px; border: 1px solid #572424; border-radius: 8px; background: #161010; box-shadow: 0 18px 45px rgba(0, 0, 0, .65); }
+.player-menu strong { color: #ffb1b1; font-size: 13px; }
+.player-menu p { margin: 0; color: #c9c9c9; font-size: 12px; }
+.player-menu > div { display: flex; gap: 7px; }
+.player-menu > div button { flex: 1; }
+.player-menu .more-subtitles { justify-self: start; background: #282828; border-color: #444; }
+.player-video { display: grid; min-height: min(73vh, 820px); place-items: center; }
+.player video { width: 100%; max-height: 78vh; background: #050505; }
+.subtitle { margin: 18px auto 0; max-width: 980px; background: #171717; padding: 10px; }
+.subtitle button { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; width: 100%; text-align: left; padding: 10px; border-bottom: 1px solid #333; }
+.subtitle-languages { display: flex; gap: 8px; margin-bottom: 8px; }
+.subtitle-languages button { display: block; width: auto; border: 1px solid #542020; border-radius: 5px; background: #261111; }
 .notice { color: #7ae5a5; }
 .player .notice { position: fixed; z-index: 120; top: 82px; left: 50%; transform: translateX(-50%); max-width: min(680px, calc(100vw - 36px)); padding: 13px 20px; border: 1px solid var(--red); border-radius: 8px; background: #1c0606; box-shadow: 0 12px 35px #000; color: #fff; text-align: center; animation: message-hide 8s forwards; }
 @keyframes message-hide { 0%, 88% { opacity: 1; visibility: visible; } 100% { opacity: 0; visibility: hidden; } }

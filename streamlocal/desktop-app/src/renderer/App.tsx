@@ -55,4 +55,124 @@ function Settings({ data, refresh, addFolder, notify }: { data: Data; refresh: (
 
 function ProviderKey({ name, saved }: { name: string; saved: boolean }) { const [key, setKey] = useState(""); const id = name.toLowerCase().replace(/[^a-z]/g, ""); return <div className="provider-key"><input type="password" value={key} placeholder={saved ? `${name} key saved` : `${name} API key (optional)`} onChange={(event) => setKey(event.target.value)} /><button disabled={!key} onClick={async () => { await window.streamlocal.settings.setProviderKey(id, key); setKey(""); }}>Save</button></div>; }
 
-function Player({ file, initial, close, refresh }: { file: MediaFile; initial: number; close: () => void; refresh: () => void }) { const video = useRef<HTMLVideoElement>(null); const track = useRef<HTMLTrackElement>(null); const [src, setSrc] = useState(""); const [subs, setSubs] = useState<SubtitleResult[]>([]); const [subtitleUrl, setSubtitleUrl] = useState(""); const [preferred, setPreferred] = useState<{ he?: string; en?: string }>({}); const [subtitleOpen, setSubtitleOpen] = useState(false); const [moreOpen, setMoreOpen] = useState(false); const [message, setMessage] = useState(""); const [seenAt, setSeenAt] = useState<number | null>(null); const [heardAt, setHeardAt] = useState<number | null>(null); useEffect(() => { void window.streamlocal.media.open(file.id).then(setSrc).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "Playback could not start.")); void window.streamlocal.subtitles.preferred(file.id).then(setPreferred); const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); if (event.key === "ArrowLeft" && video.current) video.current.currentTime = Math.max(0, video.current.currentTime - 10); if (event.key === "ArrowRight" && video.current) video.current.currentTime += 10; }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, [file.id, close]); useEffect(() => { const element = video.current; if (!element) return; const save = () => { if (Number.isFinite(element.currentTime) && element.currentTime > 0) void window.streamlocal.history.saveProgress(file.id, element.currentTime, element.duration || 0).then(refresh); }; const timer = window.setInterval(save, 5000); return () => { window.clearInterval(timer); save(); }; }, [file.id, src, refresh]); async function search(language: string) { try { const results = await window.streamlocal.subtitles.search(file.type === "episode" ? `${file.series} S${file.season}E${file.episode}` : file.title, language); setSubs(results); setMessage(results.length ? `Choose one of the ${results.length} subtitle matches.` : "No matching subtitles were found."); } catch (error) { setMessage(error instanceof Error ? error.message : "Subtitle search failed."); } } function mark(kind: "seen" | "heard") { const now = video.current?.currentTime; if (now == null || !subtitleUrl) return setMessage("Choose subtitles first."); if (kind === "seen") { setSeenAt(now); if (heardAt == null) return setMessage("Subtitle marked. Press I HEAR IT NOW when you hear the same line."); sync(now, heardAt); } else { setHeardAt(now); if (seenAt == null) return setMessage("Audio marked. Press I SEE IT NOW when you see the same line."); sync(seenAt, now); } } function sync(subtitleTime: number, audioTime: number) { const cues = track.current?.track.cues; if (!cues) return setMessage("Subtitle track is still loading. Try again in a moment."); const offset = audioTime - subtitleTime; for (const cue of Array.from(cues)) { cue.startTime = Math.max(0, cue.startTime + offset); cue.endTime = Math.max(cue.startTime + .05, cue.endTime + offset); } setSeenAt(null); setHeardAt(null); setMessage(`Subtitles synchronized by ${offset >= 0 ? "+" : ""}${offset.toFixed(2)} seconds.`); } return <div className="player"><button className="close" aria-label="Close player" title="Close player (Esc)" onClick={close}>×</button>{src && <video ref={video} src={src} controls autoPlay onPause={() => { const element = video.current; if (element) void window.streamlocal.history.saveProgress(file.id, element.currentTime, element.duration || 0).then(refresh); }} onLoadedMetadata={(event) => { event.currentTarget.currentTime = initial; }}>{subtitleUrl && <track key={subtitleUrl} ref={track} kind="subtitles" src={subtitleUrl} default onLoad={(event) => { event.currentTarget.track.mode = "showing"; setMessage("Subtitles loaded and enabled."); }} onError={() => setMessage("The selected subtitle file could not be loaded.")} />}</video>}<aside><p className="eyebrow">NOW PLAYING</p><h2>{title(file)}</h2><div className="preferred-subs"><button onClick={() => { const url = preferred.he; if (url) { setMessage("Loading Hebrew subtitles…"); setSubtitleUrl(url); } else { void search("he"); setSubtitleOpen(true); } }}>HEBREW</button><button onClick={() => { const url = preferred.en; if (url) { setMessage("Loading English subtitles…"); setSubtitleUrl(url); } else { void search("en"); setSubtitleOpen(true); } }}>ENGLISH</button><button aria-expanded={moreOpen} aria-label="More player options" onClick={() => setMoreOpen(!moreOpen)}>⋯</button></div>{moreOpen && <div className="subtitle tools"><strong>Subtitle synchronization</strong><button onClick={() => mark("seen")}>{seenAt == null ? "I SEE IT NOW" : "SUBTITLE MARKED"}</button><button onClick={() => mark("heard")}>{heardAt == null ? "I HEAR IT NOW" : "AUDIO MARKED"}</button></div>}<button onClick={() => setSubtitleOpen(!subtitleOpen)}>More subtitles</button>{subtitleOpen && <div className="subtitle"><div><button onClick={() => void search("he")}>More Hebrew</button><button onClick={() => void search("en")}>More English</button></div>{subs.slice(0, 8).map((item) => <button key={item.id} onClick={async () => { try { setMessage("Loading subtitles…"); setSubtitleUrl(await window.streamlocal.subtitles.download(item.id)); } catch (error) { setMessage(error instanceof Error ? error.message : "Download failed."); } }}><b>{item.language.toUpperCase()}</b><span>{item.release || item.fileName}</span><small>{item.downloadCount} downloads</small></button>)}</div>}{message && <p className="notice" role="status" aria-live="polite">{message}</p>}</aside></div>; }
+function Player({ file, initial, close, refresh }: { file: MediaFile; initial: number; close: () => void; refresh: () => void }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const track = useRef<HTMLTrackElement>(null);
+  const [src, setSrc] = useState("");
+  const [subs, setSubs] = useState<SubtitleResult[]>([]);
+  const [subtitleUrl, setSubtitleUrl] = useState("");
+  const [preferred, setPreferred] = useState<{ he?: string; en?: string }>({});
+  const [subtitleOpen, setSubtitleOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [brightness, setBrightness] = useState(100);
+  const [rate, setRate] = useState(1);
+  const [message, setMessage] = useState("");
+  const [seenAt, setSeenAt] = useState<number | null>(null);
+  const [heardAt, setHeardAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    void window.streamlocal.media.open(file.id).then(setSrc).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "Playback could not start."));
+    void window.streamlocal.subtitles.preferred(file.id).then(setPreferred);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+      if (event.key === "ArrowLeft" && video.current) video.current.currentTime = Math.max(0, video.current.currentTime - 10);
+      if (event.key === "ArrowRight" && video.current) video.current.currentTime += 10;
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [file.id, close]);
+
+  useEffect(() => {
+    const element = video.current;
+    if (!element) return;
+    const save = () => {
+      if (Number.isFinite(element.currentTime) && element.currentTime > 0) void window.streamlocal.history.saveProgress(file.id, element.currentTime, element.duration || 0).then(refresh);
+    };
+    const timer = window.setInterval(save, 5000);
+    return () => { window.clearInterval(timer); save(); };
+  }, [file.id, src, refresh]);
+
+  async function search(language: string) {
+    try {
+      const results = await window.streamlocal.subtitles.search(file.type === "episode" ? `${file.series} S${file.season}E${file.episode}` : file.title, language);
+      setSubs(results);
+      setMessage(results.length ? `Choose one of the ${results.length} subtitle matches.` : "No matching subtitles were found.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Subtitle search failed.");
+    }
+  }
+
+  function choosePreferred(language: "he" | "en") {
+    const url = preferred[language];
+    if (url) {
+      setMessage(`Loading ${language === "he" ? "Hebrew" : "English"} subtitles…`);
+      setSubtitleUrl(url);
+    } else {
+      void search(language);
+      setSubtitleOpen(true);
+    }
+  }
+
+  function mark(kind: "seen" | "heard") {
+    const now = video.current?.currentTime;
+    if (now == null || !subtitleUrl) return setMessage("Choose subtitles first.");
+    if (kind === "seen") {
+      setSeenAt(now);
+      if (heardAt == null) return setMessage("Subtitle marked. Press I HEAR NOW when you hear the same line.");
+      sync(now, heardAt);
+      return;
+    }
+    setHeardAt(now);
+    if (seenAt == null) return setMessage("Audio marked. Press I SEE NOW when you see the same line.");
+    sync(seenAt, now);
+  }
+
+  function sync(subtitleTime: number, audioTime: number) {
+    const cues = track.current?.track.cues;
+    if (!cues) return setMessage("Subtitle track is still loading. Try again in a moment.");
+    const offset = audioTime - subtitleTime;
+    for (const cue of Array.from(cues)) {
+      cue.startTime = Math.max(0, cue.startTime + offset);
+      cue.endTime = Math.max(cue.startTime + .05, cue.endTime + offset);
+    }
+    setSeenAt(null);
+    setHeardAt(null);
+    setMessage(`Subtitles synchronized by ${offset >= 0 ? "+" : ""}${offset.toFixed(2)} seconds.`);
+  }
+
+  return <div className="player">
+    <div className="player-toolbar" aria-label="Player controls">
+      <div className="player-title"><p className="eyebrow">NOW PLAYING</p><strong>{title(file)}</strong></div>
+      <div className="player-actions">
+        <button onClick={() => choosePreferred("he")}>HEBREW</button>
+        <button onClick={() => choosePreferred("en")}>ENGLISH</button>
+        <label className="brightness">Brightness <input type="range" min="50" max="150" value={brightness} onChange={(event) => setBrightness(Number(event.target.value))} /></label>
+        <label className="speed">Speed <select value={rate} onChange={(event) => { const nextRate = Number(event.target.value); setRate(nextRate); if (video.current) video.current.playbackRate = nextRate; }}><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+        <button aria-expanded={moreOpen} aria-controls="player-more-options" aria-label="More player options" onClick={() => setMoreOpen(!moreOpen)}>⋯</button>
+        <button className="close" aria-label="Close player" title="Close player (Esc)" onClick={close}>×</button>
+      </div>
+      {moreOpen && <div id="player-more-options" className="player-menu">
+        <strong>Subtitle synchronization</strong>
+        <p>Pause on one line, then mark when you see and hear it.</p>
+        <div><button onClick={() => mark("seen")}>{seenAt == null ? "I SEE NOW" : "SUBTITLE MARKED"}</button><button onClick={() => mark("heard")}>{heardAt == null ? "I HEAR NOW" : "AUDIO MARKED"}</button></div>
+        <button className="more-subtitles" onClick={() => setSubtitleOpen(!subtitleOpen)} aria-expanded={subtitleOpen}>More subtitles</button>
+      </div>}
+    </div>
+    <div className="player-video">
+      {src && <video ref={video} src={src} style={{ filter: `brightness(${brightness}%)` }} controls autoPlay onPause={() => {
+        const element = video.current;
+        if (element) void window.streamlocal.history.saveProgress(file.id, element.currentTime, element.duration || 0).then(refresh);
+      }} onLoadedMetadata={(event) => { event.currentTarget.currentTime = initial; event.currentTarget.playbackRate = rate; }}>
+        {subtitleUrl && <track key={subtitleUrl} ref={track} kind="subtitles" src={subtitleUrl} default onLoad={(event) => { event.currentTarget.track.mode = "showing"; setMessage("Subtitles loaded and enabled."); }} onError={() => setMessage("The selected subtitle file could not be loaded.")} />}
+      </video>}
+    </div>
+    {subtitleOpen && <section className="subtitle subtitle-drawer" aria-label="Subtitle matches">
+      <div className="subtitle-languages"><button onClick={() => void search("he")}>More Hebrew</button><button onClick={() => void search("en")}>More English</button></div>
+      {subs.slice(0, 8).map((item) => <button key={item.id} onClick={async () => {
+        try { setMessage("Loading subtitles…"); setSubtitleUrl(await window.streamlocal.subtitles.download(item.id)); }
+        catch (error) { setMessage(error instanceof Error ? error.message : "Download failed."); }
+      }}><b>{item.language.toUpperCase()}</b><span>{item.release || item.fileName}</span><small>{item.downloadCount} downloads</small></button>)}
+    </section>}
+    {message && <p className="notice" role="status" aria-live="polite">{message}</p>}
+  </div>;
+}
