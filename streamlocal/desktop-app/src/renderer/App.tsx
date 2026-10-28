@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MediaFile, Source, SubtitleResult } from "../shared/types";
 
-const appLogo = new URL("../../../frontend/public/icons/icon-192.png", import.meta.url).href;
+const appLogo = new URL("./assets/streamlocal-icon.svg", import.meta.url).href;
 type Data = Awaited<ReturnType<typeof window.streamlocal.library.listFiles>>;
 const title = (file: MediaFile) => file.type === "episode" ? `${file.series} · S${String(file.season).padStart(2, "0")}E${String(file.episode).padStart(2, "0")}` : file.title;
 const seriesName = (file: MediaFile) => file.series || "Unknown Series";

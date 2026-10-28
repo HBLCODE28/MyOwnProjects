@@ -4,6 +4,14 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-28 | Bundle desktop logo asset
+
+- Moved the renderer logo dependency into `desktop-app/src/renderer/assets/` and updated the app to load that bundled SVG.
+- This removes the invalid cross-project reference to `frontend/public`, so the logo works in Electron development and packaged builds.
+- Verification: desktop renderer TypeScript check passed.
+
+---
+
 ## 2026-10-28 | Desktop network library, series browsing, and poster refresh
 
 - Added a dedicated Windows network-folder field in Settings. It accepts validated UNC paths such as `\\SERVER\Media`, then scans that shared folder like any local source.
