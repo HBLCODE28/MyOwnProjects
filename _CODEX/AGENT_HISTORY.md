@@ -579,3 +579,8 @@
 - Centered the privacy-policy and terms-of-use content in a wider, readable card.
 - Replaced the plain return link on both pages with a prominent, keyboard-accessible return button.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-28 - Add SharedCart privacy support contact
+
+- Added the support email address to the privacy policy as a clickable mail link for account-deletion and privacy inquiries.
+- Backup: Git commit only, per the project backup policy.
