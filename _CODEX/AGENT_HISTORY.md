@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-28 - Make SharedCart mobile-ready and installable
+
+- Removed the desktop-only admin restriction and added a responsive phone layout with touch-scrollable navigation and tables, compact cards, stacked forms, and safe-area-aware dialogs.
+- Added a web app manifest and service worker so Chrome can install SharedCart as a standalone app and retain the app shell for offline launch; API and admin traffic are never cached.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-27 - Use inclusive Hebrew wording in Israel News Multiview
 
 - Updated direct user-facing wording to address women and men, while using gender-neutral wording where it is clearer.

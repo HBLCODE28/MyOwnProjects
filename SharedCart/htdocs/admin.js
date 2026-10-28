@@ -460,7 +460,7 @@ async function renderHealth(){
 function bindPaging(){document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{state.page=Math.max(1,Number(b.dataset.page));loadView()})}
 function exportCsv(){if(!state.lastRows.length){toast(t('noData'),true);return}const keys=[...new Set(state.lastRows.flatMap(Object.keys))];const csv=[keys.join(','),...state.lastRows.map(row=>keys.map(k=>`"${String(row[k]??'').replace(/"/g,'""')}"`).join(','))].join('\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`sharedcart-${state.view}-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href)}
 
-function syncDesktopGuard(){const desktop=matchMedia('(min-width:1024px)').matches;document.getElementById('desktopOnly').hidden=desktop;document.getElementById('adminApp').hidden=!desktop;return desktop}
+function syncDesktopGuard(){document.getElementById('adminApp').hidden=false;return true}
 function bootEvents(){
   document.querySelectorAll('.admin-nav-item').forEach(b=>b.onclick=()=>switchAdminView(b.dataset.view));
   document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{state.period=Number(b.dataset.period);document.querySelectorAll('[data-period]').forEach(x=>x.classList.toggle('active',x===b));loadView()});
@@ -470,9 +470,8 @@ function bootEvents(){
   document.getElementById('adminSearch').oninput=e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{state.search=e.target.value.trim();state.page=1;loadView()},350)};
   document.getElementById('btnExportCsv').onclick=exportCsv;
   window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-  window.addEventListener('resize',syncDesktopGuard);
 }
 
 
-async function boot(){installIcons();applyLanguage();if(!syncDesktopGuard())return;bootEvents();try{await loadMe();await loadView()}catch(e){if(e.status===401||e.status===403){location.replace('index.html?admin_access=denied');return}renderError(e);toast(e.message,true)}}
+async function boot(){installIcons();applyLanguage();syncDesktopGuard();bootEvents();try{await loadMe();await loadView()}catch(e){if(e.status===401||e.status===403){location.replace('index.html?admin_access=denied');return}renderError(e);toast(e.message,true)}}
 boot();

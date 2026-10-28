@@ -2,6 +2,12 @@
 
 const API       = '/api';
 const LANGUAGE_KEY = 'cg_language';
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+}
 const POLL_MS   = 5000;
 const KITCHEN_CAPTURE_MAX_DIMENSION = 1280;
 const KITCHEN_CAPTURE_QUALITY = .76;
