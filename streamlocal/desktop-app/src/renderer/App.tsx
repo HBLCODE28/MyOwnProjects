@@ -66,6 +66,12 @@ function Player({ file, initial, close, refresh }: { file: MediaFile; initial: n
   const [message, setMessage] = useState("");
   const [seenAt, setSeenAt] = useState<number | null>(null);
   const [heardAt, setHeardAt] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(true);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+  const [position, setPosition] = useState(initial);
+  const [duration, setDuration] = useState(0);
+  const [subtitleQuery, setSubtitleQuery] = useState("");
 
   useEffect(() => {
     void window.streamlocal.media.open(file.id).then(setSrc).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "Playback could not start."));
@@ -88,6 +94,10 @@ function Player({ file, initial, close, refresh }: { file: MediaFile; initial: n
     const timer = window.setInterval(save, 5000);
     return () => { window.clearInterval(timer); save(); };
   }, [file.id, src, refresh]);
+
+  useEffect(() => {
+    if (video.current) video.current.volume = volume;
+  }, [volume, src]);
 
   async function search(language: string) {
     try {
@@ -137,6 +147,27 @@ function Player({ file, initial, close, refresh }: { file: MediaFile; initial: n
     setMessage(`Subtitles synchronized by ${offset >= 0 ? "+" : ""}${offset.toFixed(2)} seconds.`);
   }
 
+  function togglePlay() {
+    const element = video.current;
+    if (!element) return;
+    if (element.paused) void element.play(); else element.pause();
+  }
+
+  function seekBy(amount: number) {
+    if (video.current) video.current.currentTime = Math.max(0, Math.min(video.current.duration || Infinity, video.current.currentTime + amount));
+  }
+
+  function formatTime(seconds: number) {
+    const total = Math.max(0, Math.floor(seconds || 0));
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+  }
+
+  function toggleFullscreen() {
+    const element = video.current;
+    if (!element) return;
+    if (document.fullscreenElement) void document.exitFullscreen(); else void element.requestFullscreen();
+  }
+
   return <div className="player">
     <div className="player-toolbar" aria-label="Player controls">
       <div className="player-title"><p className="eyebrow">NOW PLAYING</p><strong>{title(file)}</strong></div>
@@ -156,16 +187,40 @@ function Player({ file, initial, close, refresh }: { file: MediaFile; initial: n
       </div>}
     </div>
     <div className="player-video">
-      {src && <video ref={video} src={src} style={{ filter: `brightness(${brightness}%)` }} controls autoPlay onPause={() => {
+      {src && <video ref={video} src={src} style={{ filter: `brightness(${brightness}%)` }} autoPlay muted={muted} onPlay={() => setPlaying(true)} onPause={() => {
         const element = video.current;
         if (element) void window.streamlocal.history.saveProgress(file.id, element.currentTime, element.duration || 0).then(refresh);
-      }} onLoadedMetadata={(event) => { event.currentTarget.currentTime = initial; event.currentTarget.playbackRate = rate; }}>
+        setPlaying(false);
+      }} onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)} onLoadedMetadata={(event) => { setDuration(event.currentTarget.duration); event.currentTarget.currentTime = initial; event.currentTarget.playbackRate = rate; }}>
         {subtitleUrl && <track key={subtitleUrl} ref={track} kind="subtitles" src={subtitleUrl} default onLoad={(event) => { event.currentTarget.track.mode = "showing"; setMessage("Subtitles loaded and enabled."); }} onError={() => setMessage("The selected subtitle file could not be loaded.")} />}
       </video>}
+      <div className="netflix-controls" aria-label="Video controls">
+        <label className="sr-only" htmlFor="player-seek">Playback position</label>
+        <input id="player-seek" className="player-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(position, duration || 0)} onChange={(event) => { const next = Number(event.target.value); setPosition(next); if (video.current) video.current.currentTime = next; }} />
+        <div className="control-row">
+          <div className="control-group">
+            <button aria-label={playing ? "Pause" : "Play"} onClick={togglePlay}>{playing ? "❚❚" : "▶"}</button>
+            <button aria-label="Rewind 10 seconds" onClick={() => seekBy(-10)}>↶10</button>
+            <button aria-label="Forward 10 seconds" onClick={() => seekBy(10)}>10↷</button>
+            <button aria-label={muted ? "Unmute" : "Mute"} onClick={() => setMuted(!muted)}>{muted ? "🔇" : "🔊"}</button>
+            <label className="volume-control"><span className="sr-only">Volume</span><input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={(event) => { setVolume(Number(event.target.value)); setMuted(false); }} /></label>
+            <span className="timecode">{formatTime(position)} / {formatTime(duration)}</span>
+          </div>
+          <div className="control-group">
+            <button aria-label="Subtitle and audio options" onClick={() => setMoreOpen(!moreOpen)}>CC</button>
+            <button aria-label="Playback speed" onClick={() => setMoreOpen(!moreOpen)}>{rate}×</button>
+            <button aria-label="Fullscreen" onClick={toggleFullscreen}>⛶</button>
+          </div>
+        </div>
+      </div>
     </div>
-    {subtitleOpen && <section className="subtitle subtitle-drawer" aria-label="Subtitle matches">
-      <div className="subtitle-languages"><button onClick={() => void search("he")}>More Hebrew</button><button onClick={() => void search("en")}>More English</button></div>
-      {subs.slice(0, 8).map((item) => <button key={item.id} onClick={async () => {
+    {subtitleOpen && <section className="subtitle subtitle-drawer" aria-labelledby="subtitle-drawer-title">
+      <div className="subtitle-drawer-head"><div><h3 id="subtitle-drawer-title">More subtitles</h3><p>Select a subtitle track or search the available results.</p></div><button className="subtitle-close" aria-label="Close subtitle list" onClick={() => setSubtitleOpen(false)}>×</button></div>
+      <label className="subtitle-search">Filter subtitles<input value={subtitleQuery} onChange={(event) => setSubtitleQuery(event.target.value)} placeholder="Search release or language" /></label>
+      <div className="subtitle-languages"><button onClick={() => void search("he")}>Search Hebrew</button><button onClick={() => void search("en")}>Search English</button></div>
+      {!subs.length && <p className="subtitle-empty" role="status">No subtitle results yet. Choose a language to search.</p>}
+      {!!subs.length && !subs.some((item) => (item.release || item.fileName || item.language).toLowerCase().includes(subtitleQuery.toLowerCase())) && <p className="subtitle-empty" role="status">No subtitles match this filter.</p>}
+      {subs.filter((item) => (item.release || item.fileName || item.language).toLowerCase().includes(subtitleQuery.toLowerCase())).slice(0, 8).map((item) => <button className="subtitle-result" key={item.id} onClick={async () => {
         try { setMessage("Loading subtitles…"); setSubtitleUrl(await window.streamlocal.subtitles.download(item.id)); }
         catch (error) { setMessage(error instanceof Error ? error.message : "Download failed."); }
       }}><b>{item.language.toUpperCase()}</b><span>{item.release || item.fileName}</span><small>{item.downloadCount} downloads</small></button>)}

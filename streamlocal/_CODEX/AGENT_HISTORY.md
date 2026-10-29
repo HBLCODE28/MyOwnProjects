@@ -4,6 +4,15 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-29 | Netflix player and subtitle accessibility
+
+- Reworked the desktop player controls to match the Netflix-style player reference: custom seek bar, play/pause, ±10-second seeking, mute/volume, timecode, captions, speed, and fullscreen.
+- Improved More subtitles with a labelled filter, language search actions, close control, empty states, and keyboard-friendly result buttons.
+- Added exact TMDb movie poster matching when a TMDb key is configured, with stricter Wikimedia matching and the existing Wikipedia fallback.
+- Verification: main and renderer TypeScript checks passed via the local TypeScript binary; PHP smoke lint passed.
+
+---
+
 ## 2026-10-29 | Remove obsolete Windows builds
 
 - Removed the old Windows release folders and duplicate unpacked build.
