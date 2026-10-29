@@ -4,6 +4,13 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-29 | Remove obsolete Windows builds
+
+- Removed the old Windows release folders and duplicate unpacked build.
+- Kept the current release/StreamLocal-Setup.exe installer from 28/10.
+
+---
+
 ## 2026-10-29 | Complete desktop task list
 
 - Confirmed the packaged Electron app loads its bundled renderer directly and does not require the website at runtime.
