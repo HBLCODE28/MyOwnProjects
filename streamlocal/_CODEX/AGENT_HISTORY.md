@@ -4,6 +4,17 @@ Rolling log of agent changes. Most recent first.
 
 ---
 
+## 2026-10-29 | Complete desktop task list
+
+- Confirmed the packaged Electron app loads its bundled renderer directly and does not require the website at runtime.
+- Added the requested Home blur transition and landscape artwork cards, while keeping portrait cards for Movies and Series.
+- Added consistent logo-style title treatment for movies and series.
+- Improved movie poster lookup with a Wikimedia Commons poster search before the exact Wikipedia fallback.
+- Kept the player free of an intro-skip button and retained subtitle synchronization and the working close action.
+- Verification: renderer TypeScript check passed.
+
+---
+
 ## 2026-10-28 | Desktop VLC-style player controls
 
 - Reworked the Electron player into a compact top toolbar with Hebrew and English subtitle selection, brightness, playback speed, and a close action.
