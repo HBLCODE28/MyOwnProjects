@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-30 - Add a lo-fi music control to Hila Playground
+
+- Added an accessible play/pause music button directly above the welcome line in the hero section.
+- Implemented a quiet, browser-generated lo-fi loop, activated only after the visitor presses the button; no external audio file or licence dependency is required.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-30 - Enable Hila Playground project dragging on touch screens
 
 - Removed the touch-only guard from the existing Pointer Events drag handler, so project shapes can be dragged on phones while a short tap still opens the project.

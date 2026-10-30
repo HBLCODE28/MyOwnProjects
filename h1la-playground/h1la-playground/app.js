@@ -174,6 +174,75 @@
   positionShapes();
   window.addEventListener('resize',()=>{if(!active)positionShapes();});
   requestAnimationFrame(physics);
+
+  const musicButton = document.getElementById('music-toggle');
+  const musicStatus = document.getElementById('music-status');
+  let audioContext = null;
+  let musicTimer = null;
+  let musicStep = 0;
+  let musicPlaying = false;
+
+  const playTone = (frequency, start, duration, volume, type = 'triangle') => {
+    const oscillator = audioContext.createOscillator();
+    const filter = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, start);
+    filter.type = 'lowpass';
+    filter.frequency.value = 1250;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + .025);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(filter).connect(gain).connect(audioContext.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + .04);
+  };
+
+  const playKick = start => {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.frequency.setValueAtTime(110, start);
+    oscillator.frequency.exponentialRampToValueAtTime(45, start + .12);
+    gain.gain.setValueAtTime(.075, start);
+    gain.gain.exponentialRampToValueAtTime(.0001, start + .14);
+    oscillator.connect(gain).connect(audioContext.destination);
+    oscillator.start(start);
+    oscillator.stop(start + .15);
+  };
+
+  const scheduleMusic = () => {
+    if (!musicPlaying || !audioContext) return;
+    const now = audioContext.currentTime + .04;
+    const chords = [[130.81, 155.56, 196], [146.83, 174.61, 220], [110, 130.81, 164.81], [123.47, 146.83, 196]];
+    const chord = chords[Math.floor(musicStep / 4) % chords.length];
+    if (musicStep % 4 === 0) chord.forEach(note => playTone(note, now, 1.32, .018));
+    playTone(chord[musicStep % chord.length] * 2, now, .28, .012, 'sine');
+    if (musicStep % 2 === 0) playKick(now);
+    musicStep += 1;
+  };
+
+  const setMusicState = isPlaying => {
+    musicPlaying = isPlaying;
+    musicButton.setAttribute('aria-pressed', String(isPlaying));
+    musicButton.querySelector('.music-toggle-label').textContent = isPlaying ? 'השהה מוזיקה' : 'הפעל מוזיקה';
+    musicStatus.textContent = isPlaying ? 'מוזיקת רקע הופעלה' : 'מוזיקת רקע הושהתה';
+  };
+
+  musicButton?.addEventListener('click', async () => {
+    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (musicPlaying) {
+      clearInterval(musicTimer);
+      musicTimer = null;
+      await audioContext.suspend();
+      setMusicState(false);
+      return;
+    }
+    await audioContext.resume();
+    musicStep = 0;
+    setMusicState(true);
+    scheduleMusic();
+    musicTimer = window.setInterval(scheduleMusic, 340);
+  });
 })();
 // Hero Typing Animation
 

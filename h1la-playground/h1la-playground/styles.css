@@ -123,6 +123,51 @@ button {
     margin-top: 25px
 }
 
+.music-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 9px 17px;
+    margin: 0 0 18px;
+    border: 1px solid var(--brown);
+    border-radius: 999px;
+    background: rgba(250,249,245,.74);
+    color: var(--brown);
+    cursor: pointer;
+    font-weight: 700;
+    transition: background .2s, color .2s, transform .2s;
+}
+
+.music-toggle:hover,
+.music-toggle[aria-pressed="true"] {
+    background: var(--brown);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.music-toggle:focus-visible {
+    outline: 3px solid var(--rose);
+    outline-offset: 3px;
+}
+
+.music-toggle-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .eyebrow {
     display: flex;
     justify-content: center;
@@ -1173,6 +1218,7 @@ button {
   .nav-github { padding: 8px 10px; }
   .hero { min-height: 570px; height: 100svh; max-height: 820px; padding: 95px 16px 80px; }
   .hero-content { width: 100%; margin-top: 0; }
+  .music-toggle { margin-bottom: 14px; }
   .hero-title { font-size: clamp(74px, 23vw, 124px); letter-spacing: -.065em; padding: 0; margin: 0 0 18px; }
   .typing-cursor { margin-left: 4px; width: 3px; }
   .eyebrow { font-size: clamp(11px, 3.1vw, 14px); flex-wrap: wrap; padding-inline: 4px; }
