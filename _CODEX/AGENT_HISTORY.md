@@ -615,3 +615,8 @@
 - Added a responsive Hebrew RTL static landing page for h1la.com with a SharedCart project card and GitHub link.
 - Added a resilient `logo.png` slot that shows a styled placeholder until the logo file is uploaded.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-30 - Build h1la.com website
+
+- Added the h1la.com static website build, including its HTML, styling, project data, and interactive behavior.
+- Backup: Git commit only, per the project backup policy.
