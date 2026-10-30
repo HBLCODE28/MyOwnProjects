@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-30 - Upgrade Hila Playground background music
+
+- Replaced the browser-generated tone loop with the CC0-licensed `Lofi Hip Hop Loop` by omfgdude, stored locally in the project and configured to loop.
+- Increased the background-music volume to 60% while retaining the visitor-controlled play/pause button.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-30 - Add a lo-fi music control to Hila Playground
 
 - Added an accessible play/pause music button directly above the welcome line in the hero section.
