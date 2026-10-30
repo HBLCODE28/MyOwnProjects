@@ -70,7 +70,7 @@
     shapes.push(state);
     let drag = null;
     button.addEventListener('pointerdown', e => {
-      if (e.button !== 0 || active || e.pointerType === 'touch') return;
+      if (e.button !== 0 || active) return;
       drag = {id:e.pointerId,startX:e.clientX,startY:e.clientY,x:state.x,y:state.y,moved:false,t:performance.now()};
       button.setPointerCapture(e.pointerId);state.hold=true;
     });

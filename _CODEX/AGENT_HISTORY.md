@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-30 - Enable Hila Playground project dragging on touch screens
+
+- Removed the touch-only guard from the existing Pointer Events drag handler, so project shapes can be dragged on phones while a short tap still opens the project.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-30 - Move SharedCart configuration outside the web root
 
 - Updated SharedCart PHP entry points, helpers, and API routes to load `secret/config.php` outside `htdocs`, using the correct path for each directory depth.
