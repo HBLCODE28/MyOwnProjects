@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-30 - Move SharedCart configuration outside the web root
+
+- Updated SharedCart PHP entry points, helpers, and API routes to load `secret/config.php` outside `htdocs`, using the correct path for each directory depth.
+- Updated the internal security check to inspect that external configuration file rather than the removed public API configuration file.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-28 - Keep SharedCart Hebrew-only
 
 - Removed the language controls from the main app and administrator dashboard.

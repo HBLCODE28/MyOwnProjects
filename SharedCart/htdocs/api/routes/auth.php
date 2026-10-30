@@ -5,7 +5,7 @@
 // POST /api/auth/forgot-password
 // POST /api/auth/verify-reset-code
 // POST /api/auth/reset-password
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../../../secret/config.php';
 require_once __DIR__ . '/../auth_helper.php';
 require_once __DIR__ . '/../email_helper.php';
 

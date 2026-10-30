@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../../../secret/config.php';
 
 const ADMIN_CONSOLE_PATH = '/admin-29db540de5959343f303d392c63dcece.php';
 

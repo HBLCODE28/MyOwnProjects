@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../../../secret/config.php';
 require_once __DIR__ . '/../auth_helper.php';
 require_once __DIR__ . '/../admin_helper.php';
 require_once __DIR__ . '/../email_helper.php';
@@ -459,7 +459,7 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
     $routesHtaccess = $documentRoot . '/api/routes/.htaccess';
     $authHelperFile = $documentRoot . '/api/auth_helper.php';
     $adminHelperFile = $documentRoot . '/api/admin_helper.php';
-    $configFile = $documentRoot . '/api/config.php';
+    $configFile = dirname($documentRoot, 2) . '/secret/config.php';
     $adminJsFile = $documentRoot . '/admin.js';
     $uploadHtaccess = dirname($uploadDir) . '/.htaccess';
     $gateFile = $documentRoot . '/' . ltrim(ADMIN_CONSOLE_PATH, '/');
@@ -663,7 +663,7 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
     adminAddSecurityCheck($checks, 'upload_filename_integrity', $uploadScan['unexpected_names'] ? 'warning' : 'pass', (string)count($uploadScan['unexpected_names']), ['files' => $uploadScan['unexpected_names']]);
     adminAddSecurityCheck($checks, 'upload_size_integrity', $uploadScan['oversized'] ? 'warning' : 'pass', (string)count($uploadScan['oversized']), ['files' => $uploadScan['oversized']]);
 
-    $uploadSource = adminReadLocalFile($documentRoot . '/api/config.php');
+    $uploadSource = adminReadLocalFile($configFile);
     $uploadValidationStrong = '' !== $uploadSource
         && str_contains($uploadSource, 'is_uploaded_file')
         && str_contains($uploadSource, 'finfo_file')

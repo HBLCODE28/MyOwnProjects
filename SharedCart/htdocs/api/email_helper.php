@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../../../secret/config.php';
 
 function appBaseUrl(): string {
     if (defined('APP_BASE_URL') && '' !== trim((string)APP_BASE_URL)) {

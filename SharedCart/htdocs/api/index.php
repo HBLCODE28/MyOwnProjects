@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 date_default_timezone_set('UTC');
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../../../secret/config.php';
 require_once __DIR__ . '/admin_helper.php';
 
 header('Content-Type: application/json; charset=utf-8');

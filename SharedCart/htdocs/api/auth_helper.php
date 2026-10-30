@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../../../secret/config.php';
 require_once __DIR__ . '/admin_helper.php';
 
 const AUTH_COOKIE_NAME = 'sharedcart_session';

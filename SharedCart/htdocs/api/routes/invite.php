@@ -1,6 +1,6 @@
 <?php
 // Invite routes: POST /api/invite/create, GET /api/invite/join?t={token}
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../../../secret/config.php';
 require_once __DIR__ . '/../auth_helper.php';
 require_once __DIR__ . '/../admin_helper.php';
 
