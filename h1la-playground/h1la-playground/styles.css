@@ -1155,3 +1155,72 @@ button {
         transform: none;
     }
 }
+
+/* Responsive refinements for phone and small tablet screens */
+@media (max-width: 800px) {
+  .section-index { right: auto; top: 0; display: inline-block; }
+  .overlay-kicker { position: static; display: block; margin-bottom: 12px; }
+  .overlay-inner { min-height: 100%; }
+  .overlay-body { max-width: 100%; }
+  .overlay-links a { max-width: 100%; justify-content: center; }
+}
+@media (max-width: 540px) {
+  .site-header { height: auto; min-height: 76px; padding: 12px 16px; gap: 10px; }
+  .brand { flex-shrink: 0; font-size: 27px; letter-spacing: -1px; }
+  .brand-dot { right: -40px; }
+  .nav { gap: 9px; font-size: 13px; flex-wrap: wrap; justify-content: flex-end; }
+  .nav a:first-child { display: inline-flex; }
+  .nav-github { padding: 8px 10px; }
+  .hero { min-height: 570px; height: 100svh; max-height: 820px; padding: 95px 16px 80px; }
+  .hero-content { width: 100%; margin-top: 0; }
+  .hero-title { font-size: clamp(74px, 23vw, 124px); letter-spacing: -.065em; padding: 0; margin: 0 0 18px; }
+  .typing-cursor { margin-left: 4px; width: 3px; }
+  .eyebrow { font-size: clamp(11px, 3.1vw, 14px); flex-wrap: wrap; padding-inline: 4px; }
+  .hero-subtitle { font-size: clamp(19px, 5.4vw, 23px); }
+  .round-link { font-size: 16px; margin-top: 25px; }
+  .hero-bottom { inset: auto 16px 20px; gap: 10px; align-items: flex-end; }
+  .hero-bottom span:last-child { font-size: 12px; }
+  .shape-sage { right: -12%; top: 13%; width: 115px; height: 115px; }
+  .shape-peach { width: 110px; height: 110px; top: 21%; }
+  .shape-rose { width: 90px; height: 95px; }
+  .projects-section { padding: 64px 14px 70px; }
+  .section-head { padding: 0 4px; }
+  .section-head h2 { font-size: clamp(36px, 10vw, 55px); letter-spacing: -1.5px; }
+  .section-head p { font-size: 16px; line-height: 1.5; }
+  .playground { margin-top: 24px; border-radius: 24px; }
+  .project-blob { padding: 12px; gap: 5px; touch-action: pan-y; }
+  .blob-title { font-size: clamp(17px, 5.5vw, 24px); }
+  .blob-subtitle { font-size: 12px; }
+  .project-blob .blob-open { font-size: 12px; }
+  .playground-label { font-size: 13px; }
+  .playground-squiggle { font-size: 44px; }
+  .playground-hint { padding-inline: 8px; line-height: 1.6; }
+  .projects-list button { min-height: 44px; }
+  .about-section { padding: 65px 20px 45px; }
+  .about-content h2 { font-size: clamp(43px, 12vw, 58px); }
+  .about-content p { font-size: 18px; }
+  .about-decor { height: 220px; }
+  .about-blob { width: 175px; height: 175px; }
+  .footer { padding: 28px 20px; gap: 16px; }
+  .footer-brand { font-size: 34px; }
+  .footer-brand-dot { right: -54px; }
+  .footer > span:nth-child(2) { flex-basis: auto; }
+  .overlay-inner { padding: 95px 20px 35px; justify-content: flex-start; overscroll-behavior: contain; }
+  .overlay-close { top: max(14px, env(safe-area-inset-top)); right: 16px; min-height: 44px; }
+  .overlay-body h2 { font-size: clamp(40px, 12vw, 58px); margin: 10px 0 18px; }
+  .overlay-body p { font-size: 19px; line-height: 1.5; }
+  .overlay-links { gap: 10px; margin-top: 26px; }
+  .overlay-links a { min-height: 48px; font-size: 16px; padding: 12px 18px; }
+  .overlay-decoration { font-size: 180px; }
+}
+@media (max-width: 360px) {
+  .site-header { padding-inline: 10px; }
+  .nav { font-size: 12px; gap: 7px; }
+  .nav-github { padding: 7px; }
+  .hero-title { font-size: 22vw; }
+  .hero-bottom span:first-child { max-width: 120px; }
+  .project-blob { padding: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-subtitle { opacity: 1; transform: none; animation: none; }
+}

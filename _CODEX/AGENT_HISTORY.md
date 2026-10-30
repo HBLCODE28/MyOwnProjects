@@ -620,3 +620,8 @@
 
 - Added the h1la.com static website build, including its HTML, styling, project data, and interactive behavior.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-30 - Improve h1la.com mobile layout
+
+- Refined the h1la.com layout and project playground for phone and small-tablet screens, with touch-safe interactions and responsive spacing, typography, overlays, and controls.
+- Backup: Git commit only, per the project backup policy.

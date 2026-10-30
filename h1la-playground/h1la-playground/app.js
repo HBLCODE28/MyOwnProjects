@@ -30,8 +30,8 @@
     const w = stage.clientWidth;
     const cols = Math.max(1, Math.floor(w / (w < 550 ? 200 : 260)));
     const rows = Math.ceil(projects.length / cols);
-    const rowHeight = w < 550 ? 225 : 250;
-    const height = Math.max(w < 550 ? 550 : 580, rows * rowHeight + 150);
+    const rowHeight = w < 550 ? 205 : 250;
+    const height = Math.max(w < 550 ? 380 : 580, rows * rowHeight + (w < 550 ? 95 : 150));
     stage.style.height = `${height}px`;
     return {w, h: height, cols, rowHeight};
   }
@@ -43,9 +43,9 @@
       const itemsThisRow = Math.min(cols, projects.length - row * cols);
       const cellWidth = w / itemsThisRow;
       const stagger = (i % 3 - 1) * Math.min(35, w * .04);
-      s.size = Math.min(w < 550 ? 185 : 220, Math.max(145, cellWidth * .72));
+      s.size = w < 550 ? Math.min(180, Math.max(108, cellWidth * .66)) : Math.min(220, Math.max(145, cellWidth * .72));
       s.x = clamp((col + .5) * cellWidth - s.size / 2 + stagger, 12, w - s.size - 12);
-      s.y = clamp(78 + row * rowHeight + (i % 2) * 24, 12, h - s.size - 12);
+      s.y = clamp((w < 550 ? 55 : 78) + row * rowHeight + (i % 2) * 24, 12, h - s.size - 12);
       s.baseX = s.x; s.baseY = s.y;
       s.el.style.setProperty('--size', `${s.size}px`);
       s.el.style.setProperty('--x', `${s.x}px`);
@@ -70,7 +70,7 @@
     shapes.push(state);
     let drag = null;
     button.addEventListener('pointerdown', e => {
-      if (e.button !== 0 || active) return;
+      if (e.button !== 0 || active || e.pointerType === 'touch') return;
       drag = {id:e.pointerId,startX:e.clientX,startY:e.clientY,x:state.x,y:state.y,moved:false,t:performance.now()};
       button.setPointerCapture(e.pointerId);state.hold=true;
     });
