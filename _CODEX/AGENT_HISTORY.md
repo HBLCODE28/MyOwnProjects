@@ -609,3 +609,9 @@
 
 - Added the support email address to the privacy policy as a clickable mail link for account-deletion and privacy inquiries.
 - Backup: Git commit only, per the project backup policy.
+
+## 2026-10-30 - Add personal domain index page
+
+- Added a responsive Hebrew RTL static landing page for h1la.com with a SharedCart project card and GitHub link.
+- Added a resilient `logo.png` slot that shows a styled placeholder until the logo file is uploaded.
+- Backup: Git commit only, per the project backup policy.
