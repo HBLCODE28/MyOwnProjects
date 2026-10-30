@@ -3,6 +3,7 @@
 ## 2026-10-30 - Enable Hila Playground project dragging on touch screens
 
 - Removed the touch-only guard from the existing Pointer Events drag handler, so project shapes can be dragged on phones while a short tap still opens the project.
+- Batched drag rendering to the display animation frame, kept the latest touch position, and prevented browser gesture handling once a drag begins for smoother mobile movement.
 - Backup: Git commit only, per project policy.
 
 ## 2026-10-30 - Move SharedCart configuration outside the web root

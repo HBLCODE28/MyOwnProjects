@@ -68,10 +68,17 @@
     button.append(symbol,title,subtitle,open); layer.append(button);
     const state = {el:button,project,x:0,y:0,baseX:0,baseY:0,size:0,vx:0,vy:0,dragging:false,hold:false};
     shapes.push(state);
-    let drag = null;
+    let drag = null, dragFrame = 0;
+    const paintDrag = () => {
+      dragFrame = 0;
+      if (!drag || !drag.moved) return;
+      state.vx = (drag.nextX - state.x) * .4;state.vy = (drag.nextY - state.y) * .4;
+      state.x = drag.nextX;state.y = drag.nextY;
+      updateShape(state);
+    };
     button.addEventListener('pointerdown', e => {
-      if (e.button !== 0 || active) return;
-      drag = {id:e.pointerId,startX:e.clientX,startY:e.clientY,x:state.x,y:state.y,moved:false,t:performance.now()};
+      if ((e.pointerType === 'mouse' && e.button !== 0) || active) return;
+      drag = {id:e.pointerId,startX:e.clientX,startY:e.clientY,x:state.x,y:state.y,nextX:state.x,nextY:state.y,moved:false,t:performance.now()};
       button.setPointerCapture(e.pointerId);state.hold=true;
     });
     button.addEventListener('pointermove',e=>{
@@ -79,21 +86,23 @@
       const dx=e.clientX-drag.startX,dy=e.clientY-drag.startY;
       if(Math.hypot(dx,dy)>7)drag.moved=true;
       if(!drag.moved)return;
+      e.preventDefault();
       state.dragging=true;
       const rect=stage.getBoundingClientRect();
       const nx=clamp(drag.x+dx,0,rect.width-state.size),ny=clamp(drag.y+dy,0,rect.height-state.size);
-      state.vx=(nx-state.x)*.4;state.vy=(ny-state.y)*.4;
-      state.x=nx;state.y=ny;
-      updateShape(state);
+      drag.nextX=nx;drag.nextY=ny;
+      if(!dragFrame)dragFrame=requestAnimationFrame(paintDrag);
     });
     const finish = e => {
       if(!drag || e.pointerId!==drag.id)return;
+      if(dragFrame){cancelAnimationFrame(dragFrame);paintDrag();}
       const moved=drag.moved;
       drag=null;state.dragging=false;state.hold=false;
       if(!moved && e.type==='pointerup'){button.dataset.justClicked='true';openProject(project,button);}
     };
     button.addEventListener('pointerup',finish);
     button.addEventListener('pointercancel',finish);
+    button.addEventListener('lostpointercapture',finish);
     button.addEventListener('click',()=>{if(button.dataset.justClicked){delete button.dataset.justClicked;return;}openProject(project,button);});
     const item=document.createElement('button');item.type='button';item.textContent=`${project.title} ↗`;item.addEventListener('click',()=>openProject(project,button));list.append(item);
   }
