@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-31 - Convert Taer Oti to PHP-only hosting
+
+- Replaced the Next.js/Node.js/Socket.IO runtime with a PHP 8.1 application and a browser JavaScript client.
+- Implemented file-locked JSON room persistence, PHP sessions, lobby creation/joining, rounds, preparation, timed turns, guesses, scoring, results, and new games.
+- Removed Node, npm, TypeScript, Next.js, Socket.IO, and PWA build artifacts; added Apache protection for game-state files and PHP deployment instructions.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Remove Taer Oti development-only upload artifacts
 
 - Removed the unrelated PHP upload application, old ZIP release, Windows local-launch helpers, test-player tools, and automated test sources from the server upload project.
