@@ -1,0 +1,5 @@
+.overlay-kicker {
+  white-space: nowrap;
+  font-size: clamp(8px, 3vw, 13px);
+  letter-spacing: clamp(.5px, .45vw, 2px);
+}

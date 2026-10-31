@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-31 - Keep Hila Playground overlay kicker on one line
+
+- Added an isolated responsive overlay-kicker style so “A LITTLE SOMETHING I MADE /” stays on one line in every project overlay, including narrow phone screens.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Refresh Hila Playground project data cache
 
 - Increased the `projects.js` URL version so browsers and Cloudflare request the updated project list after deployment.
