@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-31 - Bust stale Hila Playground asset caches
+
+- Added version query strings to the stylesheet and JavaScript asset URLs so an updated upload receives fresh asset requests instead of stale server or browser cache responses.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Balance the DPSAC project title
 
 - Added a compact title variant for the DPSAC project overlay, without changing the title scale of other projects.
