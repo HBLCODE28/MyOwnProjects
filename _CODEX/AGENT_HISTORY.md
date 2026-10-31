@@ -5,6 +5,7 @@
 - Added a focused Hebrew landing screen that explains the game, shows the three basic steps, and starts the existing create/join experience only after the visitor chooses to play.
 - Added accessible Terms of Use and Privacy Policy pages, linked from both the landing screen and the game interface.
 - Removed the mobile-use note from the landing screen and narrowed avatar choices to woman or man.
+- Made the two avatar choices compact and added each player’s selected avatar beside their name in room lists and score tables.
 - Backup: Git commit only, per project policy.
 
 ## 2026-10-31 - Keep Taer Oti players in their room after refresh

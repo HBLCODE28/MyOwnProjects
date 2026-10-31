@@ -28,7 +28,7 @@ function taer_lower(string $value): string {
 }
 
 function taer_avatar($value): string {
-    $allowed = ['woman', 'man', 'girl', 'boy', 'senior-woman', 'senior-man'];
+    $allowed = ['woman', 'man'];
     return in_array($value, $allowed, true) ? $value : 'woman';
 }
 
