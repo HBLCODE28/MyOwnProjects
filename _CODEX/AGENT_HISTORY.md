@@ -9,6 +9,7 @@
 - Changed all avatar silhouettes to the site’s purple and set an explicit SVG fill for reliable contrast.
 - Replaced the avatar radio-choice presentation with compact, keyboard-accessible woman/man buttons.
 - Synced the name and avatar selection between the create-room and join-room forms.
+- Consolidated participant details into one shared section, leaving only the room-code field in the join-room card.
 - Backup: Git commit only, per project policy.
 
 ## 2026-10-31 - Keep Taer Oti players in their room after refresh

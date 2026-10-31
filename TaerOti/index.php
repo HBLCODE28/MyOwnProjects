@@ -61,7 +61,7 @@ $legalPages = [
             </nav>
         </section>
         <section id="game-app" class="app" aria-live="polite" hidden>
-            <header><b><span>תאר</span> אותי</b><small id="room-code"></small></header>
+            <header><a class="logo-home" href="index.php" aria-label="חזרה לעמוד הבית"><b><span>תאר</span> אותי</b></a><small id="room-code"></small></header>
             <div id="status" role="status"></div>
             <div id="screen"></div>
             <nav class="in-game-legal-links" aria-label="מידע משפטי">
