@@ -10,6 +10,8 @@
 - Replaced the avatar radio-choice presentation with compact, keyboard-accessible woman/man buttons.
 - Synced the name and avatar selection between the create-room and join-room forms.
 - Consolidated participant details into one shared section, leaving only the room-code field in the join-room card.
+- Adjusted direct in-game Hebrew wording to masculine or feminine according to the player’s selected avatar.
+- Spaced the round controls apart and shortened the no-repeat guidance to reduce lobby clutter.
 - Backup: Git commit only, per project policy.
 
 ## 2026-10-31 - Keep Taer Oti players in their room after refresh
