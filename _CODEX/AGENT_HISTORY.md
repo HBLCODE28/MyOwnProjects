@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-31 - Add a research-link field to Hila Playground projects
+
+- Added the optional `research` project field and a “פתיחת המחקר” button that appears only for a safe research URL.
+- Moved the DPSAC SSRN link from its generic website field to the new research field.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Add the DPSAC research project to Hila Playground
 
 - Replaced the DPSAC placeholder with a Hebrew description of the personalized music-preference classifier, its YAMNet transfer-learning approach, and its purpose.

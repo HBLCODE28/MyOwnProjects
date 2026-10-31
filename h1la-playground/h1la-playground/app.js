@@ -135,7 +135,7 @@
     const tags=document.getElementById('overlay-tags');tags.replaceChildren();
     (project.technologies||[]).forEach(tag=>{const span=document.createElement('span');span.textContent=tag;tags.append(span);});
     document.getElementById('overlay-links').replaceChildren();
-    makeLink('לצפייה באתר',project.website);makeLink('GitHub',project.github);
+    makeLink('לצפייה באתר',project.website);makeLink('פתיחת המחקר',project.research);makeLink('GitHub',project.github);
     overlay.style.setProperty('--overlay-color',project.color||colors[0]);
     overlay.classList.add('is-visible');overlay.setAttribute('aria-hidden','false');document.body.classList.add('is-overlay-open');
     const rect=trigger.getBoundingClientRect();
