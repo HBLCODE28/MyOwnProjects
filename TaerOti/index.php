@@ -1,3 +1,3 @@
 <?php declare(strict_types=1); ?>
-<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#14121f"><title>תאר אותי</title><link rel="stylesheet" href="style.css"></head>
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#14121f"><title>תאר אותי</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="results.css"></head>
 <body><style>.avatars{display:none}</style><main class="shell"><section class="app" aria-live="polite"><header><b><span>תאר</span> אותי</b><small id="room-code"></small></header><div id="status" role="status"></div><div id="screen"></div></section></main><script src="app.js"></script></body></html>

@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-31 - Style Taer Oti round results
+
+- Replaced the dense textual round results with clear visual cards for each describer, target, first correct guess, and awarded points.
+- Added local inline Tabler-style SVG status, user, arrow, and trophy icons with responsive result-card styling; no external runtime dependency was added.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Convert Taer Oti to PHP-only hosting
 
 - Replaced the Next.js/Node.js/Socket.IO runtime with a PHP 8.1 application and a browser JavaScript client.
