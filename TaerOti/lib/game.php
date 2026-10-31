@@ -18,7 +18,13 @@ function taer_code(): string {
 
 function taer_clean_name($name): string {
     $name = trim(preg_replace('/\s+/u', ' ', (string)$name) ?? '');
-    return mb_substr($name, 0, 40, 'UTF-8');
+    if (function_exists('mb_substr')) return mb_substr($name, 0, 40, 'UTF-8');
+    preg_match_all('/./us', $name, $characters);
+    return implode('', array_slice($characters[0], 0, 40));
+}
+
+function taer_lower(string $value): string {
+    return function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
 }
 
 function taer_avatar($value): string {
@@ -79,7 +85,7 @@ function taer_join_room(array &$room, string $name, string $avatar, string $sess
     if ($room['phase'] !== 'lobby') throw new RuntimeException('המשחק כבר התחיל והחדר נעול להצטרפות.');
     $name = taer_clean_name($name);
     if ($name === '') throw new RuntimeException('צריך להזין שם.');
-    foreach ($room['players'] as $player) if (mb_strtolower($player['name']) === mb_strtolower($name)) throw new RuntimeException('השם כבר קיים בחדר.');
+    foreach ($room['players'] as $player) if (taer_lower($player['name']) === taer_lower($name)) throw new RuntimeException('השם כבר קיים בחדר.');
     $player = ['id' => taer_id(), 'session' => $sessionId, 'name' => $name, 'avatar' => taer_avatar($avatar), 'host' => false, 'score' => 0];
     $room['players'][] = $player;
     return $player;

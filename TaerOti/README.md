@@ -4,7 +4,7 @@
 
 ## פריסה
 
-העלו את כל תיקיית `TaerOti` ל־document root של אתר PHP. דרושה PHP 8.1 ומעלה עם הרחבות `json`, `mbstring` ו־`random` הפעילות. תנו למשתמש של שרת האינטרנט הרשאת כתיבה לתיקיית `data/`; אל תאפשרו גישה ישירה אליה (הקובץ `data/.htaccess` כבר חוסם זאת ב־Apache).
+העלו את כל תיקיית `TaerOti` ל־document root של אתר PHP. דרושה PHP 8.1 ומעלה עם הרחבת `json` הפעילה. הרחבת `mbstring` נתמכת אך אינה נדרשת. תנו למשתמש של שרת האינטרנט הרשאת כתיבה לתיקיית `data/`; אל תאפשרו גישה ישירה אליה (הקובץ `data/.htaccess` כבר חוסם זאת ב־Apache).
 
 ה־web root חייב לתמוך ב־PHP וב־HTTPS. אין צורך ב־Node, npm, Redis, Socket.IO או WebSocket.
 
