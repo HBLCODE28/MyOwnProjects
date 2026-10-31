@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-31 - Remove Taer Oti development-only upload artifacts
+
+- Removed the unrelated PHP upload application, old ZIP release, Windows local-launch helpers, test-player tools, and automated test sources from the server upload project.
+- Reduced npm commands to the production build and start commands, and removed documentation that referenced the deleted local tooling.
+- Kept only the Node/Next.js game source, runtime assets, build configuration, dependency lockfile, and production deployment guidance.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Prepare Taer Oti for production deployment
 
 - Changed the Node bind setting from the platform-owned `HOSTNAME` variable to `HOST`, so a server or container continues listening on all interfaces by default.

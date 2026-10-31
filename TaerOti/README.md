@@ -53,94 +53,6 @@
 - Fullscreen אוטומטי ככל שהדפדפן מאפשר
 - פונט אחיד בכל האתר, במובייל וב-Desktop: Arial עם fallback ל-Helvetica
 
-## הרצה מקומית
-
-דרישות: Node.js 20.9 ומעלה ו-npm.
-
-הדרך הפשוטה ב-Windows היא ללחוץ פעמיים על:
-
-```text
-START_TAER_OTI.bat
-```
-
-או ידנית:
-
-```cmd
-npm install
-npm run dev
-```
-
-במחשב:
-
-```text
-http://localhost:3000
-```
-
-כדי לפתוח מטלפון באותה רשת Wi-Fi:
-
-```cmd
-ipconfig
-```
-
-ואז פתחו את כתובת ה-IPv4 של המחשב, לדוגמה:
-
-```text
-http://10.100.102.16:3000
-```
-
-## משתמשי בדיקה מקומיים ללא כפתור QA
-
-כלי הבדיקה נמצא מחוץ לאתר ואינו מוסיף endpoint או כפתור QA לממשק.
-
-1. הפעילו את השרת עם `START_TAER_OTI.bat`.
-2. צרו חדר רגיל באתר והעתיקו את קוד החדר.
-3. הפעילו `ADD_TEST_PLAYERS.bat`.
-4. הזינו את קוד החדר ואת מספר משתמשי הבדיקה. ברירת המחדל היא 3 - יחד עם המארגן מתקבלים 4 משתתפים, המינימום למשחק.
-5. השאירו את חלון ה-BAT פתוח. משתמשי הבדיקה יסמנו מוכנות וינחשו שמות אקראיים. `Ctrl+C` מנתק אותם.
-
-אפשר גם דרך CMD:
-
-```cmd
-npm run test:players -- 7Q3K9M2R 3 http://localhost:3000
-```
-
-הכלי מסכים להתחבר רק ל-`localhost` או לכתובת פרטית ברשת המקומית, כגון `10.x.x.x` או `192.168.x.x`.
-
-## בדיקות דרך CMD
-
-בדיקות מנוע, קישורים ו-Socket.IO:
-
-```cmd
-npm test
-```
-
-בדיקה עמוקה הכוללת TypeScript, כל הבדיקות ו-production build:
-
-```cmd
-npm run test:deep
-```
-
-בדיקה של שרת שכבר רץ דרך כתובת הרשת האמיתית:
-
-```cmd
-npm run test:live -- http://10.100.102.16:3000
-```
-
-הבדיקות כוללות בין היתר:
-
-- שיבוצים ללא שיבוץ עצמי וללא חזרות
-- קישורי הזמנה ושינוי token זדוני
-- הופעת המארגן בלובי
-- הצטרפות בזמן אמת ועדכון מסך המארגן
-- reconnect וטאב נוסף
-- browser session שלא יוצר participant נוסף באותו חדר
-- קיצור שלב ההכנה כאשר כולם מוכנים
-- איפוס משחק חדש והחזרת כל המשתתפים ללובי
-- הסרת שם שכבר נבחר מאפשרויות הניחוש
-- בחירה אוטומטית כאשר נשאר יעד חוקי יחיד
-- התראת ניתוק מיידית ברמת מצב החדר
-- העברת ניהול אוטומטית למשתתף הבא אם המארגן לא חוזר בתוך חלון ה-reconnect
-
 ## Session ו-Reconnect
 
 השרת מנפיק cookie אקראי מסוג `HttpOnly`, `SameSite=Strict` עם תוקף של עד 6 שעות. ה-cookie אינו נגיש ל-JavaScript. כל participant בחדר משויך ל-browser session הזה, ולכן refresh או טאב נוסף באותו דפדפן מתחברים לאותה זהות.
@@ -187,17 +99,6 @@ TAER_OTI_TRUST_PROXY=true
 
 המשחק שומר את החדרים והניקוד בזיכרון התהליך, לכן אין להריץ יותר ממופע Node אחד ללא התאמה. לפרודקשן מרובה שרתים יש להעביר את Game State ל-Redis. הפעלה מחדש של התהליך מסיימת את החדרים הפעילים; אם רוצים לשמור היסטוריית משחקים, אפשר להוסיף PostgreSQL/Supabase.
 
-## Windows - הפעלה אוטומטית
-
-`START_TAER_OTI.bat`:
-
-- בודק ש-Node.js ו-npm זמינים
-- מזהה את כתובת ה-IPv4 המקומית ומציג את הכתובת לפתיחה מהטלפון
-- מריץ `npm install --audit=false` רק אם `node_modules` עדיין לא קיים או שחבילת ה-QR חסרה
-- מפעיל `npm run dev`
-
-ה-BAT אינו מריץ בדיקות, audit או תיקוני `--force`.
-
 ## עדכון 0.4.1
 
 - פרטי משתמש (שם + דמות) מוזנים פעם אחת בלבד לפני יצירה או הצטרפות.
@@ -239,11 +140,10 @@ TAER_OTI_TRUST_PROXY=true
 - Arial נאכף על כל רכיבי הממשק גם ב-Windows/Chrome.
 - משקלי פונט ביניים הוחלפו ב-bold רגיל במקומות רלוונטיים כדי למנוע רינדור שונה בין מחשב לטלפון.
 - פסי הגלילה עוצבו בצבעי הממשק.
-- START_TAER_OTI.bat מוחק את תיקיית .next לפני ההפעלה כדי למנוע טעינת CSS ישן.
 
 
 ## Font rendering note
-The UI now forces the local Arial face on every element and uses only Arial regular/bold weights. `START_TAER_OTI.bat` clears `.next` before every launch.
+The UI now forces the local Arial face on every element and uses only Arial regular/bold weights.
 
 
 ## Changes in 0.5.0
