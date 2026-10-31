@@ -169,7 +169,7 @@ function taer_public_view(array $room, string $sessionId): array {
     if ($current) foreach ($current['guesses'] as $guess) if ($guess['player'] === $self['id']) $selected = $guess;
     $players = array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name'], 'avatar' => $p['avatar'], 'host' => $p['host'], 'score' => $p['score']], $room['players']);
     return [
-        'code' => $room['code'], 'phase' => $room['phase'], 'rounds' => $room['rounds'], 'roundNumber' => max(1, $room['currentRound']),
+        'code' => $room['code'], 'invite' => $self['host'] ? $room['invite'] : null, 'phase' => $room['phase'], 'rounds' => $room['rounds'], 'roundNumber' => max(1, $room['currentRound']),
         'endsAt' => $room['endsAt'], 'players' => $players, 'self' => ['id' => $self['id'], 'name' => $self['name'], 'host' => $self['host'], 'avatar' => $self['avatar'], 'target' => $room['phase'] === 'prep' ? ($room['assignments'][$self['id']] ?? null) : null],
         'readyCount' => count($room['ready']), 'current' => $current ? ['describer' => $current['describer']] : null,
         'selected' => $selected['target'] ?? null, 'roundResult' => $room['phase'] === 'roundResults' ? end($room['roundResults']) : null,
