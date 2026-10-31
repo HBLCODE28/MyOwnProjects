@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-31 - Balance the DPSAC project title
+
+- Added a compact title variant for the DPSAC project overlay, without changing the title scale of other projects.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Add a research-link field to Hila Playground projects
 
 - Added the optional `research` project field and a “פתיחת המחקר” button that appears only for a safe research URL.

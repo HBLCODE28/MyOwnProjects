@@ -792,6 +792,10 @@ button {
     text-align: right
 }
 
+.overlay-body h2.overlay-title-compact {
+    font-size: clamp(48px,7vw,92px);
+}
+
 .overlay-body p {
     font-size: clamp(21px,2.3vw,30px);
     line-height: 1.55;

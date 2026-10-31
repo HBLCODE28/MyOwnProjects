@@ -130,7 +130,9 @@
   function openProject(project, trigger){
     if(active||closing)return;
     active={project,trigger};lastFocus=document.activeElement;
-    document.getElementById('overlay-title').textContent=project.title||'';
+    const overlayTitle=document.getElementById('overlay-title');
+    overlayTitle.textContent=project.title||'';
+    overlayTitle.classList.toggle('overlay-title-compact',project.id==='dpsac');
     document.getElementById('overlay-description').textContent=project.description||'';
     const tags=document.getElementById('overlay-tags');tags.replaceChildren();
     (project.technologies||[]).forEach(tag=>{const span=document.createElement('span');span.textContent=tag;tags.append(span);});
