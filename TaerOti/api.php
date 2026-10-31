@@ -23,7 +23,7 @@ try {
         $index = taer_player_index($room, $sessionId);
         if ($action === 'join') { if ($index < 0 && !hash_equals($room['invite'], (string)($input['invite'] ?? ''))) throw new RuntimeException('קישור ההזמנה אינו תקין.'); taer_join_room($room, (string)($input['name'] ?? ''), (string)($input['avatar'] ?? ''), $sessionId); $index = taer_player_index($room, $sessionId); }
         if ($index < 0) throw new RuntimeException('הדפדפן הזה אינו מחובר לחדר. הצטרפו תחילה עם שם.');
-        if ($action === 'rounds') { taer_require_host($room, $index); if ($room['phase'] !== 'lobby') throw new RuntimeException('אי אפשר לשנות סבבים עכשיו.'); $room['rounds'] = max(1, min((int)($input['rounds'] ?? 1), max(1, count($room['players']) - 1))); }
+        if ($action === 'rounds') { taer_require_host($room, $index); if ($room['phase'] !== 'lobby') throw new RuntimeException('אי אפשר לשנות סבבים עכשיו.'); $rounds = max(1, min((int)($input['rounds'] ?? 1), 12)); $needed = $rounds + 1; $force = !empty($input['allowRepeats']); if (count($room['players']) < $needed && !$force) throw new RuntimeException("כדי לשחק {$rounds} סבבים בלי לחזור על אותו יעד צריך לפחות {$needed} משתתפים."); $room['rounds'] = $rounds; $room['allowRepeats'] = $force; }
         if ($action === 'start') { taer_require_host($room, $index); if ($room['phase'] !== 'lobby' || count($room['players']) < TAER_MIN_PLAYERS) throw new RuntimeException('צריך לפחות 4 משתתפים כדי להתחיל.'); taer_start_round($room); }
         if ($action === 'ready') { if ($room['phase'] !== 'prep') throw new RuntimeException('שלב ההכנה הסתיים.'); $room['ready'][$room['players'][$index]['id']] = true; if (count($room['ready']) === count($room['players'])) taer_begin_turns($room); }
         if ($action === 'guess') {

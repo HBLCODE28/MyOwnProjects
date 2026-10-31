@@ -68,7 +68,7 @@ function taer_create_room(string $name, string $avatar, string $sessionId): arra
     $room = [
         'code' => $code, 'invite' => taer_token(), 'created' => taer_now(), 'phase' => 'lobby', 'rounds' => 1,
         'currentRound' => 0, 'turnIndex' => -1, 'endsAt' => null, 'players' => [$player], 'assignments' => [],
-        'turnOrder' => [], 'pairs' => [], 'roundResults' => [], 'ready' => [], 'notice' => null,
+        'turnOrder' => [], 'pairs' => [], 'roundResults' => [], 'ready' => [], 'allowRepeats' => false, 'notice' => null,
     ];
     if (file_put_contents($path, json_encode($room, JSON_UNESCAPED_UNICODE), LOCK_EX) === false) throw new RuntimeException('לא ניתן ליצור חדר.');
     return [$room, $player];
@@ -174,6 +174,6 @@ function taer_public_view(array $room, string $sessionId): array {
         'readyCount' => count($room['ready']), 'current' => $current ? ['describer' => $current['describer']] : null,
         'selected' => $selected['target'] ?? null, 'roundResult' => $room['phase'] === 'roundResults' ? end($room['roundResults']) : null,
         'allResults' => $room['phase'] === 'final' ? $room['roundResults'] : [], 'canStart' => count($room['players']) >= TAER_MIN_PLAYERS,
-        'notice' => $room['notice'], 'maxRounds' => max(1, count($room['players']) - 1),
+        'notice' => $room['notice'], 'allowRepeats' => !empty($room['allowRepeats']), 'maxUniqueRounds' => max(1, count($room['players']) - 1),
     ];
 }
