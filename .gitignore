@@ -39,6 +39,16 @@ _ReSharper*/
 !.env.example
 !.env.template
 
+# SharedCart's private, local-only administration console
+/SharedCart/htdocs/admin-29db540de5959343f303d392c63dcece.php
+/SharedCart/htdocs/admin-access-monitor.php
+/SharedCart/htdocs/admin.css
+/SharedCart/htdocs/admin.html
+/SharedCart/htdocs/admin.js
+/SharedCart/htdocs/admin.php
+/SharedCart/htdocs/api/admin_helper.php
+/SharedCart/htdocs/api/routes/admin.php
+
 # Python bytecode and tool caches
 __pycache__/
 *.py[cod]

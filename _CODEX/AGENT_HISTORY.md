@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-31 - Keep the SharedCart private console local
+
+- Removed the private-console source files from Git tracking and added exact ignore rules, leaving the local files in place for the existing local deployment.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Remove SharedCart config-file scanner checks
 
 - Removed the admin security scan's direct `config.php` permission and source-inspection checks, including the upload-validation check that depended on the private configuration file.
