@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-31 - Fix Taer Oti project entry syntax
+
+- Replaced the invalid semicolon after the Taer Oti project description with the required object-property comma in Hila Playground’s project data.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Add Taer Oti introduction and legal information
 
 - Added a focused Hebrew landing screen that explains the game, shows the three basic steps, and starts the existing create/join experience only after the visitor chooses to play.

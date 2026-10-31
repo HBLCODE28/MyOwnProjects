@@ -26,5 +26,16 @@ window.PROJECTS = [
     github:"https://github.com/HBLCODE28/MyOwnProjects/tree/main/school/AIProject",
     color: "#CAD182",
     symbol: "🎧"
-  }
+  },
+  {
+        id: "taeroti",
+        title: "Taer Oti",
+        subtitle: "משחק לערב חברים",
+        description: "כמה אתם טובים לתאר את חברכם במילה אחת?",
+        technologies: ["PHP", "JS", "CSS", "Machine Learning"],
+        website: "https://taeroti.h1la.com/",
+        github: "https://github.com/HBLCODE28/MyOwnProjects/tree/main/TaerOti",
+        color: "#A46229",
+        symbol: "🎮"
+    }
 ];
