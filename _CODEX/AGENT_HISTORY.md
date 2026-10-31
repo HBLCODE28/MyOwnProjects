@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-31 - Maintain cache versions for Hila Playground uploads
+
+- Increased the Hila Playground asset version after the project-shape collision change, forcing the browser and CDN to request the current CSS and JavaScript files.
+- Going forward, increment this version whenever a browser-served project file changes, before handing the task back for upload.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Add collision response to Hila Playground projects
 
 - Made nearby project shapes move away when a dragged shape bumps into them, then smoothly return through the existing playground physics.
