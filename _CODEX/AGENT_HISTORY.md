@@ -6,6 +6,7 @@
 - Added accessible Terms of Use and Privacy Policy pages, linked from both the landing screen and the game interface.
 - Removed the mobile-use note from the landing screen and narrowed avatar choices to woman or man.
 - Made the two avatar choices compact and added each player’s selected avatar beside their name in room lists and score tables.
+- Changed all avatar silhouettes to the site’s purple and set an explicit SVG fill for reliable contrast.
 - Backup: Git commit only, per project policy.
 
 ## 2026-10-31 - Keep Taer Oti players in their room after refresh
