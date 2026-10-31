@@ -100,21 +100,6 @@ function taer_leave_room(array &$room, string $sessionId): void {
         foreach ($room['players'] as $playerIndex => &$player) $player['host'] = $playerIndex === 0;
         unset($player);
     }
-    if (!empty($room['players']) && $room['phase'] !== 'lobby') {
-        foreach ($room['players'] as &$player) $player['score'] = 0;
-        unset($player);
-        $room['phase'] = 'lobby';
-        $room['currentRound'] = 0;
-        $room['rounds'] = 1;
-        $room['assignments'] = [];
-        $room['turnOrder'] = [];
-        $room['turnIndex'] = -1;
-        $room['pairs'] = [];
-        $room['roundResults'] = [];
-        $room['ready'] = [];
-        $room['endsAt'] = null;
-        $room['notice'] = $leaving['name'] . ' עזב/ה את החדר. המשחק חזר ללובי.';
-    }
 }
 
 function taer_require_host(array $room, int $playerIndex): void {

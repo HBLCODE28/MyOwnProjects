@@ -3,8 +3,8 @@
 ## 2026-10-31 - Keep Taer Oti players in their room after refresh
 
 - Persisted the active room in the browser URL after creating or joining, so a normal refresh restores the session and room state.
-- Added an accessible, confirmed leave-room action, including host handoff. Leaving during an active game returns remaining players to the lobby so no invalid assignment continues.
-- Added a once-per-session mobile alert recommending a computer for clearer player names and faster guessing during the live game.
+- Added an accessible, confirmed leave-room action in the lobby, including host handoff; the server also blocks leave requests while a game is active.
+- Added a once-per-session desktop alert recommending a phone, which is easier to hold during the live read-out and for rapid guesses.
 - Backup: Git commit only, per project policy.
 
 ## 2026-10-31 - Clarify Taer Oti result direction and unmatched points
