@@ -35,6 +35,7 @@ try {
             $pair =& $room['pairs'][$room['turnIndex']]; $playerId = $room['players'][$index]['id']; $target = (string)($input['target'] ?? '');
             if ($pair['describer'] === $playerId || $pair['describer'] === $target) throw new RuntimeException('אי אפשר לבחור באפשרות הזאת.');
             foreach ($pair['guesses'] as $guess) if ($guess['player'] === $playerId) throw new RuntimeException('כבר שלחת ניחוש.');
+            foreach ($room['pairs'] as $otherPair) foreach ($otherPair['guesses'] as $guess) if ($guess['player'] === $playerId && $guess['target'] === $target) throw new RuntimeException('כבר בחרת בשם הזה בסבב הנוכחי.');
             if (!taer_find_player($room, $target)) throw new RuntimeException('היעד לא נמצא.');
             $pair['guesses'][] = ['player' => $playerId, 'target' => $target, 'at' => microtime(true)];
             if (count($pair['guesses']) >= count($room['players']) - 1) taer_close_turn($room);
