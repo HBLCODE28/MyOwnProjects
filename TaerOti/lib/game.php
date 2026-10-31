@@ -169,12 +169,13 @@ function taer_public_view(array $room, string $sessionId): array {
     if ($current) foreach ($current['guesses'] as $guess) if ($guess['player'] === $self['id']) $selected = $guess;
     $usedTargets = [];
     foreach ($room['pairs'] as $pair) foreach ($pair['guesses'] as $guess) if ($guess['player'] === $self['id']) $usedTargets[] = $guess['target'];
+    $availableTargets = array_values(array_filter(array_column($room['players'], 'id'), fn($id) => !in_array($id, $usedTargets, true) && (!$current || $id !== $current['describer'])));
     $players = array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name'], 'avatar' => $p['avatar'], 'host' => $p['host'], 'score' => $p['score']], $room['players']);
     return [
         'code' => $room['code'], 'invite' => $self['host'] ? $room['invite'] : null, 'phase' => $room['phase'], 'rounds' => $room['rounds'], 'roundNumber' => max(1, $room['currentRound']),
         'endsAt' => $room['endsAt'], 'players' => $players, 'self' => ['id' => $self['id'], 'name' => $self['name'], 'host' => $self['host'], 'avatar' => $self['avatar'], 'target' => $room['phase'] === 'prep' ? ($room['assignments'][$self['id']] ?? null) : null],
         'readyCount' => count($room['ready']), 'current' => $current ? ['describer' => $current['describer']] : null,
-        'selected' => $selected['target'] ?? null, 'usedTargets' => array_values(array_unique($usedTargets)), 'roundResult' => $room['phase'] === 'roundResults' ? end($room['roundResults']) : null,
+        'selected' => $selected['target'] ?? null, 'usedTargets' => array_values(array_unique($usedTargets)), 'availableTargets' => $availableTargets, 'roundResult' => $room['phase'] === 'roundResults' ? end($room['roundResults']) : null,
         'allResults' => $room['phase'] === 'final' ? $room['roundResults'] : [], 'canStart' => count($room['players']) >= TAER_MIN_PLAYERS,
         'notice' => $room['notice'], 'allowRepeats' => !empty($room['allowRepeats']), 'maxUniqueRounds' => max(1, count($room['players']) - 1),
     ];
