@@ -91,6 +91,32 @@ function taer_join_room(array &$room, string $name, string $avatar, string $sess
     return $player;
 }
 
+function taer_leave_room(array &$room, string $sessionId): void {
+    $index = taer_player_index($room, $sessionId);
+    if ($index < 0) throw new RuntimeException('הדפדפן הזה אינו מחובר לחדר.');
+    $leaving = $room['players'][$index];
+    array_splice($room['players'], $index, 1);
+    if (!empty($room['players']) && !empty($leaving['host'])) {
+        foreach ($room['players'] as $playerIndex => &$player) $player['host'] = $playerIndex === 0;
+        unset($player);
+    }
+    if (!empty($room['players']) && $room['phase'] !== 'lobby') {
+        foreach ($room['players'] as &$player) $player['score'] = 0;
+        unset($player);
+        $room['phase'] = 'lobby';
+        $room['currentRound'] = 0;
+        $room['rounds'] = 1;
+        $room['assignments'] = [];
+        $room['turnOrder'] = [];
+        $room['turnIndex'] = -1;
+        $room['pairs'] = [];
+        $room['roundResults'] = [];
+        $room['ready'] = [];
+        $room['endsAt'] = null;
+        $room['notice'] = $leaving['name'] . ' עזב/ה את החדר. המשחק חזר ללובי.';
+    }
+}
+
 function taer_require_host(array $room, int $playerIndex): void {
     if ($playerIndex < 0 || empty($room['players'][$playerIndex]['host'])) throw new RuntimeException('הפעולה זמינה למארגן בלבד.');
 }

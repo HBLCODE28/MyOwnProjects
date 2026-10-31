@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-31 - Keep Taer Oti players in their room after refresh
+
+- Persisted the active room in the browser URL after creating or joining, so a normal refresh restores the session and room state.
+- Added an accessible, confirmed leave-room action, including host handoff. Leaving during an active game returns remaining players to the lobby so no invalid assignment continues.
+- Added a once-per-session mobile alert recommending a computer for clearer player names and faster guessing during the live game.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Clarify Taer Oti result direction and unmatched points
 
 - Corrected the result-route arrow for the Hebrew right-to-left layout.
