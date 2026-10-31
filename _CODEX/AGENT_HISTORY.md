@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-31 - Refine Taer Oti landing copy
+
+- Updated the landing-page game explanation to emphasize that the fastest, most accurate player earns the points.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Keep Hila Playground overlay kicker on one line
 
 - Added an isolated responsive overlay-kicker style so “A LITTLE SOMETHING I MADE /” stays on one line in every project overlay, including narrow phone screens.
