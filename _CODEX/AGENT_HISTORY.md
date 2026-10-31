@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-31 - Restore Taer Oti QR joining
+
+- Added a host-only lobby QR code that encodes the room invitation link, allowing players to scan and join directly.
+- Added cache versions for the updated Taer Oti app and landing stylesheet.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Refine Taer Oti landing copy
 
 - Updated the landing-page game explanation to emphasize that the fastest, most accurate player earns the points.

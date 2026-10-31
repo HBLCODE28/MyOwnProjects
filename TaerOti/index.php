@@ -15,7 +15,7 @@ $legalPages = [
     <meta name="theme-color" content="#14121f">
     <title><?= isset($legalPages[$page]) ? htmlspecialchars($legalPages[$page], ENT_QUOTES, 'UTF-8') . ' | ' : '' ?>תאר אותי</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="landing.css">
+    <link rel="stylesheet" href="landing.css?v=20261031-2">
     <link rel="stylesheet" href="results.css">
 </head>
 <body>
@@ -70,7 +70,7 @@ $legalPages = [
             </nav>
         </section>
     </main>
-    <script src="app.js"></script>
+    <script src="app.js?v=20261031-2"></script>
 <?php endif; ?>
 </body>
 </html>
