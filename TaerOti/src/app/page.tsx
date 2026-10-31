@@ -216,7 +216,7 @@ function Home({ socket, initialCode, initialInvite, onIdentity, busy, setBusy, e
   setError: (v: string) => void;
 }) {
   const [name, setName] = useState('');
-  const [avatarId, setAvatarId] = useState(AVATARS[0].id);
+  const [avatarId, setAvatarId] = useState<string>(AVATARS[0].id);
   const [joinCode, setJoinCode] = useState(initialCode);
 
   const create = async () => {

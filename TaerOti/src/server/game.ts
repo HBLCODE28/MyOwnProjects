@@ -184,6 +184,7 @@ export class Room {
       player.disconnectTimer = null;
       onExpired();
     }, graceMs);
+    player.disconnectTimer.unref();
     this.changed();
   }
 
@@ -202,20 +203,21 @@ export class Room {
     previousHost.isHost = false;
     successor.isHost = true;
     const previousName = previousHost.name;
-    this.removeDisconnectedPlayer(previousHost.id);
-    this.notice = `${successor.name} קיבל/ה את ניהול החדר במקום ${previousName}.`;
-    this.noticeForAll = true;
-    this.changed();
+    this.removeDisconnectedPlayer(
+      previousHost.id,
+      `${successor.name} קיבל/ה את ניהול החדר במקום ${previousName}.`,
+      true,
+    );
     return successor;
   }
 
-  removeDisconnectedPlayer(playerId: string) {
+  removeDisconnectedPlayer(playerId: string, notice = '', noticeForAll = false) {
     const player = this.players.find((p) => p.id === playerId);
     if (!player || player.connected || player.isHost) return;
     this.prepReady.delete(playerId);
     this.players = this.players.filter((p) => p.id !== playerId);
-    this.notice = `${player.name} עזב/ה את המשחק.`;
-    this.noticeForAll = false;
+    this.notice = notice || `${player.name} עזב/ה את המשחק.`;
+    this.noticeForAll = noticeForAll;
 
     if (this.phase === 'lobby') {
       this.totalRounds = Math.min(this.totalRounds, this.maxRounds);
@@ -433,6 +435,7 @@ export class Room {
     }
     this.clearAllTimers();
     this.timer = setTimeout(() => this.beginTurns(), this.timings.prepMs);
+    this.timer.unref();
     if (this.prepReady.size >= this.players.length) this.beginTurns();
     else this.changed();
   }
@@ -457,6 +460,7 @@ export class Room {
     // say the word. Therefore an auto-filled turn is never closed here.
     this.autoFillForcedGuesses();
     this.timer = setTimeout(() => this.closeTurn(), this.timings.turnMs);
+    this.timer.unref();
   }
 
   private createTurnOrder(previousTurnOrder: string[]) {

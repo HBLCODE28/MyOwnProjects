@@ -173,7 +173,19 @@ npm run build
 npm start
 ```
 
-לפרודקשן מרובה שרתים יש להעביר את Game State מ-memory ל-Redis. אם רוצים לשמור היסטוריית משחקים, אפשר להוסיף PostgreSQL/Supabase.
+הפרויקט מתאים לפריסה על שרת Node.js יחיד ומתמשך (Node 20.9+), מאחורי reverse proxy עם HTTPS ו-WebSocket forwarding. הגדירו בשרת את המשתנים הבאים:
+
+```text
+NODE_ENV=production
+PORT=3000
+HOST=0.0.0.0
+TAER_OTI_PUBLIC_ORIGIN=https://game.example.com
+TAER_OTI_TRUST_PROXY=true
+```
+
+`TAER_OTI_PUBLIC_ORIGIN` חייב להיות כתובת ה-HTTPS הציבורית האמיתית; היא משמשת לקודי ה-QR ולקישורי השיתוף. הגדירו `TAER_OTI_TRUST_PROXY=true` רק אם ה-reverse proxy שלכם הוא זה שמציב את `X-Forwarded-Proto`. ב-proxy יש להעביר גם שדרוגי WebSocket עבור Socket.IO. נקודת בדיקת חיות לשרת היא `GET /healthz` ומחזירה `{"ok":true}`.
+
+המשחק שומר את החדרים והניקוד בזיכרון התהליך, לכן אין להריץ יותר ממופע Node אחד ללא התאמה. לפרודקשן מרובה שרתים יש להעביר את Game State ל-Redis. הפעלה מחדש של התהליך מסיימת את החדרים הפעילים; אם רוצים לשמור היסטוריית משחקים, אפשר להוסיף PostgreSQL/Supabase.
 
 ## Windows - הפעלה אוטומטית
 

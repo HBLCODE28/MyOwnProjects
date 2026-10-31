@@ -1,5 +1,14 @@
 # Agent History
 
+## 2026-10-31 - Prepare Taer Oti for production deployment
+
+- Changed the Node bind setting from the platform-owned `HOSTNAME` variable to `HOST`, so a server or container continues listening on all interfaces by default.
+- Added an uncached `GET /healthz` liveness endpoint and documented the reverse-proxy, HTTPS, WebSocket, public-origin, and single-instance requirements.
+- Added a deployment environment template for the public share/QR origin and trusted-proxy behavior.
+- Added the npm lockfile, corrected the avatar-selection TypeScript type that blocked production builds, and made room timers release cleanly when no server is active.
+- Made host handoff atomic, so the newly promoted organizer receives the correct handoff notice rather than a stale departure notice.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Maintain cache versions for Hila Playground uploads
 
 - Increased the Hila Playground asset version after the project-shape collision change, forcing the browser and CDN to request the current CSS and JavaScript files.
