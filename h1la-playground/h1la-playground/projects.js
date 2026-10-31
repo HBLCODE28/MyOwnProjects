@@ -15,5 +15,14 @@ window.PROJECTS = [
     website: "https://sharedcart.h1la.com/",
     color: "#D88180",
     symbol: "🛒"
+  },
+  {
+    id: "dpsac",
+    title: "DPSAC",
+    subtitle: "מוזיקה, AI וטעם אישי",
+    description: "מערכת המלצות מוזיקה אישית שפיתחתי, שלומדת את הטעם המוזיקלי של המשתמש בעזרת YAMNet ולמידת העברה — ומנבאת אילו שירים חדשים הוא או היא יאהבו, גם ללא היסטוריית האזנה. במבחן עיוור על שירים חדשים המודל הגיע ל־93% דיוק.",
+    technologies: ["Python", "TensorFlow", "YAMNet", "Machine Learning"],
+    color: "#CAD182",
+    symbol: "🎧"
   }
 ];

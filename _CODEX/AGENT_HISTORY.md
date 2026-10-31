@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-31 - Add the DPSAC research project to Hila Playground
+
+- Replaced the DPSAC placeholder with a Hebrew description of the personalized music-preference classifier, its YAMNet transfer-learning approach, and its purpose.
+- Added accurate technology tags and left project links unset so they can be added later.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-30 - Upgrade Hila Playground background music
 
 - Replaced the browser-generated tone loop with the CC0-licensed `Lofi Hip Hop Loop` by omfgdude, stored locally in the project and configured to loop.
