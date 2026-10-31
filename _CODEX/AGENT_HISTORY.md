@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-31 - Add Taer Oti introduction and legal information
+
+- Added a focused Hebrew landing screen that explains the game, shows the three basic steps, and starts the existing create/join experience only after the visitor chooses to play.
+- Added accessible Terms of Use and Privacy Policy pages, linked from both the landing screen and the game interface.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Keep Taer Oti players in their room after refresh
 
 - Persisted the active room in the browser URL after creating or joining, so a normal refresh restores the session and room state.
