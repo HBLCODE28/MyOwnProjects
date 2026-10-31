@@ -64,7 +64,7 @@ function taer_create_room(string $name, string $avatar, string $sessionId): arra
     $name = taer_clean_name($name);
     if ($name === '') throw new RuntimeException('צריך להזין שם.');
     do { $code = taer_code(); $path = taer_room_path($code); } while (file_exists($path));
-    $player = ['id' => taer_id(), 'session' => $sessionId, 'name' => $name, 'avatar' => taer_avatar($avatar), 'host' => true, 'score' => 0];
+    $player = ['id' => taer_id(), 'session' => $sessionId, 'name' => $name, 'avatar' => taer_avatar($avatar), 'host' => true, 'score' => 0, 'lastSeen' => taer_now()];
     $room = [
         'code' => $code, 'invite' => taer_token(), 'created' => taer_now(), 'phase' => 'lobby', 'rounds' => 1,
         'currentRound' => 0, 'turnIndex' => -1, 'endsAt' => null, 'players' => [$player], 'assignments' => [],
@@ -86,7 +86,7 @@ function taer_join_room(array &$room, string $name, string $avatar, string $sess
     $name = taer_clean_name($name);
     if ($name === '') throw new RuntimeException('צריך להזין שם.');
     foreach ($room['players'] as $player) if (taer_lower($player['name']) === taer_lower($name)) throw new RuntimeException('השם כבר קיים בחדר.');
-    $player = ['id' => taer_id(), 'session' => $sessionId, 'name' => $name, 'avatar' => taer_avatar($avatar), 'host' => false, 'score' => 0];
+    $player = ['id' => taer_id(), 'session' => $sessionId, 'name' => $name, 'avatar' => taer_avatar($avatar), 'host' => false, 'score' => 0, 'lastSeen' => taer_now()];
     $room['players'][] = $player;
     return $player;
 }
