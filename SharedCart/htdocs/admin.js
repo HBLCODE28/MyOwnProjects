@@ -18,8 +18,8 @@ let lastSecurityScan=null;
 let lastHealthSnapshot=null;
 
 const SECURITY_CHECK_LABELS={
-  he:{database_connection:'חיבור למסד הנתונים',required_tables:'טבלאות מערכת נדרשות',active_admins:'חשבונות מנהל פעילים',password_hashes:'הצפנת סיסמאות',jwt_secret:'מפתח חתימת התחברות',php_version:'גרסת PHP נתמכת',display_errors:'הצגת שגיאות למבקרים',allow_url_include:'טעינת קוד מכתובות חיצוניות',expose_php:'חשיפת גרסת PHP',upload_directory:'תיקיית העלאת תמונות',upload_execution_protection:'חסימת הרצת קוד בתיקיית העלאות',suspicious_uploads:'קבצים חשודים בתיקיית התמונות',web_server_rules:'כללי אבטחת השרת',admin_gate:'שער כניסה ללוח הניהול',admin_probe_monitor:'ניטור ניסיונות גילוי עמוד מנהל',sensitive_public_files:'קבצים רגישים בתיקייה הציבורית',blocked_login_attempts:'חסימות התחברות פעילות',admin_access_attempts:'ניסיונות גישה ללוח הניהול',failed_logins:'התחברויות שנכשלו',system_errors:'שגיאות מערכת',duplicate_identities:'כפילויות בזהויות משתמשים',jwt_self_test:'בדיקת JWT פעילה',jwt_header_validation:'אימות כותרת JWT',auth_cookie_security:'אבטחת עוגיית התחברות',admin_token_storage:'אחסון טוקן בלוח המנהל',session_lifetime:'משך תוקף התחברות',password_policy:'מדיניות אורך סיסמה',password_reset_policy:'מדיניות איפוס סיסמה',https_request:'חיבור HTTPS פעיל',hsts_policy:'מדיניות HSTS',content_security_policy:'מדיניות CSP',csp_script_safety:'בטיחות script-src',security_headers:'כותרות אבטחה',api_private_files:'חסימת קובצי API פנימיים',config_file_permissions:'הרשאות config.php',admin_helper_permissions:'הרשאות admin_helper.php',root_rules_permissions:'הרשאות .htaccess ראשי',world_writable_paths:'קבצים ותיקיות הניתנים לכתיבה לכולם',upload_mime_integrity:'תקינות MIME של קובצי העלאה',upload_symlinks:'קישורים סמליים בתיקיית העלאות',upload_filename_integrity:'תקינות שמות קובצי העלאה',upload_size_integrity:'תקינות גודל קובצי העלאה',upload_validation_code:'בדיקות קוד העלאת תמונות',php_source_heuristics:'סריקת דפוסי PHP חשודים',fixed_admin_bootstrap:'הרשאת מנהל קבועה בקוד',database_strict_mode:'מצב SQL מחמיר',database_charset:'קידוד חיבור למסד',database_table_formats:'מנוע וקידוד טבלאות',database_privileges:'הרשאות משתמש מסד הנתונים',database_orphans:'רשומות יתומות במסד',database_clock:'סנכרון שעון מסד הנתונים',password_reset_state:'מצב בקשות איפוס סיסמה',token_json_exposure:'חשיפת JWT ל-JavaScript',rate_limit_failure_mode:'מצב כשל של הגבלת קצב'},
-  en:{database_connection:'Database connection',required_tables:'Required system tables',active_admins:'Active administrator accounts',password_hashes:'Password hashing',jwt_secret:'Login signing key',php_version:'Supported PHP version',display_errors:'Error display to visitors',allow_url_include:'Remote code inclusion',expose_php:'PHP version exposure',upload_directory:'Image upload directory',upload_execution_protection:'Upload execution protection',suspicious_uploads:'Suspicious files in image storage',web_server_rules:'Web server security rules',admin_gate:'Admin access gate',admin_probe_monitor:'Admin path probe monitor',sensitive_public_files:'Sensitive files in the public directory',blocked_login_attempts:'Active login blocks',admin_access_attempts:'Admin access attempts',failed_logins:'Failed logins',system_errors:'System errors',duplicate_identities:'Duplicate user identities',jwt_self_test:'Active JWT self-test',jwt_header_validation:'JWT header validation',auth_cookie_security:'Authentication cookie security',admin_token_storage:'Admin token storage',session_lifetime:'Session lifetime',password_policy:'Password length policy',password_reset_policy:'Password reset policy',https_request:'Active HTTPS connection',hsts_policy:'HSTS policy',content_security_policy:'Content Security Policy',csp_script_safety:'script-src safety',security_headers:'Security headers',api_private_files:'Private API file protection',config_file_permissions:'config.php permissions',admin_helper_permissions:'admin_helper.php permissions',root_rules_permissions:'Root .htaccess permissions',world_writable_paths:'World-writable paths',upload_mime_integrity:'Upload MIME integrity',upload_symlinks:'Upload-directory symlinks',upload_filename_integrity:'Upload filename integrity',upload_size_integrity:'Upload size integrity',upload_validation_code:'Image upload validation code',php_source_heuristics:'Suspicious PHP source patterns',fixed_admin_bootstrap:'Hard-coded administrator bootstrap',database_strict_mode:'Strict SQL mode',database_charset:'Database connection charset',database_table_formats:'Database table engine and collation',database_privileges:'Database account privileges',database_orphans:'Orphaned database records',database_clock:'Database clock synchronization',password_reset_state:'Password reset request state',token_json_exposure:'JWT exposure to JavaScript',rate_limit_failure_mode:'Rate-limit failure mode'}
+  he:{database_connection:'חיבור למסד הנתונים',required_tables:'טבלאות מערכת נדרשות',active_admins:'חשבונות מנהל פעילים',password_hashes:'הצפנת סיסמאות',jwt_secret:'מפתח חתימת התחברות',php_version:'גרסת PHP נתמכת',display_errors:'הצגת שגיאות למבקרים',allow_url_include:'טעינת קוד מכתובות חיצוניות',expose_php:'חשיפת גרסת PHP',upload_directory:'תיקיית העלאת תמונות',upload_execution_protection:'חסימת הרצת קוד בתיקיית העלאות',suspicious_uploads:'קבצים חשודים בתיקיית התמונות',web_server_rules:'כללי אבטחת השרת',admin_gate:'שער כניסה ללוח הניהול',admin_probe_monitor:'ניטור ניסיונות גילוי עמוד מנהל',sensitive_public_files:'קבצים רגישים בתיקייה הציבורית',blocked_login_attempts:'חסימות התחברות פעילות',admin_access_attempts:'ניסיונות גישה ללוח הניהול',failed_logins:'התחברויות שנכשלו',system_errors:'שגיאות מערכת',duplicate_identities:'כפילויות בזהויות משתמשים',jwt_self_test:'בדיקת JWT פעילה',jwt_header_validation:'אימות כותרת JWT',auth_cookie_security:'אבטחת עוגיית התחברות',admin_token_storage:'אחסון טוקן בלוח המנהל',session_lifetime:'משך תוקף התחברות',password_policy:'מדיניות אורך סיסמה',password_reset_policy:'מדיניות איפוס סיסמה',https_request:'חיבור HTTPS פעיל',hsts_policy:'מדיניות HSTS',content_security_policy:'מדיניות CSP',csp_script_safety:'בטיחות script-src',security_headers:'כותרות אבטחה',api_private_files:'חסימת קובצי API פנימיים',admin_helper_permissions:'הרשאות admin_helper.php',root_rules_permissions:'הרשאות .htaccess ראשי',world_writable_paths:'קבצים ותיקיות הניתנים לכתיבה לכולם',upload_mime_integrity:'תקינות MIME של קובצי העלאה',upload_symlinks:'קישורים סמליים בתיקיית העלאות',upload_filename_integrity:'תקינות שמות קובצי העלאה',upload_size_integrity:'תקינות גודל קובצי העלאה',php_source_heuristics:'סריקת דפוסי PHP חשודים',fixed_admin_bootstrap:'הרשאת מנהל קבועה בקוד',database_strict_mode:'מצב SQL מחמיר',database_charset:'קידוד חיבור למסד',database_table_formats:'מנוע וקידוד טבלאות',database_privileges:'הרשאות משתמש מסד הנתונים',database_orphans:'רשומות יתומות במסד',database_clock:'סנכרון שעון מסד הנתונים',password_reset_state:'מצב בקשות איפוס סיסמה',token_json_exposure:'חשיפת JWT ל-JavaScript',rate_limit_failure_mode:'מצב כשל של הגבלת קצב'},
+  en:{database_connection:'Database connection',required_tables:'Required system tables',active_admins:'Active administrator accounts',password_hashes:'Password hashing',jwt_secret:'Login signing key',php_version:'Supported PHP version',display_errors:'Error display to visitors',allow_url_include:'Remote code inclusion',expose_php:'PHP version exposure',upload_directory:'Image upload directory',upload_execution_protection:'Upload execution protection',suspicious_uploads:'Suspicious files in image storage',web_server_rules:'Web server security rules',admin_gate:'Admin access gate',admin_probe_monitor:'Admin path probe monitor',sensitive_public_files:'Sensitive files in the public directory',blocked_login_attempts:'Active login blocks',admin_access_attempts:'Admin access attempts',failed_logins:'Failed logins',system_errors:'System errors',duplicate_identities:'Duplicate user identities',jwt_self_test:'Active JWT self-test',jwt_header_validation:'JWT header validation',auth_cookie_security:'Authentication cookie security',admin_token_storage:'Admin token storage',session_lifetime:'Session lifetime',password_policy:'Password length policy',password_reset_policy:'Password reset policy',https_request:'Active HTTPS connection',hsts_policy:'HSTS policy',content_security_policy:'Content Security Policy',csp_script_safety:'script-src safety',security_headers:'Security headers',api_private_files:'Private API file protection',admin_helper_permissions:'admin_helper.php permissions',root_rules_permissions:'Root .htaccess permissions',world_writable_paths:'World-writable paths',upload_mime_integrity:'Upload MIME integrity',upload_symlinks:'Upload-directory symlinks',upload_filename_integrity:'Upload filename integrity',upload_size_integrity:'Upload size integrity',php_source_heuristics:'Suspicious PHP source patterns',fixed_admin_bootstrap:'Hard-coded administrator bootstrap',database_strict_mode:'Strict SQL mode',database_charset:'Database connection charset',database_table_formats:'Database table engine and collation',database_privileges:'Database account privileges',database_orphans:'Orphaned database records',database_clock:'Database clock synchronization',password_reset_state:'Password reset request state',token_json_exposure:'JWT exposure to JavaScript',rate_limit_failure_mode:'Rate-limit failure mode'}
 };
 
 const SECURITY_EVENT_LABELS={
@@ -62,21 +62,21 @@ function securityRecommendedUploads(scan,health){
     files.set(clean,current);
   };
   const map={
-    database_connection:[['api/config.php',true],['database-schema.sql',false]],
+    database_connection:[['database-schema.sql',false]],
     required_tables:[['database-schema.sql',false],['api/admin_helper.php',false]],
     active_admins:[['api/admin_helper.php',false]],
     password_hashes:[['api/routes/auth.php',false],['api/auth_helper.php',false]],
     duplicate_identities:[['database-schema.sql',false],['api/routes/auth.php',false]],
-    jwt_secret:[['api/config.php',true],['api/auth_helper.php',false]],
-    jwt_self_test:[['api/auth_helper.php',false],['api/config.php',true]],
+    jwt_secret:[['api/auth_helper.php',false]],
+    jwt_self_test:[['api/auth_helper.php',false]],
     jwt_header_validation:[['api/auth_helper.php',false]],
-    auth_cookie_security:[['api/auth_helper.php',false],['api/config.php',true]],
+    auth_cookie_security:[['api/auth_helper.php',false]],
     admin_token_storage:[['admin.js',false],['api/auth_helper.php',false]],
     token_json_exposure:[['api/routes/auth.php',false],['admin.js',false]],
     rate_limit_failure_mode:[['api/routes/auth.php',false],['api/admin_helper.php',false]],
-    session_lifetime:[['api/config.php',true],['api/auth_helper.php',false]],
-    password_policy:[['api/config.php',true],['api/routes/auth.php',false]],
-    password_reset_policy:[['api/config.php',true],['api/routes/auth.php',false]],
+    session_lifetime:[['api/auth_helper.php',false]],
+    password_policy:[['api/routes/auth.php',false]],
+    password_reset_policy:[['api/routes/auth.php',false]],
     password_reset_state:[['api/routes/auth.php',false],['api/routes/admin.php',false]],
     https_request:[['.htaccess',false]],
     hsts_policy:[['.htaccess',false]],
@@ -85,26 +85,20 @@ function securityRecommendedUploads(scan,health){
     security_headers:[['.htaccess',false]],
     web_server_rules:[['.htaccess',false]],
     api_private_files:[['api/.htaccess',false],['api/routes/.htaccess',false],['.htaccess',false]],
-    config_file_permissions:[['api/config.php',true]],
     admin_helper_permissions:[['api/admin_helper.php',false]],
     root_rules_permissions:[['.htaccess',false]],
     world_writable_paths:[['.htaccess',false]],
-    upload_directory:[['api/config.php',true],['uploads/.htaccess',false]],
+    upload_directory:[['uploads/.htaccess',false]],
     upload_execution_protection:[['uploads/.htaccess',false],['.htaccess',false]],
-    suspicious_uploads:[['uploads/.htaccess',false],['api/config.php',true]],
-    upload_mime_integrity:[['api/config.php',true],['uploads/.htaccess',false]],
+    suspicious_uploads:[['uploads/.htaccess',false]],
+    upload_mime_integrity:[['uploads/.htaccess',false]],
     upload_symlinks:[['uploads/.htaccess',false]],
-    upload_filename_integrity:[['api/config.php',true]],
-    upload_size_integrity:[['api/config.php',true]],
-    upload_validation_code:[['api/config.php',true]],
     php_source_heuristics:[['.htaccess',false]],
     fixed_admin_bootstrap:[['api/admin_helper.php',false]],
-    database_strict_mode:[['api/config.php',true],['database-schema.sql',false]],
-    database_charset:[['api/config.php',true],['database-schema.sql',false]],
+    database_strict_mode:[['database-schema.sql',false]],
+    database_charset:[['database-schema.sql',false]],
     database_table_formats:[['database-schema.sql',false]],
-    database_privileges:[['api/config.php',true]],
     database_orphans:[['database-schema.sql',false],['api/routes/admin.php',false]],
-    database_clock:[['api/config.php',true]],
     blocked_login_attempts:[['api/routes/auth.php',false],['api/admin_helper.php',false]],
     admin_access_attempts:[['admin-access-monitor.php',false],['api/admin_helper.php',false],['admin-29db540de5959343f303d392c63dcece.php',false]],
     failed_logins:[['api/routes/auth.php',false],['api/auth_helper.php',false]],
@@ -133,7 +127,7 @@ function buildSecuritySupportReport(scan,health){
     report_version:1,
     generated_at:new Date().toISOString(),
     purpose:'Upload this JSON file to ChatGPT to diagnose SharedCart security findings and determine which source files are needed next.',
-    privacy:{contains_passwords:false,contains_jwt_secret:false,contains_auth_token:false,note:'config.php is never embedded in this report. If it is requested separately, redact DB passwords, JWT secrets, SMTP passwords and API keys.'},
+    privacy:{contains_passwords:false,contains_jwt_secret:false,contains_auth_token:false,note:'This report does not contain application secrets.'},
     client:{admin_time_zone:ADMIN_TIME_ZONE,protocol:location.protocol,host:location.host,admin_path:location.pathname},
     scan:{scan_version:scan?.scan_version||null,scanned_at:scan?.scanned_at||null,overall_status:scan?.overall_status||null,score:scan?.score??null,summary:scan?.summary||{},checks,findings:checks.filter(c=>c.status!=='pass')},
     environment:{database_version:health?.database_version||null,php_version:health?.php_version||null,server_software:health?.server_software||null,server_time:health?.server_time||null,uploads_path:health?.uploads_path||null,uploads_writable:health?.uploads_writable??null,uploads_bytes:health?.uploads_bytes??null,uploads_files:health?.uploads_files??null,disk_free_bytes:health?.disk_free_bytes??null,disk_total_bytes:health?.disk_total_bytes??null,upload_max_filesize:health?.upload_max_filesize||null,post_max_size:health?.post_max_size||null,memory_limit:health?.memory_limit||null,file_uploads:health?.file_uploads??null,email_usage:health?.email_usage||null,tables:health?.tables||{}},
@@ -144,7 +138,7 @@ function buildSecuritySupportReport(scan,health){
     instructions_for_analysis:[
       'Analyze findings in severity order: critical, then warning.',
       'Use recommended_uploads to request only files needed to investigate failed checks.',
-      'Do not ask for secrets. For api/config.php, request a redacted copy with constant names and non-secret settings preserved.',
+      'Do not ask for secrets or configuration files.',
       'If database-schema.sql is requested, export structure only without table data.',
       'Correlate recent_errors and recent_security_events with failed checks before requesting additional files.'
     ]

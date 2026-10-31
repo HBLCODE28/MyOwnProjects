@@ -213,7 +213,6 @@ function adminFindSensitiveWebFiles(string $documentRoot, int $limit = 25): arra
             if (!$file->isFile()) continue;
             $relative = adminRelativePath($file->getPathname(), $documentRoot);
             if (str_starts_with($relative, 'uploads/')) continue;
-            if ('api/config.php' === $relative) continue;
             $name = strtolower($file->getFilename());
             $extension = strtolower((string)$file->getExtension());
             $sensitiveName = str_starts_with($name, '.env') || str_contains($name, 'config.php.') || str_ends_with($name, '~');

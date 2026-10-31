@@ -213,7 +213,6 @@ function adminFindSensitiveWebFiles(string $documentRoot, int $limit = 25): arra
             if (!$file->isFile()) continue;
             $relative = adminRelativePath($file->getPathname(), $documentRoot);
             if (str_starts_with($relative, 'uploads/')) continue;
-            if ('api/config.php' === $relative) continue;
             $name = strtolower($file->getFilename());
             $extension = strtolower((string)$file->getExtension());
             $sensitiveName = str_starts_with($name, '.env') || in_array($name, ['.git', '.svn', '.hg', '.ds_store'], true) || str_contains($name, 'config.php.') || str_ends_with($name, '~') || str_ends_with($name, '.swp');
@@ -459,7 +458,6 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
     $routesHtaccess = $documentRoot . '/api/routes/.htaccess';
     $authHelperFile = $documentRoot . '/api/auth_helper.php';
     $adminHelperFile = $documentRoot . '/api/admin_helper.php';
-    $configFile = dirname($documentRoot, 2) . '/secret/config.php';
     $adminJsFile = $documentRoot . '/admin.js';
     $uploadHtaccess = dirname($uploadDir) . '/.htaccess';
     $gateFile = $documentRoot . '/' . ltrim(ADMIN_CONSOLE_PATH, '/');
@@ -622,7 +620,6 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
         'route_files' => $routeFilesProtected,
     ]);
 
-    adminCheckFilePermissions($checks, 'config_file_permissions', $configFile, $documentRoot);
     adminCheckFilePermissions($checks, 'admin_helper_permissions', $adminHelperFile, $documentRoot);
     adminCheckFilePermissions($checks, 'root_rules_permissions', $rootHtaccess, $documentRoot);
 
@@ -662,14 +659,6 @@ function adminRunSecurityScan(PDO $dbh, string $uploadDir): array {
     adminAddSecurityCheck($checks, 'upload_symlinks', $uploadScan['symlinks'] ? 'critical' : 'pass', (string)count($uploadScan['symlinks']), ['files' => $uploadScan['symlinks']]);
     adminAddSecurityCheck($checks, 'upload_filename_integrity', $uploadScan['unexpected_names'] ? 'warning' : 'pass', (string)count($uploadScan['unexpected_names']), ['files' => $uploadScan['unexpected_names']]);
     adminAddSecurityCheck($checks, 'upload_size_integrity', $uploadScan['oversized'] ? 'warning' : 'pass', (string)count($uploadScan['oversized']), ['files' => $uploadScan['oversized']]);
-
-    $uploadSource = adminReadLocalFile($configFile);
-    $uploadValidationStrong = '' !== $uploadSource
-        && str_contains($uploadSource, 'is_uploaded_file')
-        && str_contains($uploadSource, 'finfo_file')
-        && str_contains($uploadSource, 'random_bytes')
-        && str_contains($uploadSource, 'move_uploaded_file');
-    adminAddSecurityCheck($checks, 'upload_validation_code', $uploadValidationStrong ? 'pass' : 'critical');
 
     adminAddSecurityCheck($checks, 'admin_gate', is_file($gateFile) ? 'pass' : 'critical');
     adminAddSecurityCheck($checks, 'admin_probe_monitor', is_file($documentRoot . '/admin-access-monitor.php') ? 'pass' : 'critical');

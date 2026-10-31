@@ -1,5 +1,12 @@
 # Agent History
 
+## 2026-10-31 - Remove SharedCart config-file scanner checks
+
+- Removed the admin security scan's direct `config.php` permission and source-inspection checks, including the upload-validation check that depended on the private configuration file.
+- Removed `config.php` from generated support-report recommendations and instructions; normal runtime configuration includes remain private and unchanged.
+- Verified PHP and JavaScript syntax after the update.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Restore Taer Oti QR joining
 
 - Added a host-only lobby QR code that encodes the room invitation link, allowing players to scan and join directly.
