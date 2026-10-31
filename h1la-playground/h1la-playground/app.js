@@ -75,6 +75,7 @@
       state.vx = (drag.nextX - state.x) * .4;state.vy = (drag.nextY - state.y) * .4;
       state.x = drag.nextX;state.y = drag.nextY;
       updateShape(state);
+      if (!reduceMotion.matches) repelNearbyShapes(state);
     };
     button.addEventListener('pointerdown', e => {
       if ((e.pointerType === 'mouse' && e.button !== 0) || active) return;
@@ -107,6 +108,24 @@
     const item=document.createElement('button');item.type='button';item.textContent=`${project.title} ↗`;item.addEventListener('click',()=>openProject(project,button));list.append(item);
   }
   function updateShape(s){s.el.style.setProperty('--x',`${s.x}px`);s.el.style.setProperty('--y',`${s.y}px`);}
+
+  function repelNearbyShapes(dragged){
+    const w=stage.clientWidth,h=stage.clientHeight;
+    const dragCenterX=dragged.x+dragged.size/2,dragCenterY=dragged.y+dragged.size/2;
+    shapes.forEach(other=>{
+      if(other===dragged||other.hold)return;
+      const dx=(other.x+other.size/2)-dragCenterX,dy=(other.y+other.size/2)-dragCenterY;
+      const distance=Math.hypot(dx,dy);
+      const minDistance=(dragged.size+other.size)*.43;
+      if(distance>=minDistance)return;
+      const dirX=distance?dx/distance:1,dirY=distance?dy/distance:0;
+      const push=Math.min(minDistance-distance,42)*.78;
+      other.x=clamp(other.x+dirX*push,0,w-other.size);
+      other.y=clamp(other.y+dirY*push,0,h-other.size);
+      other.vx+=dirX*push*.18;other.vy+=dirY*push*.18;
+      updateShape(other);
+    });
+  }
 
   function physics(){
     if(!reduceMotion.matches && !active){

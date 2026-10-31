@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-31 - Add collision response to Hila Playground projects
+
+- Made nearby project shapes move away when a dragged shape bumps into them, then smoothly return through the existing playground physics.
+- Respects visitors who request reduced motion by not applying the automatic collision movement.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Bust stale Hila Playground asset caches
 
 - Added version query strings to the stylesheet and JavaScript asset URLs so an updated upload receives fresh asset requests instead of stale server or browser cache responses.
