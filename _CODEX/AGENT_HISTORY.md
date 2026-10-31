@@ -1,5 +1,11 @@
 # Agent History
 
+## 2026-10-31 - Clarify Taer Oti result direction and unmatched points
+
+- Corrected the result-route arrow for the Hebrew right-to-left layout.
+- Clarified in the result card that, when nobody guesses, the describer receives the three points; the server scoring already awards those points to that player.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Style Taer Oti round results
 
 - Replaced the dense textual round results with clear visual cards for each describer, target, first correct guess, and awarded points.
