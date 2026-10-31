@@ -1,5 +1,10 @@
 # Agent History
 
+## 2026-10-31 - Refresh Hila Playground project data cache
+
+- Increased the `projects.js` URL version so browsers and Cloudflare request the updated project list after deployment.
+- Backup: Git commit only, per project policy.
+
 ## 2026-10-31 - Fix Taer Oti project entry syntax
 
 - Replaced the invalid semicolon after the Taer Oti project description with the required object-property comma in Hila Playground’s project data.
